@@ -4,7 +4,7 @@
 
 
 (define student-test-repos
-  '("git@github.com:NorthwesternSoftwareConstructionFall19/dummy-team-tests.git"))
+  '("https://github.com/NorthwesternSoftwareConstructionFall19/dummy-team-tests.git"))
 
 (define assign-number "0")
 (define student-path "./student")
@@ -30,7 +30,8 @@
   (for ([repo (in-list student-test-repos)]
         [i (in-naturals)])
     (define this-student-tests @~a{student-tests-@i})
-    (system @~a{git clone "@repo" @this-student-tests})
+    (unless (system @~a{git clone "@repo" @this-student-tests})
+      (displayln @~a{Failed to clone @repo}))
     (define tests-dir (build-path this-student-tests assign-number))
     (cond [(directory-exists? tests-dir)
            (for ([test (in-directory tests-dir)])
