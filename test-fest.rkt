@@ -6,8 +6,9 @@
 (define student-test-repos
   '("https://github.com/NorthwesternSoftwareConstructionFall19/dummy-team-tests.git"))
 
-(define path-to-oracle-exe
-  "oracle-dist/bin/main")
+(define racket (find-executable-path "racket"))
+(define path-to-oracle
+  "oracle-dist/main.rkt")
 
 (define assign-number (box "0"))
 (define test-exe-path (box "./student"))
@@ -48,7 +49,7 @@
     (define tests-dir (build-path this-student-tests (unbox assign-number)))
     (cond [(directory-exists? tests-dir)
            (for ([test (in-directory tests-dir)])
-             (cond [(not (system @~a{../@|i|/@path-to-oracle-exe @test}))
+             (cond [(not (system @~a{@racket ../@|i|/@path-to-oracle @test}))
                     (displayln @~a{Test @test invalid})]
                    [(not (system @~a{@test-exe-path/relative @test}))
                     (displayln @~a{Failed test @test from @repo})
