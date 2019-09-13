@@ -20,6 +20,8 @@
   "Path to student exe"
   (set! student-path student-path*)])
 
+(define student-path/rel (build-path ".." student-path))
+
 (define test-repos-dir "./student-tests")
 (delete-directory/files test-repos-dir
                         #:must-exist? #f)
@@ -29,10 +31,14 @@
         [i (in-naturals)])
     (define this-student-tests @~a{student-tests-@i})
     (system @~a{git clone "@repo" @this-student-tests})
-    (for ([test (in-directory (build-path this-student-tests assign-number))])
-      (cond [(not (system @~a{../@|i|/main @test}))
-             (displayln @~a{Test @test invalid})]
-            [(not (system @~a{@student-path @test}))
-             (displayln @~a{Failed test @test})]
-            [else
-             (displayln @~a{Passed test @test})]))))
+    (define tests-dir (build-path this-student-tests assign-number))
+    (cond [(directory-exists? tests-dir)
+           (for ([test (in-directory tests-dir)])
+             (cond [(not (system @~a{../@|i|/main @test}))
+                    (displayln @~a{Test @test invalid})]
+                   [(not (system @~a{@student-path/rel @test}))
+                    (displayln @~a{Failed test @test})]
+                   [else
+                    (displayln @~a{Passed test @test})]))]
+          [else
+           (displayln @~a{No tests for student @i})])))
