@@ -6,6 +6,9 @@
 (define student-test-repos
   '("https://github.com/NorthwesternSoftwareConstructionFall19/dummy-team-tests.git"))
 
+(define path-to-oracle-exe
+  "oracle-dist/bin/main")
+
 (define assign-number "0")
 (define student-path "./student")
 
@@ -35,7 +38,7 @@
     (define tests-dir (build-path this-student-tests assign-number))
     (cond [(directory-exists? tests-dir)
            (for ([test (in-directory tests-dir)])
-             (cond [(not (system @~a{../@|i|/main @test}))
+             (cond [(not (system @~a{../@|i|/@path-to-oracle-exe @test}))
                     (displayln @~a{Test @test invalid})]
                    [(not (system @~a{@student-path/rel @test}))
                     (displayln @~a{Failed test @test})]
