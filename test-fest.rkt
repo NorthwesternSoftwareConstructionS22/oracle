@@ -1,34 +1,45 @@
 #lang at-exp racket
 
-(require racket/cmdline)
+(require racket/cmdline
+         "test-fest-data.rkt"
+         "test.rkt"
+         "logger.rkt")
+
+(define test-repos-dir "./peer-tests")
 
 
-(define student-test-repos
-  '("https://github.com/NorthwesternSoftwareConstructionFall19/dummy-team-tests.git"))
 
-(define racket (find-executable-path "racket"))
-(define path-to-oracle
-  "oracle-dist/main.rkt")
-
-(define assign-number (box "0"))
-(define test-exe-path (box "./student"))
-
-(command-line
- #:once-each
- [("-a" "--assign")
-  assign-number*
-  "Assignment number"
-  (set-box! assign-number assign-number*)]
- [("-t" "--test-exe")
-  student-path*
-  "Relative path to executable to test"
-  (set-box! test-exe-path student-path*)])
-
-(define test-exe-path/relative (build-path ".." (unbox test-exe-path)))
 
 (define (basename p)
   (define-values {_1 name _2} (split-path p))
   name)
+
+(define racket (find-executable-path "racket"))
+(define oracle-path/relative
+  "oracle-dist/main.rkt")
+
+(define assign-major-number-box (box "0"))
+(define assign-minor-number-box (box "0"))
+(define test-exe-path (box "echo"))
+
+(command-line
+ #:once-each
+ [("-M" "--Major")
+  assign-number*
+  "Assignment major number. E.g. for 5.2 this is 5."
+  (set-box! assign-major-number-box assign-number*)]
+ [("-m" "--minor")
+  assign-number*
+  "Assignment minor number. E.g. for 5.2 this is 2."
+  (set-box! assign-minor-number-box assign-number*)]
+ [("-t" "--test-exe")
+  student-path*
+  "Absolute path to executable to test."
+  (set-box! test-exe-path student-path*)])
+
+(define assign-major-number (unbox assign-major-number-box))
+(define assign-number
+  @~a{@|(unbox assign-major-number-box)|.@|(unbox assign-minor-number-box)|})
 
 (define failed-tests (box '()))
 (define (record-failed-test! repo test)
@@ -36,28 +47,56 @@
             (cons (list repo test)
                   (unbox failed-tests))))
 
-(define test-repos-dir "./student-tests")
 (delete-directory/files test-repos-dir
                         #:must-exist? #f)
 (make-directory test-repos-dir)
+(define path-to-test-exe (unbox test-exe-path))
 (parameterize ([current-directory test-repos-dir])
+  (define path-to-oracle
+    @~a{../@|assign-major-number|/@|assign-number|/@oracle-path/relative})
+  (define oracle-tests-dir
+    @~a{../@|assign-major-number|/@|assign-number|/tests})
+  (define (oracle-passes? test-input test-output)
+    (log-fest debug @~a{Checking @test-input against oracle.})
+    (check-test-pass path-to-oracle
+                     test-input
+                     test-output
+                     #:run-with-racket? #t))
+  (log-fest info "Checking test exe against oracle tests ...")
+  (for-each-test-in
+   oracle-tests-dir
+   (λ (test-input test-output)
+     (unless (check-test-pass path-to-test-exe
+                              test-input
+                              test-output)
+       (log-fest warning
+        @~a{Your executable failed test @test-input from oracle})
+       (record-failed-test! "oracle"
+                            (path->string (basename test-input)))))
+   #:check-other-validity oracle-passes?)
+  (log-fest info "Done.\n")
+
+  (log-fest info "Commencing test fest ...")
   (for ([repo (in-list student-test-repos)]
         [i (in-naturals)])
+    (log-fest info @~a{Testing against @repo ...})
     (define this-student-tests @~a{student-tests-@i})
-    (unless (system @~a{git clone "@repo" @this-student-tests})
-      (displayln @~a{Failed to clone @repo}))
-    (define tests-dir (build-path this-student-tests (unbox assign-number)))
+    (unless (clone-repo repo this-student-tests)
+      (log-fest warning @~a{Failed to clone @repo}))
+    (define tests-dir (build-path this-student-tests
+                                  assign-major-number
+                                  assign-number))
     (cond [(directory-exists? tests-dir)
-           (for ([test (in-directory tests-dir)])
-             (cond [(not (system @~a{@racket ../@|i|/@path-to-oracle @test}))
-                    (displayln @~a{Test @test invalid})]
-                   [(not (system @~a{@test-exe-path/relative @test}))
-                    (displayln @~a{Failed test @test from @repo})
-                    (record-failed-test! repo (path->string (basename test)))]
-                   [else
-                    (displayln @~a{Passed test @test})]))]
+           (for-each-test-in
+            tests-dir
+            (λ (test-input test-output)
+              (log-fest info @~a{Failed test @test-input from @repo})
+              (record-failed-test! repo
+                                   (path->string (basename test-input))))
+            #:check-other-validity oracle-passes?)]
           [else
-           (displayln @~a{No tests for student @i})])))
+           (log-fest info @~a{No test directory for @repo})]))
+  (log-fest info "Done.\n"))
 
 (define failed-list (unbox failed-tests))
 (define failed? (not (empty? failed-list)))
@@ -66,9 +105,9 @@
 
 
      =======================================================
-        Test fest summary for assignment @(unbox assign-number): @(if failed?
-                                                                      "FAIL"
-                                                                      "OK")
+        Test fest summary for assignment @|assign-number|: @(if failed?
+                                                                "FAIL"
+                                                                "OK")
      =======================================================
      })
 (exit
