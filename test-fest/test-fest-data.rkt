@@ -6,6 +6,14 @@
 (define student-groups
   '("dummy-team"))
 
+;; Travis kills any job running longer than 115 min
+(define absolute-max-timeout-minutes 115)
+;; or not producing output for 10 min
+(define ci-output-timeout-minutes 10)
+
+(define (oracle->student-timeout mins)
+  (* 10 mins))
+
 (define (group-name? s)
   (member s student-groups))
 
@@ -53,8 +61,8 @@
   (match a
     [(cons major minor) @~a{@|major|.@|minor|}]))
 
-(struct test (in out) #:transparent)
-(define test/c (struct/c test path-string? path-string?))
+(struct test (in out timeout-minutes) #:transparent)
+(define test/c (struct/c test path-string? path-string? natural?))
 
 (define test-set/c (hash/c repo-name? (listof test/c)))
 

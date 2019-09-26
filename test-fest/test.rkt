@@ -1,7 +1,5 @@
 #lang at-exp racket
 
-;; lltodo: add timeouts to running student executables
-
 (provide valid-tests
          valid-tests/passing-oracle
          test-failures-for)
@@ -11,26 +9,41 @@
          "test-fest-data.rkt"
          "logger.rkt")
 
-(define (exe-passes-test? exe-path
-                          input-file
-                          output-file)
+(define/contract (exe-passes-test? exe-path t)
+  (path-to-existant-file? test/c . -> . boolean?)
+
+  (match-define (test input-file output-file timeout-minutes) t)
   (define expected-output
     (call-with-input-file output-file
       read-json/safe
       #:mode 'text))
   (define in-port (open-input-file input-file))
-  (match-define (list stdout #f pid #f ctl)
-    (process*/ports #f in-port 'stdout
-                    exe-path))
-  (ctl 'wait)
+  (define-values {proc stdout _1 _2}
+    (subprocess #f in-port 'stdout
+                exe-path))
+  (unless (wait/keep-ci-alive proc timeout-minutes)
+    (log-fest warning
+              @~a{@(pretty-path exe-path) timeout (@timeout-minutes min)})
+    (subprocess-kill proc #t))
   (define exe-output (read-json/safe stdout))
   (when (eq? exe-output bad-json)
-    (log-fest warning @~a{@exe-path produces invalid json!}))
+    (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!}))
   (close-input-port stdout)
+  (close-input-port in-port)
   (log-fest
    debug
    @~a{@(pretty-path exe-path): expect: @~v[expected-output], actual: @~v[exe-output]})
   (jsexpr=? expected-output exe-output))
+
+;; Travis CI kills any job that has no output for 10 minutes; prevent that.
+(define (wait/keep-ci-alive proc timeout-minutes)
+  (define safe-waiting-period (sub1 ci-output-timeout-minutes))
+  (define rounds-to-wait
+    (add1 (quotient timeout-minutes safe-waiting-period)))
+  (for/or ([i (in-range rounds-to-wait)])
+    (match (sync/timeout (* safe-waiting-period 60) proc)
+      [#f (displayln ".") #f]
+      [success success])))
 
 (define/contract (valid-tests repo-path
                               assign-number
@@ -77,7 +90,7 @@
                                   @~a{Skip @test-input, fails validity test.})
                         #t]
                        [else #f]))
-       (test test-input test-output))]
+       (test test-input test-output absolute-max-timeout-minutes))]
     [else
      (log-fest warning
                @~a{Unable to find @repo-path tests at @repo-tests-path})
@@ -103,16 +116,21 @@
   (valid-tests repo-path
                assign-number
                (λ (in out)
-                 (exe-passes-test? oracle-path in out))))
+                 (exe-passes-test? oracle-path
+                                   (test in out
+                                         absolute-max-timeout-minutes)))))
 
 (define/contract (test-failures-for exe-path peer-tests)
   (path-to-existant-file? test-set/c . -> . test-set/c)
 
+  (define passes-test?
+    (match-lambda
+      [(test in out oracle-time)
+       (exe-passes-test? exe-path
+                         (test in
+                               out
+                               (oracle->student-timeout oracle-time)))]))
   (for*/hash ([(group tests) (in-hash peer-tests)]
-              [failed-tests (in-value
-                             (filter-not (match-lambda
-                                           [(test in out)
-                                            (exe-passes-test? exe-path in out)])
-                                         tests))]
+              [failed-tests (in-value (filter-not passes-test? tests))]
               #:unless (empty? failed-tests))
     (values group failed-tests)))
