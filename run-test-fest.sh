@@ -43,4 +43,4 @@ fi
 # cat travis-racket/install-racket.sh | bash # pipe to bash not sh!
 
 export PLTSTDERR="debug@fest"
-cd oracle && $RACKET_PATH test-fest/test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"
+cd oracle && $RACKET_PATH test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"

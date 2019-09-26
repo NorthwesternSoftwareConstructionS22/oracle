@@ -1,12 +1,32 @@
 #lang at-exp racket
 
-(provide (all-defined-out))
+(provide (all-defined-out)
+         (struct-out test))
+
+(define student-groups
+  '("dummy-team"))
+
+(define (group-name? s)
+  (member s student-groups))
+
+(define ((add-suffix suffix) str)
+  (string-append str suffix))
 
 (define student-test-repos
-  '("dummy-team-tests"
-    "dummy-team-tests"))
+  (map (add-suffix "-tests") student-groups))
+(define student-dev-repos
+  (map (add-suffix "-dev") student-groups))
 
-(define (repo-name->url name)
+(define (repo-name? name)
+  (or (string=? name "oracle")
+      (and (ormap (λ (group) (string-prefix? name group))
+                  student-groups)
+           (or (string-suffix? name "-dev")
+               (string-suffix? name "-tests")))))
+
+(define/contract (repo-name->url name)
+  (repo-name? . -> . string?)
+
   @~a{https://github.com/NorthwesternSoftwareConstructionFall19/@|name|.git})
 
 (define max-number-tests 5)
@@ -21,4 +41,28 @@
   (test-input-file? . -> . path-string?)
   (match path
     [(regexp input-file-rx (list _ path n))
-     @~a{@|path|/output-@n}]))
+     @~a{@|path|/output-@n}]
+    [(? path?)
+     (test-input-file->output-file (path->string path))]))
+
+(define major-number? (and/c string? #rx"[0-9]+"))
+(define minor-number? major-number?)
+(define assign-number? (cons/c major-number? minor-number?))
+(define/contract (assign-number->string a)
+  (assign-number? . -> . string?)
+  (match a
+    [(cons major minor) @~a{@|major|.@|minor|}]))
+
+(struct test (in out) #:transparent)
+(define test/c (struct/c test path-string? path-string?))
+
+(define test-set/c (hash/c repo-name? (listof test/c)))
+
+(define path-to-existant-directory?
+  (and/c path-string? directory-exists?))
+(define path-to-existant-file?
+  (and/c path-string? file-exists?))
+
+(define (pretty-path path)
+  (find-relative-path (simple-form-path ".")
+                      (simple-form-path path)))
