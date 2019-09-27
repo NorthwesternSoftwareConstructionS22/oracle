@@ -9,7 +9,7 @@ if [[ $1 == "" || $2 == "" ]]; then
     exit 1
 fi
 
-if [[ ! -d "./.git" ]]; then
+if [[ ! -d "./.git" && "$NO_CHECK_REPO" == "" ]]; then
     printf "Error: This script must be run at the root of your repository.\n"
     exit 1
 fi
