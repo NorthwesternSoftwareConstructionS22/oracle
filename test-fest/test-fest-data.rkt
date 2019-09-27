@@ -20,17 +20,25 @@
 (define ((add-suffix suffix) str)
   (string-append str suffix))
 
+(define group->test-repo-name (add-suffix "-tests"))
+(define group->dev-repo-name (add-suffix "-dev"))
+
 (define student-test-repos
-  (map (add-suffix "-tests") student-groups))
+  (map group->test-repo-name student-groups))
 (define student-dev-repos
-  (map (add-suffix "-dev") student-groups))
+  (map group->dev-repo-name student-groups))
+
+(define (repo->team-name repo-name)
+  (match repo-name
+    [(regexp #rx"(.*)-dev" (list _ name))
+     name]
+    [(regexp #rx"(.*)-tests" (list _ name))
+     name]
+    [else #f]))
 
 (define (repo-name? name)
   (or (string=? name "oracle")
-      (and (ormap (λ (group) (string-prefix? name group))
-                  student-groups)
-           (or (string-suffix? name "-dev")
-               (string-suffix? name "-tests")))))
+      (member (repo->team-name name) student-groups)))
 
 (define/contract (repo-name->url name)
   (repo-name? . -> . string?)
