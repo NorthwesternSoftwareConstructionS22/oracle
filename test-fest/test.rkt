@@ -30,10 +30,11 @@
     (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!}))
   (close-input-port stdout)
   (close-input-port in-port)
-  (log-fest
-   debug
-   @~a{@(pretty-path exe-path): expect: @~v[expected-output], actual: @~v[exe-output]})
-  (jsexpr=? expected-output exe-output))
+  (define pass? (jsexpr=? expected-output exe-output))
+  (unless pass?
+    (log-fest info @~a{@(pretty-path exe-path) fails @input-file})
+    (log-fest info @~a{    expected: @~v[expected-output], actual: @~v[exe-output]}))
+  pass?)
 
 ;; Travis CI kills any job that has no output for 10 minutes; prevent that.
 (define (wait/keep-ci-alive proc timeout-minutes)

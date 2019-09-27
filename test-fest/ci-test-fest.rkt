@@ -63,9 +63,9 @@
                      valid-peer-tests))
 (log-fest info @~a{Done.})
 
-(define failed?
-  (not (for/and ([(_ tests) (in-hash failed-peer-tests)])
-         (empty? tests))))
+(define total-test-count (test-set-count-tests valid-peer-tests))
+(define failed-count (test-set-count-tests failed-peer-tests))
+(define failed? (not (zero? failed-count)))
 (displayln
  @~a{
 
@@ -74,8 +74,7 @@
         Test fest summary for assignment @|assign-number|: @(if failed?
                                                                 "FAIL"
                                                                 "OK")
-        Ran against @(count (negate empty?)
-                            (hash-values valid-peer-tests)) peer tests
+        Failed @failed-count / @total-test-count peer tests
      =======================================================
      })
 (exit
