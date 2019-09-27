@@ -9,8 +9,15 @@
          "test-fest-data.rkt"
          "logger.rkt")
 
-(define/contract (exe-passes-test? exe-path t)
-  (path-to-existant-file? test/c . -> . boolean?)
+(define racket-exe (find-executable-path "racket"))
+
+(define/contract (exe-passes-test? exe-path
+                                   t
+                                   #:run-with-racket? [run-with-racket? #f])
+  ({path-to-existant-file? test/c}
+   {#:run-with-racket? boolean?}
+   . ->* .
+   boolean?)
 
   (match-define (test input-file output-file timeout-minutes) t)
   (define expected-output
@@ -19,8 +26,11 @@
       #:mode 'text))
   (define in-port (open-input-file input-file))
   (define-values {proc stdout _1 _2}
-    (subprocess #f in-port 'stdout
-                exe-path))
+    (apply subprocess
+           #f in-port 'stdout
+           (if run-with-racket?
+               (list racket-exe exe-path)
+               (list exe-path))))
   (unless (wait/keep-ci-alive proc timeout-minutes)
     (log-fest warning
               @~a{@(pretty-path exe-path) timeout (@timeout-minutes min)})
@@ -119,7 +129,8 @@
                (λ (in out)
                  (exe-passes-test? oracle-path
                                    (test in out
-                                         absolute-max-timeout-minutes)))))
+                                         absolute-max-timeout-minutes)
+                                   #:run-with-racket? #t))))
 
 (define/contract (test-failures-for exe-path peer-tests)
   (path-to-existant-file? test-set/c . -> . test-set/c)
