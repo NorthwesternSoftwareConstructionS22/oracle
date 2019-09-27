@@ -9,7 +9,7 @@ if [[ $1 == "" || $2 == "" ]]; then
     exit 1
 fi
 
-if [[ ! -d "./.git" && "$NO_CHECK_REPO" == "" ]]; then
+if [[ ! -d "./.git" && "$LOCAL_TEST_FEST" == "" ]]; then
     printf "Error: This script must be run at the root of your repository.\n"
     exit 1
 fi
@@ -17,8 +17,6 @@ fi
 CWD=$(pwd)
 ASSIGN_DIR="$CWD/Deliverables/$1/$1.$2"
 ASSIGN_DIR_LOWER="$CWD/deliverables/$1/$1.$2"
-# RACKET_PATH="/usr/racket/bin/racket"
-RACKET_PATH="racket"
 
 # Check directory structure
 if [[ ! -d "$ASSIGN_DIR" && ! -d "$ASSIGN_DIR_LOWER" ]]; then
@@ -43,9 +41,15 @@ if [[ ! -f "$EXE_PATH" ]]; then
     exit 1
 fi
 
-# Setup environment
-# git clone https://github.com/greghendershott/travis-racket.git
-# cat travis-racket/install-racket.sh | bash # pipe to bash not sh!
+RACKET_PATH="racket"
+if [[ "$LOCAL_TEST_FEST" == "" ]]; then
+    # Setup environment
+    git clone https://github.com/greghendershott/travis-racket.git
+    cat travis-racket/install-racket.sh | bash # pipe to bash not sh!
+    RACKET_PATH="/usr/racket/bin/racket"
+    export PLTSTDERR="info@fest"
+else
+    export PLTSTDERR="debug@fest"
+fi
 
-export PLTSTDERR="debug@fest"
 cd oracle && $RACKET_PATH test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"
