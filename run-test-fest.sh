@@ -50,6 +50,7 @@ if [[ "$LOCAL_TEST_FEST" == "" ]]; then
     export PLTSTDERR="info@fest"
 else
     export PLTSTDERR="debug@fest"
+    cd ..
 fi
 
 cd oracle && $RACKET_PATH test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"
