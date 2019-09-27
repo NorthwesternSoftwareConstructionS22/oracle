@@ -1,7 +1,6 @@
 #lang at-exp racket
 
-(provide clone-repo!
-         clone-repos-into!)
+(provide (all-defined-out))
 
 (require "test-fest-data.rkt"
          "util.rkt"
@@ -32,3 +31,24 @@
                 #:when repo-path)
       (values repo
               (build-path-string target-dir repo-path)))))
+
+(define/contract (git-add path)
+  ((or/c path-to-existant-file? path-to-existant-directory?) . -> . void?)
+
+  (system @~a{git add @path}))
+
+(define (system/string cmd)
+  (call-with-output-string
+   (λ (out)
+     (parameterize ([current-output-port out]
+                    [current-error-port out])
+       (system cmd)))))
+
+(define/contract (checkout-last-commit-before iso-date-deadline)
+  (string? . -> . void?)
+
+  (define pre-deadline-commit
+    (let ([time-str (format "--before='~a'" iso-date-deadline)])
+      (system/string
+       @~a{git rev-list --date=iso --reverse -n 1 @time-str master})))
+  (system @~a{git checkout @pre-deadline-commit}))
