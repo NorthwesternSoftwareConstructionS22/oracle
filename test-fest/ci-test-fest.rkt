@@ -10,13 +10,6 @@
 
 (define test-repos-dir "./peer-tests")
 
-
-
-
-(define (basename p)
-  (define-values {_1 name _2} (split-path p))
-  (path->string name))
-
 (define racket (find-executable-path "racket"))
 
 (define-runtime-path oracle-repo "..")

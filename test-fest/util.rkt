@@ -60,3 +60,7 @@
 
 (define (build-path-string . args)
   (path->string (apply build-path args)))
+
+(define (basename p)
+  (define-values {_1 name _2} (split-path p))
+  (path->string name))
