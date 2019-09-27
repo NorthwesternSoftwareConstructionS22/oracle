@@ -74,11 +74,17 @@
 
 (define test-set/c (hash/c repo-name? (listof test/c)))
 
+(define/contract (test-set-count-tests t)
+  (test-set/c . -> . natural?)
+  (for/sum ([tests (in-hash-values t)])
+    (length tests)))
+
 (define path-to-existant-directory?
   (and/c path-string? directory-exists?))
 (define path-to-existant-file?
   (and/c path-string? file-exists?))
 
 (define (pretty-path path)
-  (find-relative-path (simple-form-path ".")
-                      (simple-form-path path)))
+  (path->string
+   (find-relative-path (simple-form-path ".")
+                       (simple-form-path path))))

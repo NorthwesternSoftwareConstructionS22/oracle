@@ -33,11 +33,6 @@
          (file-exists? "./run"))
        (build-path-string assign-dir repo-path)))
 
-(define/contract (test-set-count-tests t)
-  (test-set/c . -> . natural?)
-  (for/sum ([tests (in-hash-values valid-tests)])
-    (length tests)))
-
 (define/contract (summarize-test-fest results valid-tests)
   ((hash/c repo-name? test-set/c) test-set/c . -> . void?)
 
