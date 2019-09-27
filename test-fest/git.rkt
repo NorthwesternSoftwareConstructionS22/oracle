@@ -19,16 +19,19 @@
      (log-fest warning @~a{Failed to clone repo @repo-name})
      #f]))
 
-(define/contract (clone-repos-into! target-dir repo-names)
-  (path-to-existant-directory?
-   (listof repo-name?)
-   . -> .
+(define/contract (clone-repos-into! target-dir repo-names
+                                    #:setup-repos [do-setup! void])
+  ({path-to-existant-directory?
+    (listof repo-name?)}
+   {#:setup-repos (-> void?)}
+   . ->* .
    (hash/c repo-name? path-to-existant-directory?))
 
   (parameterize ([current-directory target-dir])
     (for*/hash ([repo (in-list repo-names)]
                 [repo-path (in-value (clone-repo! repo))]
                 #:when repo-path)
+      (do-setup!)
       (values repo
               (build-path-string target-dir repo-path)))))
 
