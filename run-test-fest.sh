@@ -9,6 +9,11 @@ if [[ $1 == "" || $2 == "" ]]; then
     exit 1
 fi
 
+if [[ ! -d "./.git" ]]; then
+    printf "Error: This script must be run at the root of your repository.\n"
+    exit 1
+fi
+
 CWD=$(pwd)
 ASSIGN_DIR="$CWD/Deliverables/$1/$1.$2"
 ASSIGN_DIR_LOWER="$CWD/deliverables/$1/$1.$2"
