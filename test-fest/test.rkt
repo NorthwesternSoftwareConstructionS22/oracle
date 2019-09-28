@@ -28,7 +28,7 @@
    . ->* .
    boolean?)
 
-  (match-define (test input-file output-file timeout-minutes) t)
+  (match-define (test input-file output-file timeout-seconds) t)
   (define expected-output
     (call-with-input-file output-file
       read-json/safe
@@ -41,38 +41,49 @@
         (subprocess
          #f in-port 'stdout
          exe-path)))
-  (unless (wait/keep-ci-alive proc timeout-minutes)
+  (define terminated? (wait/keep-ci-alive proc timeout-seconds))
+  (unless terminated?
     (log-fest warning
-              @~a{@(pretty-path exe-path) timeout (@timeout-minutes min)})
+              @~a{@(pretty-path exe-path) timeout (@|timeout-seconds|s)})
     (subprocess-kill proc #t))
-  (define exe-output (read-json/safe stdout))
+  (define exe-output
+    (if terminated?
+        (read-json/safe stdout)
+        bad-json))
   (when (eq? exe-output bad-json)
     (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!}))
   (close-input-port stdout)
   (close-input-port in-port)
   (define pass? (jsexpr=? expected-output exe-output))
   (unless pass?
-    (log-fest info @~a{@(pretty-path exe-path) fails @input-file})
+    (log-fest info @~a{@(pretty-path exe-path) fails @(pretty-path input-file)})
     (log-fest info @~a{    expected: @~v[expected-output], actual: @~v[exe-output]}))
   pass?)
 
 ;; Travis CI kills any job that has no output for 10 minutes; prevent that.
-(define (wait/keep-ci-alive proc timeout-minutes)
-  (define safe-waiting-period (sub1 ci-output-timeout-minutes))
+(define (wait/keep-ci-alive proc timeout-seconds)
+  (define waiting-period
+    (min timeout-seconds ci-output-timeout-seconds))
   (define rounds-to-wait
-    (add1 (quotient timeout-minutes safe-waiting-period)))
+    (round-up (/ timeout-seconds waiting-period)))
+  (log-fest debug
+            @~a{Waiting for @rounds-to-wait rounds of @|waiting-period|s})
   (for/or ([i (in-range rounds-to-wait)])
     (displayln ".")
-    (sync/timeout (* safe-waiting-period 60) proc)))
+    (sync/timeout waiting-period proc)))
 
 (define/contract (valid-tests repo-path
                               assign-number
                               check-validity
-                              #:check-json-validity? [check-json-validity? #t])
+                              #:check-json-validity? [check-json-validity? #t]
+                              #:test-timeout
+                              [test-timeout (const
+                                             absolute-max-timeout-seconds)])
   (->* {path-to-existant-directory?
         assign-number?
         (path-to-existant-file? path-to-existant-file? . -> . boolean?)}
-       {#:check-json-validity? boolean?}
+       {#:check-json-validity? boolean?
+        #:test-timeout (-> natural?)}
        (listof test/c))
 
   (define (file->test-input path)
@@ -110,7 +121,7 @@
                                   @~a{Skip @test-input, fails validity test.})
                         #t]
                        [else #f]))
-       (test test-input test-output absolute-max-timeout-minutes))]
+       (test test-input test-output (test-timeout)))]
     [else
      (log-fest warning
                @~a{Unable to find @repo-path tests at @repo-tests-path})
@@ -133,24 +144,31 @@
                        (car assign-number)
                        (assign-number->string assign-number)
                        oracle-exe-name))
+  (define timeout-box (box #f))
   (valid-tests repo-path
                assign-number
                (λ (in out)
-                 (exe-passes-test? oracle-path
-                                   (test in out
-                                         absolute-max-timeout-minutes)
-                                   #:run-with-racket? #t))))
+                 (define-values {results _2 ms _3}
+                   (time-apply
+                    (thunk (exe-passes-test? oracle-path
+                                             (test in out
+                                                   absolute-max-timeout-seconds)
+                                             #:run-with-racket? #t))
+                    empty))
+                 (define student-timeout
+                   (oracle->student-timeout (/ ms 1000)))
+                 (define seconds (round-up student-timeout))
+                 (log-fest debug
+                           @~a{Determined timeout: @|seconds|s (oracle: @|ms|ms)})
+                 (set-box! timeout-box seconds)
+                 (first results))
+               #:test-timeout (thunk (unbox timeout-box))))
 
 (define/contract (test-failures-for exe-path peer-tests)
   (path-to-existant-file? test-set/c . -> . test-set/c)
 
-  (define passes-test?
-    (match-lambda
-      [(test in out oracle-time)
-       (exe-passes-test? exe-path
-                         (test in
-                               out
-                               (oracle->student-timeout oracle-time)))]))
+  (define (passes-test? t)
+    (exe-passes-test? exe-path t))
   (for*/hash ([(group tests) (in-hash peer-tests)]
               [failed-tests (in-value (filter-not passes-test? tests))]
               #:unless (empty? failed-tests))

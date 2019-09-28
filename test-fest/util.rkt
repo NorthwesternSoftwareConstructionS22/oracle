@@ -80,3 +80,7 @@
     (for ([(k v) (in-hash env-vars)])
       (putenv k v))
     (thunk)))
+
+(define/contract (round-up x)
+  (number? . -> . integer?)
+  (truncate (ceiling x)))
