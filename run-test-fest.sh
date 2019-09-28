@@ -45,11 +45,14 @@ if [[ "$LOCAL_TEST_FEST" == "" ]]; then
     # Setup environment
     git clone https://github.com/greghendershott/travis-racket.git
     cat travis-racket/install-racket.sh | bash # pipe to bash not sh!
-    export PATH="/usr/racket/bin/racket:$PATH"
+    export PATH="/usr/racket/bin/:$PATH"
     export PLTSTDERR="info@fest"
 else
     export PLTSTDERR="debug@fest"
     cd ..
 fi
+
+printf "\nPath: %s\n\n" "$PATH"
+type racket
 
 cd oracle && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"
