@@ -55,4 +55,8 @@ fi
 printf "\nPath: %s\n\n" "$PATH"
 type racket
 
+if [[ -f ./ci-debug.sh ]]; then
+    source ci-debug.sh
+fi
+
 cd oracle && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"
