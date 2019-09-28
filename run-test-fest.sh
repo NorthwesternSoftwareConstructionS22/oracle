@@ -43,11 +43,8 @@ fi
 
 ORACLE_DIR=./oracle
 if [[ "$LOCAL_TEST_FEST" == "" ]]; then
-    export RACKET_VERSION=7.0
     # Setup environment
-    git clone https://github.com/greghendershott/travis-racket.git
-    cat travis-racket/install-racket.sh | bash # pipe to bash not sh!
-    export PATH="/usr/racket/bin/:$PATH"
+    source $ORACLE_DIR/ci-setup-racket.sh
     export PLTSTDERR="info@fest"
 else
     export PLTSTDERR="debug@fest"
