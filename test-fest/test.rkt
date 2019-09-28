@@ -11,6 +11,15 @@
 
 (define racket-exe (find-executable-path "racket"))
 
+(define/contract (subprocess/racket-bytecode subprocess-args path)
+  (list? path-to-existant-file? . -> . any)
+
+  (call-with-extended-environment
+   (hash "PLT_COMPILED_FILE_CHECK" "exists"
+         "PLTCOMPILEDROOTS" "compiled/@(version):")
+   (thunk (apply subprocess (append subprocess-args
+                                    (list racket-exe path))))))
+
 (define/contract (exe-passes-test? exe-path
                                    t
                                    #:run-with-racket? [run-with-racket? #f])
@@ -26,11 +35,12 @@
       #:mode 'text))
   (define in-port (open-input-file input-file))
   (define-values {proc stdout _1 _2}
-    (apply subprocess
-           #f in-port 'stdout
-           (if run-with-racket?
-               (list racket-exe exe-path)
-               (list exe-path))))
+    (if run-with-racket?
+        (subprocess/racket-bytecode (list #f in-port 'stdout)
+                                    exe-path)
+        (subprocess
+         #f in-port 'stdout
+         exe-path)))
   (unless (wait/keep-ci-alive proc timeout-minutes)
     (log-fest warning
               @~a{@(pretty-path exe-path) timeout (@timeout-minutes min)})

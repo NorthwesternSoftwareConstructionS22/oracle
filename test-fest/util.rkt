@@ -61,6 +61,22 @@
 (define (build-path-string . args)
   (path->string (apply build-path args)))
 
-(define (basename p)
-  (define-values {_1 name _2} (split-path p))
-  (path->string name))
+(define (basename p #:with-directory? [dir? #f])
+  (define-values {dir name _2} (split-path p))
+  (define name-str (path->string name))
+  (define dir-str (path->string dir))
+  (if dir?
+      (values dir-str name-str)
+      name-str))
+
+(define/contract (call-with-extended-environment env-vars thunk)
+  ((hash/c string-environment-variable-name? string-no-nuls?)
+   (-> any)
+   . -> .
+   any)
+
+  (parameterize ([current-environment-variables
+                  (environment-variables-copy (current-environment-variables))])
+    (for ([(k v) (in-hash env-vars)])
+      (putenv k v))
+    (thunk)))
