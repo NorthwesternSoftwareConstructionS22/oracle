@@ -41,6 +41,7 @@ if [[ ! -f "$EXE_PATH" ]]; then
     exit 1
 fi
 
+ORACLE_DIR=./oracle
 if [[ "$LOCAL_TEST_FEST" == "" ]]; then
     # Setup environment
     git clone https://github.com/greghendershott/travis-racket.git
@@ -49,14 +50,15 @@ if [[ "$LOCAL_TEST_FEST" == "" ]]; then
     export PLTSTDERR="info@fest"
 else
     export PLTSTDERR="debug@fest"
-    cd ..
+    ORACLE_DIR=../oracle
 fi
 
 printf "\nPath: %s\n\n" "$PATH"
 type racket
 
 if [[ -f ./ci-debug.sh ]]; then
-    source ci-debug.sh
+    printf "Running ./ci-debug.sh...\n"
+    source ./ci-debug.sh "$ORACLE_DIR"
 fi
 
-cd oracle && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"
+cd "$ORACLE_DIR" && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"
