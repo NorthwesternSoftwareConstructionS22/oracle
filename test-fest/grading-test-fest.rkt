@@ -33,8 +33,8 @@
          (file-exists? "./run"))
        (build-path-string assign-dir repo-path)))
 
-(define/contract (summarize-test-fest results valid-tests)
-  ((hash/c repo-name? test-set/c) test-set/c . -> . void?)
+(define/contract (summarize-test-fest assign-number results valid-tests)
+  (assign-number? (hash/c repo-name? test-set/c) test-set/c . -> . void?)
 
   (define total-valid-test-count
     (test-set-count-tests valid-tests))
@@ -42,7 +42,12 @@
    @~a{
 
        ==================== Test fest summary ====================
-       @"("})
+                            Assignment @assign-number
+       ===========================================================
+       @"("
+       })
+  (writeln assign-number)
+  (displayln "(")
   (for ([(dev-repo-name failed-tests) (in-hash results)])
     (define team-name (repo->team-name dev-repo-name))
     (define test-repo-name (group->test-repo-name team-name))
@@ -53,7 +58,7 @@
                                     total-valid-test-count)))
     (displayln
      @~a{(@~v[team-name] @valid-test-count @test-fest-grade)}))
-  (displayln ")"))
+  (displayln "))"))
 
 (module+ main
   (define assign-major-number-box (box "0"))
@@ -80,7 +85,7 @@
   (define repo-cache-file (find-repo-cache-file assign-number))
   (unless (not (file-exists? repo-cache-file))
     (eprintf "Error: Repo cache file not found~n"))
-  (define/contract student-repo-caches
+  (define student-repo-caches
     (with-handlers ([exn:fail?
                      (λ _
                        (log-fest error
@@ -123,5 +128,6 @@
       (values repo-name failed-peer-tests)))
   (log-fest info @~a{Test fest complete.})
 
-  (summarize-test-fest test-fest-results
+  (summarize-test-fest assign-number
+                       test-fest-results
                        valid-peer-tests))
