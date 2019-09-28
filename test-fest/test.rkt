@@ -44,7 +44,7 @@
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
   (unless terminated?
     (log-fest warning
-              @~a{@(pretty-path exe-path) timeout (@|timeout-seconds|s)})
+              @~a{@(pretty-path exe-path) timed out (@|timeout-seconds|s)})
     (subprocess-kill proc #t))
   (define exe-output
     (if terminated?
