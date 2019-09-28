@@ -62,9 +62,8 @@
   (define rounds-to-wait
     (add1 (quotient timeout-minutes safe-waiting-period)))
   (for/or ([i (in-range rounds-to-wait)])
-    (match (sync/timeout (* safe-waiting-period 60) proc)
-      [#f (displayln ".") #f]
-      [success success])))
+    (displayln ".")
+    (sync/timeout (* safe-waiting-period 60) proc)))
 
 (define/contract (valid-tests repo-path
                               assign-number
