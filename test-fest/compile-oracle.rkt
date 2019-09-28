@@ -47,7 +47,8 @@
   (make-directory* assign-distrib-path)
   (void (system @~a{echo "" > @oracle-distrib-placeholder-file}))
   (void (call-with-extended-environment
-         (hash "PLTCOMPILEDROOTS" "compiled/@(version):")
+         (hash "PLTCOMPILEDROOTS" "compiled/@(version):"
+               "PLT_COMPILE_ANY" "yes")
          (thunk (system* raco-exe "make" oracle-path))))
   (rename-file-or-directory (build-path oracle-dir "compiled")
                             (build-path assign-distrib-path "compiled")))
