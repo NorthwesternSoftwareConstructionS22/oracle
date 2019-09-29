@@ -20,7 +20,13 @@
    . ->* .
    path-to-existant-file?)
 
-  (system @~a{tar -czf @|dir|.tar.gz @dir})
+  ;; Need to tar it up as a direct child in order to avoid creating the whole
+  ;; absolute path when untar'ed:
+  ;; /home/foo/bar/baz/...
+  (define-values {containing-dir dir-name}
+    (basename dir #:with-directory? #t))
+  (parameterize ([current-directory containing-dir])
+    (system @~a{tar -czf @|dir-name|.tar.gz @dir-name}))
   (when delete-original?
     (delete-directory/files dir))
   (path-replace-extension dir ".tar.gz"))
@@ -36,7 +42,8 @@
 (define/contract (unzip! zip-file)
   (path-to-existant-file? . -> . path-to-existant-directory?)
 
-  (define-values {containing-dir filename _2} (split-path zip-file))
+  (define-values {containing-dir filename}
+    (basename zip-file #:with-directory? #t))
   (parameterize ([current-directory containing-dir])
     (system @~a{tar -xzf @filename}))
   ;; twice to remove .tar.gz
