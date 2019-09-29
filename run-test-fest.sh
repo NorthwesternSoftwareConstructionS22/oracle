@@ -1,11 +1,12 @@
 #!/bin/bash
 
-## run-test-fest.sh <major-number> <minor-number>
+## run-test-fest.sh <major-number> <minor-number> <team-name>
 # Run a test fest for assignment <major-number>.<minor-number>
+# for team <team-name>
 
-if [[ $1 == "" || $2 == "" ]]; then
+if [[ $1 == "" || $2 == "" || $3 == "" ]]; then
     printf "Error: Invalid usage.\n"
-    printf "Usage: run-test-fest.sh <major-number> <minor-number>\n"
+    printf "Usage: run-test-fest.sh <major-number> <minor-number> <team-name>\n"
     exit 1
 fi
 
@@ -59,4 +60,4 @@ if [[ -f ./ci-debug.sh ]]; then
     source ./ci-debug.sh "$ORACLE_DIR"
 fi
 
-cd "$ORACLE_DIR" && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH"
+cd "$ORACLE_DIR" && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH" -n $3

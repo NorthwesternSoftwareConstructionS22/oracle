@@ -56,8 +56,10 @@
   (close-input-port in-port)
   (define pass? (jsexpr=? expected-output exe-output))
   (unless pass?
-    (log-fest info @~a{@(pretty-path exe-path) fails @(pretty-path input-file)})
-    (log-fest info @~a{    expected: @~v[expected-output], actual: @~v[exe-output]}))
+    (log-fest info
+              @~a{@(pretty-path exe-path) fails @(pretty-path input-file)})
+    (log-fest info
+              @~a{    expected: @~v[expected-output], actual: @~v[exe-output]}))
   pass?)
 
 ;; Travis CI kills any job that has no output for 10 minutes; prevent that.

@@ -17,6 +17,7 @@
 (define assign-major-number-box (box "0"))
 (define assign-minor-number-box (box "0"))
 (define test-exe-path (box "echo"))
+(define team-box (box "dummy-team"))
 
 (command-line
  #:once-each
@@ -31,7 +32,11 @@
  [("-t" "--test-exe")
   student-path*
   "Absolute path to executable to test."
-  (set-box! test-exe-path student-path*)])
+  (set-box! test-exe-path student-path*)]
+ [("-n" "--team-name")
+  team
+  "Team name to report test validity results for."
+  (set-box! team-box team)])
 
 (define assign-number (cons (unbox assign-major-number-box)
                             (unbox assign-minor-number-box)))
@@ -63,6 +68,13 @@
                      valid-peer-tests))
 (log-fest info @~a{Done.})
 
+
+(define valid-tests-by-team
+  (length (hash-ref valid-peer-tests
+                    (group->test-repo-name (unbox team-box))
+                    empty)))
+(define enough-valid-tests? (>= valid-tests-by-team 5))
+
 (define total-test-count (test-set-count-tests valid-peer-tests))
 (define failed-count (test-set-count-tests failed-peer-tests))
 (define failed? (not (zero? failed-count)))
@@ -74,6 +86,7 @@
         Test fest summary for assignment @|assign-number|: @(if failed?
                                                                 "FAIL"
                                                                 "OK")
+        Submitted @valid-tests-by-team / 5 valid tests
         Failed @failed-count / @total-test-count peer tests
      =======================================================
      })
@@ -88,4 +101,5 @@
                                         tests))))
                        })
         1]
+       [(not enough-valid-tests?) 1]
        [else 0]))
