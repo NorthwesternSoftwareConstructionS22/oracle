@@ -36,8 +36,7 @@
     (basename oracle-path #:with-directory? #t))
   (define assign-distrib-path
     (build-path-string distribute-dir
-                       (car assign-number)
-                       (assign-number->string assign-number)))
+                       (assign-number->dir-path assign-number)))
   (define oracle-distrib-placeholder-file
     (build-path-string assign-distrib-path
                        oracle-file-name))

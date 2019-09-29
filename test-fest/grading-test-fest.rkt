@@ -21,14 +21,12 @@
 
   (define assign-dir (build-path repo-path
                                  "Deliverables"
-                                 (car assign-number)
-                                 (assign-number->string assign-number)))
+                                 (assign-number->dir-path assign-number)))
   (and (directory-exists? assign-dir)
        (parameterize ([current-directory assign-dir])
          (system "make > /dev/null 2>&1")
          (system "chmod u+x ./run")
          (file-exists? "./run"))
-       ;; lltodo: make a function that makes the major/major.minor string.
        (build-path-string assign-dir "run")))
 
 (define/contract (summarize-test-fest assign-number results valid-tests)

@@ -92,8 +92,7 @@
          path-str))
   (define repo-tests-path
     (build-path-string repo-path
-                       (car assign-number)
-                       (assign-number->string assign-number)))
+                       (assign-number->dir-path assign-number)))
   (cond
     [(directory-exists? repo-tests-path)
      (for*/list ([file-path (in-directory repo-path)]
@@ -141,8 +140,7 @@
   (define oracle-path
     (build-path-string oracle-repo-path
                        "distribute"
-                       (car assign-number)
-                       (assign-number->string assign-number)
+                       (assign-number->dir-path assign-number)
                        oracle-exe-name))
   (define timeout-box (box #f))
   (valid-tests repo-path

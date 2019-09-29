@@ -3,6 +3,8 @@
 (provide (all-defined-out)
          (struct-out test))
 
+(require "util.rkt")
+
 (define student-groups
   '("dummy-team"))
 
@@ -74,6 +76,10 @@
   (assign-number? . -> . string?)
   (match a
     [(cons major minor) @~a{@|major|.@|minor|}]))
+(define/contract (assign-number->dir-path a)
+  (assign-number? . -> . string?)
+  (build-path-string (car a)
+                     (assign-number->string a)))
 
 (struct test (in out timeout-seconds) #:transparent)
 (define test/c (struct/c test path-string? path-string? natural?))
