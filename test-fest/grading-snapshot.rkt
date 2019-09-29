@@ -1,6 +1,7 @@
 #lang at-exp racket
 
-(require "util.rkt"
+(require racket/cmdline
+         "util.rkt"
          "test-fest-data.rkt"
          "git.rkt"
          "tar.rkt"
@@ -23,7 +24,7 @@
     (set-box! assign-minor-number-box assign-number*)]
    [("-d" "--deadline")
     deadline
-    @~a{Deadline for assignment in iso format "YYYY-MM-DD HH:MM:SS"}
+    "Deadline for assignment in format \"YYYY-MM-DD HH:MM:SS\""
     (set-box! deadline-box deadline)]
    [("-r" "--grading-repo-path")
     path
@@ -42,20 +43,31 @@
   (make-directory snapshot-dir)
   (log-fest info @~a{Cloning dev repos into @snapshot-dir ...})
   (define dev-repos
-    (clone-repos-into! snapshot-dir
-                       student-dev-repos
-                       #:setup-repos (checkout-last-commit-before deadline)))
+    (parameterize ([git-remote-access-method 'ssh])
+      (clone-repos-into! snapshot-dir
+                         student-dev-repos
+                         #:setup-repos (checkout-last-commit-before deadline))))
   (log-fest info @~a{Done. Zipping dev repos ...})
   (define dev-zips (zip-repos! dev-repos #:delete-original? #t))
   (log-fest info @~a{Done. Writing cache file @repo-cache-file ...})
   (call-with-output-file repo-cache-file
-    (thunk (write dev-zips))
+    (λ (out)
+      (write (for/hash ([(name path) (in-hash dev-zips)])
+               (values name
+                       (path->string
+                        (find-relative-path (current-directory)
+                                            (simple-form-path path)))))
+             out))
     #:mode 'text
     #:exists 'truncate)
   (log-fest info @~a{Done. git-adding snapshot ...})
-  (git-add repo-cache-file)
-  (git-add snapshot-dir)
+  (void (git-add repo-cache-file)
+        (git-add snapshot-dir))
   (displayln @~a{
+
+
+
                  Git-added snapshot of student dev repos.
                  Commit and then push to kick off grading.
+                 Don't forget to set the assignment number in .travis.yml!
                  }))
