@@ -6,17 +6,19 @@
          "util.rkt"
          "logger.rkt")
 
+(define git-remote-access-method (make-parameter 'https))
+
 (define/contract (clone-repo! repo-name)
   (repo-name? . -> . (or/c path-to-existant-directory? #f))
 
-  (define repo-url (repo-name->url repo-name))
+  (define repo-url (repo-name->url repo-name (git-remote-access-method)))
   (log-fest debug @~a{Cloning @repo-name ...})
   (match (system @~a{git clone "@repo-url" > /dev/null 2>&1})
     [#t
      (log-fest debug @~a{Done.})
      (build-path-string "." repo-name)]
     [#f
-     (log-fest warning @~a{Failed to clone repo @repo-name})
+     (log-fest warning @~a{Failed to clone repo @repo-name from @repo-url})
      #f]))
 
 (define/contract (clone-repos-into! target-dir repo-names

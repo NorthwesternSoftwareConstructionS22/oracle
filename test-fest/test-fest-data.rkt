@@ -40,10 +40,16 @@
   (or (string=? name "oracle")
       (member (repo->team-name name) student-groups)))
 
-(define/contract (repo-name->url name)
-  (repo-name? . -> . string?)
+(define/contract (repo-name->url name [mode 'https])
+  ({repo-name?}
+   {(or/c 'https 'ssh)}
+   . ->* .
+   string?)
 
-  @~a{https://github.com/NorthwesternSoftwareConstructionFall19/@|name|.git})
+  (define path @~a{NorthwesternSoftwareConstructionFall19/@|name|.git})
+  (match mode
+    ['https @~a{https://github.com/@|path|}]
+    ['ssh @~a{git@"@"github.com:@|path|}]))
 
 (define max-number-tests 5)
 
