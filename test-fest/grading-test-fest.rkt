@@ -28,7 +28,8 @@
          (system "make > /dev/null 2>&1")
          (system "chmod u+x ./run")
          (file-exists? "./run"))
-       (build-path-string assign-dir repo-path)))
+       ;; lltodo: make a function that makes the major/major.minor string.
+       (build-path-string assign-dir "run")))
 
 (define/contract (summarize-test-fest assign-number results valid-tests)
   (assign-number? (hash/c repo-name? test-set/c) test-set/c . -> . void?)
@@ -48,8 +49,8 @@
   (for ([(dev-repo-name failed-tests) (in-hash results)])
     (define team-name (repo->team-name dev-repo-name))
     (define test-repo-name (group->test-repo-name team-name))
-    (define valid-tests (hash-ref valid-tests test-repo-name empty))
-    (define valid-test-count (length valid-tests))
+    (define valid-tests-for-repo (hash-ref valid-tests test-repo-name empty))
+    (define valid-test-count (length valid-tests-for-repo))
     (define total-failed-test-count (test-set-count-tests failed-tests))
     (define test-fest-grade (- 1 (/ total-failed-test-count
                                     total-valid-test-count)))
