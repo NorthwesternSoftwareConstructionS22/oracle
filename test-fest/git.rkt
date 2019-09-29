@@ -25,7 +25,7 @@
                                     #:setup-repos [do-setup! void])
   ({path-to-existant-directory?
     (listof repo-name?)}
-   {#:setup-repos (-> void?)}
+   {#:setup-repos (-> any)}
    . ->* .
    (hash/c repo-name? path-to-existant-directory?))
 
@@ -33,12 +33,14 @@
     (for*/hash ([repo (in-list repo-names)]
                 [repo-path (in-value (clone-repo! repo))]
                 #:when repo-path)
-      (do-setup!)
-      (values repo
-              (build-path-string target-dir repo-path)))))
+      (define full-path-to-repo
+        (build-path-string (current-directory) repo-path))
+      (parameterize ([current-directory full-path-to-repo])
+        (do-setup!))
+      (values repo full-path-to-repo))))
 
 (define/contract (git-add path)
-  ((or/c path-to-existant-file? path-to-existant-directory?) . -> . void?)
+  ((or/c path-to-existant-file? path-to-existant-directory?) . -> . any)
 
   (system @~a{git add @path}))
 
@@ -49,11 +51,13 @@
                     [current-error-port out])
        (system cmd)))))
 
-(define/contract (checkout-last-commit-before iso-date-deadline)
-  (string? . -> . void?)
+(define/contract ((checkout-last-commit-before iso-date-deadline))
+  (string? . -> . (-> any))
 
   (define pre-deadline-commit
     (let ([time-str (format "--before='~a'" iso-date-deadline)])
       (system/string
        @~a{git rev-list --date=iso --reverse -n 1 @time-str master})))
-  (system @~a{git checkout @pre-deadline-commit}))
+  ;; ll: This sometimes produces output despite the redirections. WTF?
+  ;; hack for now: stuff it in a string
+  (system/string @~a{git checkout @pre-deadline-commit > /dev/null 2>&1}))
