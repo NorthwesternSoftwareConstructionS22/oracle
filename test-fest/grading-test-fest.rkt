@@ -10,11 +10,8 @@
          "tar.rkt")
 
 (define test-repos-dir "./peer-tests")
-(define dev-repos-dir "./peer-code")
 
-(define racket (find-executable-path "racket"))
-
-(define-runtime-path oracle-repo "./oracle")
+(define-runtime-path oracle-repo "..")
 
 (define/contract (make-repo-exe! repo-path assign-number)
   (path-to-existant-directory?
