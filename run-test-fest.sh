@@ -30,11 +30,6 @@ fi
 
 EXE_PATH="${ASSIGN_DIR}/run"
 
-# Try to build exe
-pushd "$ASSIGN_DIR"
-make
-popd
-
 # Check exe
 if [[ ! -f "$EXE_PATH" ]]; then
     printf "Error: makefile failed to build an executable,.\n"
