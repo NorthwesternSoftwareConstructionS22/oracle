@@ -65,7 +65,7 @@
   (test-input-file? . -> . path-string?)
   (match path
     [(regexp input-file-rx (list _ path n))
-     @~a{@|path|/output-@n}]
+     @~a{@|path|/output@n}]
     [(? path?)
      (test-input-file->output-file (path->string path))]))
 
