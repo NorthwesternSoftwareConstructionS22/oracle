@@ -144,6 +144,17 @@
                        "distribute"
                        (assign-number->dir-path assign-number)
                        oracle-exe-name))
+
+  (unless (file-exists? oracle-path)
+    (log-fest error
+              @~a{
+                  No oracle exists for this assignment @assign-number yet.
+                  Refusing to validate any tests.
+                  Try again when the oracle has been released.
+
+                  })
+    (raise-user-error 'test-fest "Missing oracle."))
+
   (define timeout-box (box #f))
   (valid-tests repo-path
                assign-number
