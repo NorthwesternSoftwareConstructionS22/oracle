@@ -6,7 +6,32 @@
 (require "util.rkt")
 
 (define student-groups
-  '("dummy-team"))
+  '("dummy-team"
+    "team1"
+    "team2"
+    "team3"
+    "team4"
+    "team5"
+    "team6"
+    "team7"
+    "team8"
+    "team9"
+    "team10"
+    "team11"
+    "team12"
+    "team13"
+    "team14"
+    "team15"
+    "team16"
+    "team17"
+    "team18"
+    "team19"
+    "team20"
+    "team21"
+    "team22"
+    "team23"
+    "team24"
+    "team25"))
 
 ;; Travis kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
