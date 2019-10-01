@@ -56,7 +56,7 @@
 (define max-number-tests 5)
 
 
-(define input-file-rx #rx"(.*/)input-([0-9]+)")
+(define input-file-rx #rx"(.*/)input([0-9]+)")
 
 (define (test-input-file? path)
   (regexp-match? input-file-rx path))
