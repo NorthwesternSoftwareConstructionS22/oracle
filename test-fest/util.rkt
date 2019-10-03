@@ -84,3 +84,13 @@
 (define/contract (round-up x)
   (number? . -> . integer?)
   (truncate (ceiling x)))
+
+(define path-to-existant-directory?
+  (and/c path-string? directory-exists?))
+(define path-to-existant-file?
+  (and/c path-string? file-exists?))
+
+(define (pretty-path path)
+  (path->string
+   (find-relative-path (simple-form-path ".")
+                       (simple-form-path path))))

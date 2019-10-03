@@ -43,6 +43,14 @@
 (define (oracle->student-timeout secs)
   (* 10 secs))
 
+(define max-number-tests 5)
+
+(define input-file-rx #rx"(.*/)input([0-9]+)")
+
+
+
+
+
 (define (group-name? s)
   (member s student-groups))
 
@@ -80,10 +88,7 @@
     ['https @~a{https://github.com/@|path|}]
     ['ssh @~a{git@"@"github.com:@|path|}]))
 
-(define max-number-tests 5)
 
-
-(define input-file-rx #rx"(.*/)input([0-9]+)")
 
 (define (test-input-file? path)
   (regexp-match? input-file-rx path))
@@ -95,6 +100,8 @@
      @~a{@|path|/output@n}]
     [(? path?)
      (test-input-file->output-file (path->string path))]))
+
+
 
 (define major-number? (and/c string? #rx"[0-9]+"))
 (define minor-number? major-number?)
@@ -108,6 +115,7 @@
   (build-path-string (car a)
                      (assign-number->string a)))
 
+
 (struct test (in out timeout-seconds) #:transparent)
 (define test/c (struct/c test path-string? path-string? natural?))
 
@@ -118,15 +126,6 @@
   (for/sum ([tests (in-hash-values t)])
     (length tests)))
 
-(define path-to-existant-directory?
-  (and/c path-string? directory-exists?))
-(define path-to-existant-file?
-  (and/c path-string? file-exists?))
-
-(define (pretty-path path)
-  (path->string
-   (find-relative-path (simple-form-path ".")
-                       (simple-form-path path))))
 
 (define/contract (find-oracle-file oracle-repo-path
                                    assign-number)
