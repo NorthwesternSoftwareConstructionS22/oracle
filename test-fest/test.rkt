@@ -97,35 +97,38 @@
                        (assign-number->dir-path assign-number)))
   (cond
     [(directory-exists? repo-tests-path)
-     (for*/list ([file-path (in-directory repo-path)]
-                 [test-input (in-value (file->test-input file-path))]
-                 #:when test-input
-                 [test-output (in-value
-                               (test-input-file->output-file test-input))]
-                 #:unless
-                 (cond [(not (file-exists? test-output))
-                        (log-fest info
-                                  @~a{Skip @test-input, missing output file.})
-                        #t]
-                       [(and check-json-validity?
-                             (not (valid-json-file? test-input)))
-                        (log-fest info
-                                  @~a{Skip @test-input, invalid json input.})
-                        #t]
-                       [(and check-json-validity?
-                             (not (valid-json-file? test-output)))
-                        (log-fest info
-                                  @~a{Skip @test-input, invalid json output.})
-                        #t]
-                       [(not (check-validity test-input test-output))
-                        (log-fest info
-                                  @~a{Skip @test-input, fails validity test.})
-                        #t]
-                       [else #f]))
-       (test test-input test-output (test-timeout)))]
+     (define valid
+       (for*/list ([file-path (in-directory repo-path)]
+                   [test-input (in-value (file->test-input file-path))]
+                   #:when test-input
+                   [test-output (in-value
+                                 (test-input-file->output-file test-input))]
+                   #:unless
+                   (cond [(not (file-exists? test-output))
+                          (log-fest info
+                                    @~a{Skip @test-input, missing output file.})
+                          #t]
+                         [(and check-json-validity?
+                               (not (valid-json-file? test-input)))
+                          (log-fest info
+                                    @~a{Skip @test-input, invalid json input.})
+                          #t]
+                         [(and check-json-validity?
+                               (not (valid-json-file? test-output)))
+                          (log-fest info
+                                    @~a{Skip @test-input, invalid json output.})
+                          #t]
+                         [(not (check-validity test-input test-output))
+                          (log-fest info
+                                    @~a{Skip @test-input, fails validity test.})
+                          #t]
+                         [else #f]))
+         (test test-input test-output (test-timeout))))
+     (take valid (min max-number-tests (length valid)))]
     [else
-     (log-fest warning
-               @~a{Unable to find @repo-path tests at @repo-tests-path})
+     (log-fest
+      info
+      @~a{Unable to find @(pretty-path repo-path) tests at @repo-tests-path})
      empty]))
 
 (define/contract (valid-tests/passing-oracle repo-path
