@@ -1,1 +1,0 @@
-("7.2.0.3" #f ("5f4be91569dc233d75044328e956f02be21ce477" . "06547fded6d27f7c7207dba4d2a0ae74e7f4e86a") #"/Users/chrdimo/github/software-construction/try-your-lang/back-end.rkt" (collects #"json" #"main.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
