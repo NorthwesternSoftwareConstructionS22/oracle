@@ -31,7 +31,8 @@
     "team22"
     "team23"
     "team24"
-    "team25"))
+    "team25"
+    "team26"))
 
 ;; Travis kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
