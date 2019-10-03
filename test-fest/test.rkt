@@ -46,20 +46,22 @@
     (log-fest warning
               @~a{@(pretty-path exe-path) timed out (@|timeout-seconds|s)})
     (subprocess-kill proc #t))
-  (define exe-output
-    (if terminated?
-        (read-json/safe stdout)
-        bad-json))
-  (when (eq? exe-output bad-json)
-    (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!}))
+  (define-values {exe-output-str exe-output-json}
+    (cond [terminated?
+           (define output (port->string stdout))
+           (values output (call-with-input-string output read-json/safe))]
+          [else (values "<timed out>" bad-json)]))
+  (when (eq? exe-output-json bad-json)
+    (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!})
+    (log-fest warning @~a{Output was: @~v[exe-output-str]}))
   (close-input-port stdout)
   (close-input-port in-port)
-  (define pass? (jsexpr=? expected-output exe-output))
+  (define pass? (jsexpr=? expected-output exe-output-json))
   (unless pass?
     (log-fest info
               @~a{@(pretty-path exe-path) fails @(pretty-path input-file)})
     (log-fest info
-              @~a{    expected: @~v[expected-output], actual: @~v[exe-output]}))
+              @~a{    expected: @~v[expected-output], actual: @~v[exe-output-json]}))
   pass?)
 
 ;; Travis CI kills any job that has no output for 10 minutes; prevent that.
