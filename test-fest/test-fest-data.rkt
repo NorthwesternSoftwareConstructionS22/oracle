@@ -3,7 +3,8 @@
 (provide (all-defined-out)
          (struct-out test))
 
-(require "util.rkt")
+(require "util.rkt"
+         "logger.rkt")
 
 (define student-groups
   '("dummy-team"
@@ -126,3 +127,28 @@
   (path->string
    (find-relative-path (simple-form-path ".")
                        (simple-form-path path))))
+
+(define/contract (find-oracle-file oracle-repo-path
+                                   assign-number)
+  (path-to-existant-directory? assign-number? . -> . path-to-existant-file?)
+
+  (define assign-dir
+    (build-path-string oracle-repo-path
+                       "distribute"
+                       (assign-number->dir-path assign-number)))
+  (define path
+    (and (directory-exists? assign-dir)
+         (for/first ([f (in-directory assign-dir)]
+                     #:when (equal? (path-get-extension f) #".rkt"))
+           f)))
+  (match path
+    [#f
+     (log-fest error
+               @~a{
+                   No oracle exists for this assignment @assign-number yet.
+                   Refusing to validate any tests.
+                   Try again when the oracle has been released.
+
+                   })
+     (raise-user-error 'test-fest "Missing oracle.")]
+    [else path]))
