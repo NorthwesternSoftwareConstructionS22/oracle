@@ -33,7 +33,8 @@
     "team23"
     "team24"
     "team25"
-    "team26"))
+    "team26"
+    "team27"))
 
 ;; Travis kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
@@ -45,7 +46,7 @@
 
 (define max-number-tests 5)
 
-(define input-file-rx #rx"(.*/)input([0-9]+)")
+(define input-file-rx #rx"(.*/)input([0-9]+)$")
 
 
 
