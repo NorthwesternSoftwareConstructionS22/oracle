@@ -100,7 +100,7 @@
   (cond
     [(directory-exists? repo-tests-path)
      (define valid
-       (for*/list ([file-path (in-directory repo-path)]
+       (for*/list ([file-path (in-directory repo-tests-path)]
                    [test-input (in-value (file->test-input file-path))]
                    #:when test-input
                    [test-output (in-value
