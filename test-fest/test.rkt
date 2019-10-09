@@ -125,7 +125,9 @@
                                     @~a{Skip @test-input, fails validity test.})
                           #t]
                          [else #f]))
-         (test test-input test-output (test-timeout))))
+         (test (simple-form-path-string test-input)
+               (simple-form-path-string test-output)
+               (test-timeout))))
      (take valid (min max-number-tests (length valid)))]
     [else
      (log-fest
@@ -142,8 +144,9 @@
        {#:check-json-validity? boolean?}
        (listof test/c))
 
-  (define oracle-path (find-oracle-file oracle-repo-path
-                                        assign-number))
+  (define oracle-path
+    (simple-form-path-string (find-oracle-file oracle-repo-path
+                                               assign-number)))
 
   (define timeout-box (box #f))
   (valid-tests repo-path

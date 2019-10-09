@@ -120,8 +120,9 @@
         (match (make-repo-exe! repo-path assign-number)
           [#f valid-peer-tests]
           [path-to-test-exe
+           (define full-path-to-test-exe (simple-form-path-string path-to-test-exe))
            (parameterize ([current-directory (build-path repo-path "Deliverables")])
-             (test-failures-for path-to-test-exe
+             (test-failures-for full-path-to-test-exe
                                 valid-peer-tests))]))
       (values repo-name failed-peer-tests)))
   (log-fest info @~a{Test fest complete.})

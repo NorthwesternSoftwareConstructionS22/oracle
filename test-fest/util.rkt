@@ -60,6 +60,8 @@
 
 (define (build-path-string . args)
   (path->string (apply build-path args)))
+(define (simple-form-path-string p)
+  (path->string (simple-form-path p)))
 
 (define (basename p #:with-directory? [dir? #f])
   (define-values {dir name _2} (split-path p))
