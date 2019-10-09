@@ -115,12 +115,14 @@
   (define test-fest-results
     (for/hash ([(repo-name repo-path) (in-hash dev-repo-paths)])
       (log-fest info @~a{Testing @repo-name ...})
+      (log-fest info @~a{repo: @repo-path :: cwd: @(current-directory)})
       (define failed-peer-tests
         (match (make-repo-exe! repo-path assign-number)
           [#f valid-peer-tests]
           [path-to-test-exe
-           (test-failures-for path-to-test-exe
-                              valid-peer-tests)]))
+           (parameterize ([current-directory (build-path repo-path "Deliverables")])
+             (test-failures-for path-to-test-exe
+                                valid-peer-tests))]))
       (values repo-name failed-peer-tests)))
   (log-fest info @~a{Test fest complete.})
 
