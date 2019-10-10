@@ -28,6 +28,7 @@
    . ->* .
    boolean?)
 
+  (define {_3 exe-dir} (basename exe-path #:with-directory? #t))
   (match-define (test input-file output-file timeout-seconds) t)
   (define expected-output
     (call-with-input-file output-file
@@ -35,12 +36,13 @@
       #:mode 'text))
   (define in-port (open-input-file input-file))
   (define-values {proc stdout _1 _2}
-    (if run-with-racket?
-        (subprocess/racket-bytecode (list #f in-port 'stdout)
-                                    exe-path)
-        (subprocess
-         #f in-port 'stdout
-         exe-path)))
+    (parameterize ([current-directory exe-dir])
+      (if run-with-racket?
+          (subprocess/racket-bytecode (list #f in-port 'stdout)
+                                      exe-path)
+          (subprocess
+           #f in-port 'stdout
+           exe-path))))
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
   (unless terminated?
     (log-fest warning
