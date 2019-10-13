@@ -28,7 +28,7 @@
    . ->* .
    boolean?)
 
-  (define {_3 exe-dir} (basename exe-path #:with-directory? #t))
+  (define-values {exe-dir _3} (basename exe-path #:with-directory? #t))
   (match-define (test input-file output-file timeout-seconds) t)
   (define expected-output
     (call-with-input-file output-file
