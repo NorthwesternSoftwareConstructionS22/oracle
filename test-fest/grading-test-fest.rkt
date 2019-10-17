@@ -79,8 +79,9 @@
   (define assign-number (cons (unbox assign-major-number-box)
                               (unbox assign-minor-number-box)))
   (define repo-cache-file (find-repo-cache-file assign-number))
-  (unless (not (file-exists? repo-cache-file))
-    (eprintf "Error: Repo cache file not found~n"))
+  (unless (file-exists? repo-cache-file)
+    (eprintf "Error: Repo cache file not found~n")
+    (exit 1))
   (define student-repo-caches
     (with-handlers ([exn:fail?
                      (λ _
