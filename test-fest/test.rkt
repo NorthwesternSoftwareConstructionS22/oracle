@@ -2,7 +2,8 @@
 
 (provide valid-tests
          valid-tests/passing-oracle
-         test-failures-for)
+         test-failures-for
+         log-test-failure-comparison?)
 
 (require json
          "util.rkt"
@@ -19,6 +20,10 @@
          "PLTCOMPILEDROOTS" "compiled/@(version):")
    (thunk (apply subprocess (append subprocess-args
                                     (list racket-exe path))))))
+
+;; Values being compared may be large, so they can be suppressed to prevent
+;; filling up the log when other `info`-level information is desired
+(define log-test-failure-comparison? (make-parameter #t))
 
 (define/contract (exe-passes-test? exe-path
                                    t
@@ -62,8 +67,10 @@
   (unless pass?
     (log-fest info
               @~a{@(pretty-path exe-path) fails @(pretty-path input-file)})
-    (log-fest info
-              @~a{    expected: @~v[expected-output], actual: @~v[exe-output-json]}))
+    (when (log-test-failure-comparison?)
+      (log-fest
+       info
+       @~a{    expected: @~v[expected-output], actual: @~v[exe-output-json]})))
   pass?)
 
 ;; Travis CI kills any job that has no output for 10 minutes; prevent that.

@@ -114,16 +114,19 @@
     (unzip-repos! student-repo-caches))
   (log-fest info @~a{Done. Commencing test fest ...})
   (define test-fest-results
-    (for/hash ([(repo-name repo-path) (in-hash dev-repo-paths)])
-      (log-fest info @~a{Testing @repo-name ...})
-      (log-fest info @~a{repo: @repo-path :: cwd: @(current-directory)})
-      (define failed-peer-tests
-        (match (make-repo-exe! repo-path assign-number)
-          [#f valid-peer-tests]
-          [path-to-test-exe
-           (test-failures-for (simple-form-path-string path-to-test-exe)
-                              valid-peer-tests)]))
-      (values repo-name failed-peer-tests)))
+    ;; Grading produces a lot of output and the CI doesn't like it, especially
+    ;; comparing test results when values are large. So suppress those.
+    (parameterize ([log-test-failure-comparison? #f])
+      (for/hash ([(repo-name repo-path) (in-hash dev-repo-paths)])
+        (log-fest info @~a{Testing @repo-name ...})
+        (log-fest info @~a{repo: @repo-path :: cwd: @(current-directory)})
+        (define failed-peer-tests
+          (match (make-repo-exe! repo-path assign-number)
+            [#f valid-peer-tests]
+            [path-to-test-exe
+             (test-failures-for (simple-form-path-string path-to-test-exe)
+                                valid-peer-tests)]))
+        (values repo-name failed-peer-tests))))
   (log-fest info @~a{Test fest complete.})
 
   (summarize-test-fest assign-number
