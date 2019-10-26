@@ -17,6 +17,8 @@
   (not (eq? (read-json/safe port) bad-json)))
 
 (define (valid-json-file? path)
+  (log-fest debug
+            @~a{Checking json validity for file @(pretty-path path)})
   (call-with-input-file path
     valid-json?
     #:mode 'text))
