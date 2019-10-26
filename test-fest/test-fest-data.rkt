@@ -39,7 +39,7 @@
 ;; Travis kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
 ;; or not producing output for 10 min
-(define ci-output-timeout-seconds (* 10 60))
+(define ci-output-timeout-seconds (* 8 60))
 
 (define (oracle->student-timeout secs)
   (* 10 secs))
