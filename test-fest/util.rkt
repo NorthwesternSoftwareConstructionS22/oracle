@@ -2,7 +2,8 @@
 
 (provide (all-defined-out))
 
-(require json)
+(require json
+         "logger.rkt")
 
 (define bad-json
   (let ()
