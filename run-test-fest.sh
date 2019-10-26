@@ -1,8 +1,9 @@
 #!/bin/bash
 
-## run-test-fest.sh <major-number> <minor-number> <team-name>
+## run-test-fest.sh <major-number> <minor-number> <team-name> [<debug-output?>]
 # Run a test fest for assignment <major-number>.<minor-number>
 # for team <team-name>
+# Optionally enable debug output
 
 if [[ $1 == "" || $2 == "" || $3 == "" ]]; then
     printf "Error: Invalid usage.\n"
@@ -18,6 +19,7 @@ fi
 CWD=$(pwd)
 ASSIGN_DIR="$CWD/Deliverables/$1/$1.$2"
 ASSIGN_DIR_LOWER="$CWD/deliverables/$1/$1.$2"
+DEBUG_OUTPUT="$4"
 
 # Check directory structure
 if [[ ! -d "$ASSIGN_DIR" && ! -d "$ASSIGN_DIR_LOWER" ]]; then
@@ -45,6 +47,10 @@ if [[ "$LOCAL_TEST_FEST" == "" ]]; then
 else
     export PLTSTDERR="debug@fest"
     ORACLE_DIR=../oracle
+fi
+
+if [[ "$DEBUG_OUTPUT" != "" ]]; then
+    export PLTSTDERR="debug@fest"
 fi
 
 printf "\nPath: %s\n\n" "$PATH"

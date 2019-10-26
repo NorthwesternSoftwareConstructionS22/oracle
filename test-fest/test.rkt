@@ -35,6 +35,8 @@
 
   (define-values {exe-dir _3} (basename exe-path #:with-directory? #t))
   (match-define (test input-file output-file timeout-seconds) t)
+  (log-fest debug
+            @~a{Reading output json from @(pretty-path output-file)})
   (define expected-output
     (call-with-input-file output-file
       read-json/safe
@@ -42,6 +44,8 @@
   (define in-port (open-input-file input-file))
   (define-values {proc stdout _1 _2}
     (parameterize ([current-directory exe-dir])
+      (log-fest debug
+                @~a{Running @(pretty-path exe-path) ...})
       (if run-with-racket?
           (subprocess/racket-bytecode (list #f in-port 'stdout)
                                       exe-path)
@@ -53,8 +57,11 @@
     (log-fest warning
               @~a{@(pretty-path exe-path) timed out (@|timeout-seconds|s)})
     (subprocess-kill proc #t))
+  (log-fest debug
+            @~a{@(pretty-path exe-path) done.})
   (define-values {exe-output-str exe-output-json}
     (cond [terminated?
+           (log-fest debug @~a{Reading exe output})
            (define output (port->string stdout))
            (values output (call-with-input-string output read-json/safe))]
           [else (values "<timed out>" bad-json)]))
