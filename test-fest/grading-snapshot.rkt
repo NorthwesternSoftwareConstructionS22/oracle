@@ -5,7 +5,10 @@
          "test-fest-data.rkt"
          "git.rkt"
          "tar.rkt"
-         "logger.rkt")
+         "logger.rkt"
+         "env.rkt")
+
+(define env-file "env.sh")
 
 (module+ main
   (define assign-major-number-box (box "0"))
@@ -30,6 +33,14 @@
     path
     "Path to the root of the grading repo."
     (current-directory path)])
+
+  (unless (regexp-match? ".*/grading" (current-directory))
+    (displayln
+     @~a{
+         Warning: grading repo path is currently @(current-directory)
+         Is this right? Press enter to continue.
+         })
+    (void (read-line)))
 
   (define assign-number (cons (unbox assign-major-number-box)
                               (unbox assign-minor-number-box)))
@@ -60,14 +71,16 @@
              out))
     #:mode 'text
     #:exists 'truncate)
+  (log-fest info @~a{Done. Writing env ...})
+  (write-env! (current-directory) env-file "dummy" assign-number)
   (log-fest info @~a{Done. git-adding snapshot ...})
   (void (git-add repo-cache-file)
-        (git-add snapshot-dir))
+        (git-add snapshot-dir)
+        (git-add env-file))
   (displayln @~a{
 
 
 
                  Git-added snapshot of student dev repos.
                  Commit and then push to kick off grading.
-                 Don't forget to set the assignment number in .travis.yml!
                  }))
