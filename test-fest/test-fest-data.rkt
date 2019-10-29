@@ -42,7 +42,7 @@
 (define ci-output-timeout-seconds (* 8 60))
 
 (define (oracle->student-timeout secs)
-  (* 10 secs))
+  (* 100 secs))
 
 (define max-number-tests 5)
 
