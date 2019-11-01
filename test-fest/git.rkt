@@ -44,13 +44,6 @@
 
   (system @~a{git add @path}))
 
-(define (system/string cmd)
-  (call-with-output-string
-   (λ (out)
-     (parameterize ([current-output-port out]
-                    [current-error-port out])
-       (system cmd)))))
-
 (define/contract ((checkout-last-commit-before iso-date-deadline))
   (string? . -> . (-> any))
 
@@ -61,3 +54,22 @@
   ;; ll: This sometimes produces output despite the redirections. WTF?
   ;; hack for now: stuff it in a string
   (system/string @~a{git checkout @pre-deadline-commit > /dev/null 2>&1}))
+
+(define/contract (commit-and-push! repo-dir msg
+                                   #:remote [remote "origin"]
+                                   #:branch [branch "master"]
+                                   #:add [paths-to-add empty])
+  ({path-to-existant-directory? string?}
+   {#:remote string?
+    #:branch string?
+    #:add (listof string?)}
+   . ->* .
+   any)
+
+  (define /dev/null (open-output-nowhere))
+  (parameterize ([current-directory repo-dir]
+                 [current-output-port /dev/null])
+    (for-each git-add paths-to-add)
+    (system @~a{git commit -m "@msg"})
+    (system @~a{git push @remote @branch}))
+  (close-output-port /dev/null))
