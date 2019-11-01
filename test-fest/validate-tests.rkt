@@ -2,6 +2,7 @@
 
 (require racket/cmdline
          racket/runtime-path
+         racket/pretty
          "test-fest-data.rkt"
          "util.rkt"
          "git.rkt"
@@ -41,7 +42,9 @@
   (define this-assign-tests-dir
     (build-path-string valid-tests-repo-path
                        (assign-number->dir-path assign-number)))
-  (define test-repo-paths (directory-list this-assign-tests-dir #:build? #t))
+  (define test-repo-paths
+    (filter directory-exists?
+            (directory-list this-assign-tests-dir #:build? #t)))
   (define oracle-repo (unbox oracle-repo-box))
   (define oracle-tests
     (build-path-string oracle-repo
@@ -55,4 +58,4 @@
                                    oracle-repo
                                    #:check-json-validity? #t))))
 
-  (writeln (serialize-tests valid-tests-repo-path all-valid-tests)))
+  (pretty-write (serialize-tests valid-tests-repo-path all-valid-tests)))
