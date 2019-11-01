@@ -1,6 +1,7 @@
 #lang at-exp racket
 
 (require racket/cmdline
+         racket/runtime-path
          "util.rkt"
          "test-fest-data.rkt"
          "git.rkt"
@@ -10,6 +11,8 @@
          "test-cache.rkt")
 
 (define env-file "env.sh")
+
+(define-runtime-path oracle-repo "..")
 
 (module+ main
   (define assign-major-number-box (box "0"))
@@ -45,6 +48,10 @@
 
   (match (unbox clean-invalid-box)
     [#f
+     (displayln
+      "Is this copy of the oracle repo up to date? Hit Enter to continue.")
+     (void (read-line))
+
      (delete-directory/files this-assign-tests-dir-path #:must-exist? #f)
      (make-directory* this-assign-tests-dir-path)
      (log-fest info
@@ -52,7 +59,9 @@
      (void
       (clone-repos-into! this-assign-tests-dir-path
                          student-test-repos
-                         #:setup-repos (thunk (delete-directory/files ".git"))))
+                         #:setup-repos (thunk (delete-directory/files ".git")))
+      (copy-directory/files (build-path oracle-repo "tests")
+                            (build-path this-assign-tests-dir-path "oracle")))
      (log-fest info @~a{Done. Writing env ...})
      (write-env! valid-tests-repo-path
                  env-file
