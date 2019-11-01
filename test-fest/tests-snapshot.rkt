@@ -47,8 +47,12 @@
     [#f
      (delete-directory/files this-assign-tests-dir-path #:must-exist? #f)
      (make-directory* this-assign-tests-dir-path)
-     (log-fest info @~a{Cloning test repos into @this-assign-tests-dir-path ...})
-     (void (clone-repos-into! this-assign-tests-dir-path student-test-repos))
+     (log-fest info
+               @~a{Cloning test repos into @this-assign-tests-dir-path ...})
+     (void
+      (clone-repos-into! this-assign-tests-dir-path
+                         student-test-repos
+                         #:setup-repos (thunk (delete-directory/files ".git"))))
      (log-fest info @~a{Done. Writing env ...})
      (write-env! valid-tests-repo-path
                  env-file
@@ -58,7 +62,7 @@
      (displayln "About to commit and push; hit Enter to continue.")
      (void (read-line))
      (commit-and-push! valid-tests-repo-path
-                       "Validate: @(assign-number->string assign-number)"
+                       @~a{Validate: @(assign-number->string assign-number)}
                        #:add (list this-assign-tests-dir
                                    env-file)
                        #:remote "origin"
@@ -67,6 +71,7 @@
     [#t
      (log-fest info @~a{Reading valid test information from stdin...})
      (define valid-tests-serialized (read))
+     (log-fest info @~a{Deserializing test info...})
      (define valid-tests (deserialize-tests valid-tests-repo-path
                                             valid-tests-serialized))
      (define valid-test-file-set
@@ -76,11 +81,11 @@
      (log-fest debug @~a{Determined valid test set @valid-test-file-set})
      (log-fest info @~a{Cleaning invalid tests...})
      (for ([path (in-directory this-assign-tests-dir-path)]
-           #:when (and (file-exists? path)
-                       (not (set-member? valid-test-file-set
-                                         path))))
-       (log-fest debug @~a{Deleting @path})
-       (delete-file path))
+           #:when (file-exists? path)
+           [path-absolute (in-value (simple-form-path-string path))]
+           #:unless (set-member? valid-test-file-set path-absolute))
+       (log-fest debug @~a{Deleting @path-absolute})
+       (delete-file path-absolute))
      (log-fest info @~a{Done. Writing valid test file...})
      (write-to-file valid-tests-serialized
                     (build-path this-assign-tests-dir-path
@@ -89,7 +94,7 @@
      (displayln "About to commit and push; hit Enter to continue.")
      (void (read-line))
      (commit-and-push! valid-tests-repo-path
-                       "Validate: @(assign-number->string assign-number)"
+                       @~a{Validated @(assign-number->string assign-number)}
                        #:add (list this-assign-tests-dir env-file)
                        #:remote "origin"
                        #:branch "master")]))

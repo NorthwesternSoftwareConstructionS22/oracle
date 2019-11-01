@@ -20,8 +20,8 @@
 (define (deserialize-test tests-repo-path)
   (match-lambda
     [(list in-rel out-rel timeout)
-     (test (build-path-string tests-repo-path in-rel)
-           (build-path-string tests-repo-path out-rel)
+     (test (simple-form-path-string (build-path-string tests-repo-path in-rel))
+           (simple-form-path-string (build-path-string tests-repo-path out-rel))
            timeout)]))
 
 (define (serialize-tests tests-repo-path lot)
