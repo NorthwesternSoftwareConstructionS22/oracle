@@ -7,7 +7,7 @@
          "tar.rkt"
          "logger.rkt"
          "env.rkt"
-         "serialize-test.rkt")
+         "test-cache.rkt")
 
 (define env-file "env.sh")
 
@@ -41,7 +41,7 @@
   (define valid-tests-repo-path (unbox tests-repo-box))
   (define this-assign-tests-dir (assign-number->dir-path assign-number))
   (define this-assign-tests-dir-path
-    (build-path-string valid-tests-repo-path this-assign-tests-dir))
+    (find-cached-tests-path valid-tests-repo-path assign-number))
 
   (match (unbox clean-invalid-box)
     [#f
@@ -88,8 +88,8 @@
        (delete-file path-absolute))
      (log-fest info @~a{Done. Writing valid test file...})
      (write-to-file valid-tests-serialized
-                    (build-path this-assign-tests-dir-path
-                                "valid-tests.rktd"))
+                    (find-cached-test-info-path valid-tests-repo-path
+                                                assign-number))
 
      (displayln "About to commit and push; hit Enter to continue.")
      (void (read-line))

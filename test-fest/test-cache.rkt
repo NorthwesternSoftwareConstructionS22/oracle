@@ -3,7 +3,9 @@
 (provide serialize-test
          deserialize-test
          serialize-tests
-         deserialize-tests)
+         deserialize-tests
+         find-cached-tests-path
+         find-cached-test-info-path)
 
 (require "test-fest-data.rkt"
          "util.rkt")
@@ -39,3 +41,16 @@
   (define serialized ((serialize-test dir) t))
   (check-equal? ((deserialize-test dir) serialized)
                 t))
+
+
+(define/contract (find-cached-tests-path tests-repo-path assign-number)
+  (path-string? assign-number? . -> . string?)
+
+  (build-path-string tests-repo-path
+                     (assign-number->dir-path assign-number)))
+
+(define (find-cached-test-info-path tests-repo-path assign-number)
+  (path-string? assign-number? . -> . string?)
+
+  (build-path-string (find-cached-tests-path tests-repo-path assign-number)
+                     "valid-tests.rktd"))

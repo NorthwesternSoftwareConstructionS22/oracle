@@ -8,7 +8,7 @@
          "git.rkt"
          "test.rkt"
          "logger.rkt"
-         "serialize-test.rkt")
+         "test-cache.rkt")
 
 (module+ main
   (define assign-major-number-box (box "0"))
@@ -40,8 +40,7 @@
 
   (define valid-tests-repo-path (unbox tests-repo-box))
   (define this-assign-tests-dir
-    (build-path-string valid-tests-repo-path
-                       (assign-number->dir-path assign-number)))
+    (find-cached-tests-path valid-tests-repo-path assign-number))
   (define test-repo-paths
     (filter directory-exists?
             (directory-list this-assign-tests-dir #:build? #t)))
