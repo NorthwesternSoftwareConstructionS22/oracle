@@ -65,6 +65,9 @@
   (path->string (apply build-path args)))
 (define (simple-form-path-string p)
   (path->string (simple-form-path p)))
+(define (find-relative-path-string base path)
+  (path->string (find-relative-path (simple-form-path base)
+                                    (simple-form-path path))))
 
 (define (basename p #:with-directory? [dir? #f])
   (define-values {dir name _2} (split-path p))
@@ -99,3 +102,10 @@
   (path->string
    (find-relative-path (simple-form-path ".")
                        (simple-form-path path))))
+
+(define (system/string cmd)
+  (call-with-output-string
+   (λ (out)
+     (parameterize ([current-output-port out]
+                    [current-error-port out])
+       (system cmd)))))
