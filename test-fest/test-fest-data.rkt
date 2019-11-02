@@ -4,7 +4,8 @@
          (struct-out test))
 
 (require "util.rkt"
-         "logger.rkt")
+         "logger.rkt"
+         racket/date)
 
 (define student-groups
   '("dummy-team"
@@ -49,6 +50,11 @@
 (define input-file-rx #rx"(.*/)input([0-9]+)$")
 
 
+;; sunday is 0, saturday is 6
+(define pre-validated-test-days '(1 2)) ;; monday and tuesday
+(define (use-pre-validated-tests?)
+  (define week-day (date-week-day (current-date)))
+  (member week-day pre-validated-test-days))
 
 
 
@@ -76,6 +82,7 @@
 
 (define (repo-name? name)
   (or (string=? name "oracle")
+      (string=? name "valid-tests")
       (member (repo->team-name name) student-groups)))
 
 (define/contract (repo-name->url name [mode 'https])
