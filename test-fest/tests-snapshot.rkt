@@ -96,9 +96,12 @@
        (log-fest debug @~a{Deleting @path-absolute})
        (delete-file path-absolute))
      (log-fest info @~a{Done. Writing valid test file...})
-     (write-to-file valid-tests-serialized
-                    (find-cached-test-info-path valid-tests-repo-path
-                                                assign-number))
+     (call-with-output-file
+       (find-cached-test-info-path valid-tests-repo-path
+                                   assign-number)
+       #:exists 'truncate
+       (λ (out)
+         (pretty-write valid-tests-serialized out)))
 
      (displayln "About to commit and push; hit Enter to continue.")
      (void (read-line))
