@@ -8,7 +8,7 @@
          racket/date)
 
 (define student-groups
-  '("dummy-team"
+  #;'("dummy-team"
     "team1"
     "team2"
     "team3"
@@ -35,7 +35,33 @@
     "team24"
     "team25"
     "team26"
-    "team27"))
+    "team27")
+  '("team28"
+    "team29"
+    "team30"
+    "team31"
+    "team32"
+    "team33"
+    "team34"
+    "team35"
+    "team36"
+    "team37"
+    "team38"
+    "team39"
+    "team40"
+    "team41"
+    "team42"
+    "team43"
+    "team44"
+    "team45"
+    "team46"
+    "team47"
+    "team48"
+    "team49"
+    "team50"
+    "team51"
+    "team52"
+    "team53"))
 
 ;; Travis kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
