@@ -45,13 +45,9 @@
     (filter directory-exists?
             (directory-list this-assign-tests-dir #:build? #t)))
   (define oracle-repo (unbox oracle-repo-box))
-  (define oracle-tests
-    (build-path-string oracle-repo
-                       "tests"
-                       (assign-number->dir-path assign-number)))
   (define all-valid-tests
     (flatten
-     (for/list ([test-repo-path (in-list (cons oracle-tests test-repo-paths))])
+     (for/list ([test-repo-path (in-list test-repo-paths)])
        (valid-tests/passing-oracle test-repo-path
                                    assign-number
                                    oracle-repo
