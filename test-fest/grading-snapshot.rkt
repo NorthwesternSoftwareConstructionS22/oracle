@@ -53,10 +53,13 @@
   (delete-directory/files snapshot-dir #:must-exist? #f)
   (make-directory snapshot-dir)
   (log-fest info @~a{Cloning dev repos into @snapshot-dir ...})
+  (define student-dev-repos/active
+    (map group->dev-repo-name
+         (assign->active-groups assign-number)))
   (define dev-repos
     (parameterize ([git-remote-access-method 'ssh])
       (clone-repos-into! snapshot-dir
-                         student-dev-repos
+                         student-dev-repos/active
                          #:setup-repos (checkout-last-commit-before deadline))))
   (log-fest info @~a{Done. Zipping dev repos ...})
   (define dev-zips (zip-repos! dev-repos #:delete-original? #t))

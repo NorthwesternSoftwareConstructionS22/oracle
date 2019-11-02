@@ -17,8 +17,11 @@
 
 (define (clone+validate-tests-from-repos! assign-number)
   (log-fest info @~a{Cloning test repos into @test-repos-dir ...})
+  (define student-test-repos/active
+    (map group->test-repo-name
+         (assign->active-groups assign-number)))
   (define test-repo-paths (clone-repos-into! test-repos-dir
-                                             student-test-repos))
+                                             student-test-repos/active))
   (define test-repo-paths+oracle
     (hash-set test-repo-paths
               "oracle"

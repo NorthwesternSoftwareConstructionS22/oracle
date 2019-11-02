@@ -56,9 +56,12 @@
      (make-directory* this-assign-tests-dir-path)
      (log-fest info
                @~a{Cloning test repos into @this-assign-tests-dir-path ...})
+     (define student-test-repos/active
+       (map group->test-repo-name
+            (assign->active-groups assign-number)))
      (void
       (clone-repos-into! this-assign-tests-dir-path
-                         student-test-repos
+                         student-test-repos/active
                          #:setup-repos (thunk (delete-directory/files ".git")))
       (copy-directory/files (build-path oracle-repo "tests")
                             (build-path this-assign-tests-dir-path "oracle")))

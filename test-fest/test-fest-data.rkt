@@ -7,8 +7,8 @@
          "logger.rkt"
          racket/date)
 
-(define student-groups
-  #;'("dummy-team"
+(define student-groups-1
+  '("dummy-team"
     "team1"
     "team2"
     "team3"
@@ -35,7 +35,8 @@
     "team24"
     "team25"
     "team26"
-    "team27")
+    "team27"))
+(define student-groups-2
   '("team28"
     "team29"
     "team30"
@@ -62,6 +63,14 @@
     "team51"
     "team52"
     "team53"))
+(define student-groups
+  (append student-groups-1
+          student-groups-2))
+
+(define (assign->active-groups assign)
+  (match assign
+    [(cons (app string->number (? (</c 6))) _) student-groups-1]
+    [else student-groups-2]))
 
 ;; Travis kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
