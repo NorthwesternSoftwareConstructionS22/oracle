@@ -171,8 +171,7 @@
                  (define-values {results _2 ms _3}
                    (time-apply
                     (thunk (exe-passes-test? oracle-path
-                                             (test in out
-                                                   absolute-max-timeout-seconds)
+                                             (test in out oracle-timeout)
                                              #:run-with-racket? #t))
                     empty))
                  (define student-timeout

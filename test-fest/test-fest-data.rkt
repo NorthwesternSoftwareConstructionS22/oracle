@@ -68,6 +68,7 @@
 ;; or not producing output for 10 min
 (define ci-output-timeout-seconds (* 8 60))
 
+(define oracle-timeout (* 1 60))
 (define (oracle->student-timeout secs)
   (* 100 secs))
 
