@@ -90,6 +90,8 @@
 (define pre-validated-test-days '(1 2)) ;; monday and tuesday
 (define (use-pre-validated-tests?)
   (define week-day (date-week-day (current-date)))
+  (log-fest debug
+            @~a{Today: @week-day, pre-valid-days: @pre-validated-test-days})
   (member week-day pre-validated-test-days))
 
 
