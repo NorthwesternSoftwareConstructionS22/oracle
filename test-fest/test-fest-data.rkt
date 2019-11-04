@@ -5,7 +5,8 @@
 
 (require "util.rkt"
          "logger.rkt"
-         racket/date)
+         racket/date
+         gregor)
 
 (define student-groups-1
   '("dummy-team"
@@ -89,7 +90,7 @@
 ;; sunday is 0, saturday is 6
 (define pre-validated-test-days '(1 2)) ;; monday and tuesday
 (define (use-pre-validated-tests?)
-  (define week-day (date-week-day (current-date)))
+  (define week-day (->wday (today #:tz "America/Chicago")))
   (log-fest debug
             @~a{Today: @week-day, pre-valid-days: @pre-validated-test-days})
   (member week-day pre-validated-test-days))
