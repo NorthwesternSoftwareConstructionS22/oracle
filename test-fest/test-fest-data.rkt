@@ -4,9 +4,11 @@
          (struct-out test))
 
 (require "util.rkt"
-         "logger.rkt")
+         "logger.rkt"
+         racket/date
+         gregor)
 
-(define student-groups
+(define student-groups-1
   '("dummy-team"
     "team1"
     "team2"
@@ -35,12 +37,48 @@
     "team25"
     "team26"
     "team27"))
+(define student-groups-2
+  '("team28"
+    "team29"
+    "team30"
+    "team31"
+    "team32"
+    "team33"
+    "team34"
+    "team35"
+    "team36"
+    "team37"
+    "team38"
+    "team39"
+    "team40"
+    "team41"
+    "team42"
+    "team43"
+    "team44"
+    "team45"
+    "team46"
+    "team47"
+    "team48"
+    "team49"
+    "team50"
+    "team51"
+    "team52"
+    "team53"))
+(define student-groups
+  (append student-groups-1
+          student-groups-2))
+
+(define (assign->active-groups assign)
+  (match assign
+    [(cons (app string->number (? (</c 6))) _) student-groups-1]
+    [else student-groups-2]))
 
 ;; Travis kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
 ;; or not producing output for 10 min
 (define ci-output-timeout-seconds (* 8 60))
 
+(define oracle-timeout (* 1 60))
 (define (oracle->student-timeout secs)
   (* 100 secs))
 
@@ -49,6 +87,13 @@
 (define input-file-rx #rx"(.*/)input([0-9]+)$")
 
 
+;; sunday is 0, saturday is 6
+(define pre-validated-test-days '(1 2)) ;; monday and tuesday
+(define (use-pre-validated-tests?)
+  (define week-day (->wday (today #:tz "America/Chicago")))
+  (log-fest debug
+            @~a{Today: @week-day, pre-valid-days: @pre-validated-test-days})
+  (member week-day pre-validated-test-days))
 
 
 
@@ -76,6 +121,7 @@
 
 (define (repo-name? name)
   (or (string=? name "oracle")
+      (string=? name "valid-tests")
       (member (repo->team-name name) student-groups)))
 
 (define/contract (repo-name->url name [mode 'https])

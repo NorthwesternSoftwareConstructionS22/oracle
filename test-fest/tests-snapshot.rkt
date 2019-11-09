@@ -56,9 +56,12 @@
      (make-directory* this-assign-tests-dir-path)
      (log-fest info
                @~a{Cloning test repos into @this-assign-tests-dir-path ...})
+     (define student-test-repos/active
+       (map group->test-repo-name
+            (assign->active-groups assign-number)))
      (void
       (clone-repos-into! this-assign-tests-dir-path
-                         student-test-repos
+                         student-test-repos/active
                          #:setup-repos (thunk (delete-directory/files ".git")))
       (copy-directory/files (build-path oracle-repo "tests")
                             (build-path this-assign-tests-dir-path "oracle")))
@@ -96,9 +99,12 @@
        (log-fest debug @~a{Deleting @path-absolute})
        (delete-file path-absolute))
      (log-fest info @~a{Done. Writing valid test file...})
-     (write-to-file valid-tests-serialized
-                    (find-cached-test-info-path valid-tests-repo-path
-                                                assign-number))
+     (call-with-output-file
+       (find-cached-test-info-path valid-tests-repo-path
+                                   assign-number)
+       #:exists 'truncate
+       (λ (out)
+         (pretty-write valid-tests-serialized out)))
 
      (displayln "About to commit and push; hit Enter to continue.")
      (void (read-line))
