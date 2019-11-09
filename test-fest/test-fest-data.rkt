@@ -82,7 +82,10 @@
 (define (oracle->student-timeout secs)
   (* 100 secs))
 
-(define max-number-tests 5)
+(define (max-number-tests assign)
+  (match assign
+    [(cons (app string->number (? (=/c 7))) _) 10]
+    [else 5]))
 
 (define input-file-rx #rx"(.*/)input([0-9]+)$")
 

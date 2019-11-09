@@ -144,7 +144,7 @@
          (test (simple-form-path-string test-input)
                (simple-form-path-string test-output)
                (test-timeout))))
-     (take valid (min max-number-tests (length valid)))]
+     (take valid (min (max-number-tests assign-number) (length valid)))]
     [else
      (log-fest
       info
