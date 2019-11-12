@@ -43,8 +43,7 @@
       #:mode 'text))
   (define in-port (open-input-file input-file))
   (define cust (make-custodian (current-custodian)))
-  (define stdout (open-output-string))
-  (define-values {proc _4 _1 _2}
+  (define-values {proc stdout _1 _2}
     (parameterize ([current-directory exe-dir]
                    [current-custodian cust]
                    [current-subprocess-custodian-mode 'kill])
@@ -66,7 +65,9 @@
 
   (log-fest debug
             @~a{@(pretty-path exe-path) done.})
+
   (close-input-port in-port) ;; close input port before trying to read output
+
   (define-values {exe-output-str exe-output-json}
     (cond [terminated?
            (log-fest debug @~a{Reading exe output})
@@ -75,7 +76,7 @@
            #;(log-fest debug (begin
                              (copy-port stdout
                                         (current-error-port))))
-           (define output (get-output-string stdout))
+           (define output (port->string stdout))
            (log-fest debug @~a{output string: @~v[output]})
            (values output (call-with-input-string output read-json/safe))]
           [else (values "<timed out>" bad-json)]))
