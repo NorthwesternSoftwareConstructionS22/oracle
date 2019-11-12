@@ -51,6 +51,7 @@
                                       exe-path)
           (subprocess
            #f in-port 'stdout
+           'new
            exe-path))))
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
   (unless terminated?
@@ -63,6 +64,7 @@
   (define-values {exe-output-str exe-output-json}
     (cond [terminated?
            (log-fest debug @~a{Reading exe output})
+           (log-fest debug @~a{exe status: @(subprocess-status proc)})
            (log-fest debug @~a{Copying port... @(port-closed? stdout)})
            (log-fest debug (begin
                              (copy-port stdout
