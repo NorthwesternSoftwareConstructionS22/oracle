@@ -43,7 +43,8 @@
       #:mode 'text))
   (define in-port (open-input-file input-file))
   (define cust (make-custodian (current-custodian)))
-  (define-values {proc stdout _1 _2}
+  (define stdout (open-output-string))
+  (define-values {proc _3 _1 _2}
     (parameterize ([current-directory exe-dir]
                    [current-custodian cust]
                    [current-subprocess-custodian-mode 'kill])
@@ -53,7 +54,7 @@
           (subprocess/racket-bytecode (list #f in-port 'stdout)
                                       exe-path)
           (subprocess
-           #f in-port 'stdout
+           stdout in-port 'stdout
            'new
            exe-path))))
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
@@ -70,11 +71,11 @@
     (cond [terminated?
            (log-fest debug @~a{Reading exe output})
            (log-fest debug @~a{exe status: @(subprocess-status proc)})
-           (log-fest debug @~a{Copying port... @(port-closed? stdout)})
-           (log-fest debug (begin
+           (log-fest debug @~a{port closed? @(port-closed? stdout)})
+           #;(log-fest debug (begin
                              (copy-port stdout
                                         (current-error-port))))
-           (define output (port->string stdout))
+           (define output (get-output-string stdout))
            (log-fest debug @~a{output string: @~v[output]})
            (values output (call-with-input-string output read-json/safe))]
           [else (values "<timed out>" bad-json)]))
