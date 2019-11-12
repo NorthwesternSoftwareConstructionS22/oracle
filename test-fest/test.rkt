@@ -42,8 +42,11 @@
       read-json/safe
       #:mode 'text))
   (define in-port (open-input-file input-file))
+  (define cust (make-custodian (current-custodian)))
   (define-values {proc stdout _1 _2}
-    (parameterize ([current-directory exe-dir])
+    (parameterize ([current-directory exe-dir]
+                   [current-custodian cust]
+                   [current-subprocess-custodian-mode 'kill])
       (log-fest debug
                 @~a{Running @(pretty-path exe-path) ...})
       (if run-with-racket?
@@ -56,8 +59,10 @@
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
   (unless terminated?
     (log-fest warning
-              @~a{@(pretty-path exe-path) timed out (@|timeout-seconds|s)})
-    (subprocess-kill proc #t))
+              @~a{@(pretty-path exe-path) timed out (@|timeout-seconds|s)}))
+
+  (custodian-shutdown-all cust) ;; Ensure the process is always dead
+
   (log-fest debug
             @~a{@(pretty-path exe-path) done.})
   (close-input-port in-port) ;; close input port before trying to read output
