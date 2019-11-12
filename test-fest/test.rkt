@@ -44,7 +44,7 @@
   (define in-port (open-input-file input-file))
   (define cust (make-custodian (current-custodian)))
   (define stdout (open-output-string))
-  (define-values {proc _3 _1 _2}
+  (define-values {proc _4 _1 _2}
     (parameterize ([current-directory exe-dir]
                    [current-custodian cust]
                    [current-subprocess-custodian-mode 'kill])
