@@ -68,8 +68,11 @@
   (when (eq? exe-output-json bad-json)
     (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!})
     (log-fest warning @~a{Output was: @~v[exe-output-str]}))
+  (log-fest debug @~a{Closing exe ports})
   (close-input-port stdout)
   (close-input-port in-port)
+  (log-fest debug
+            @~a{Comparing exe output with expected})
   (define pass? (jsexpr=? expected-output exe-output-json))
   (unless pass?
     (log-fest info
