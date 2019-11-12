@@ -62,6 +62,10 @@
   (define-values {exe-output-str exe-output-json}
     (cond [terminated?
            (log-fest debug @~a{Reading exe output})
+           (log-fest debug @~a{Copying port...})
+           (log-fest debug (begin
+                             (copy-port stdout
+                                        (current-error-port))))
            (define output (port->string stdout))
            (log-fest debug @~a{output string: @~v[output]})
            (values output (call-with-input-string output read-json/safe))]
