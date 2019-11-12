@@ -63,6 +63,7 @@
     (cond [terminated?
            (log-fest debug @~a{Reading exe output})
            (define output (port->string stdout))
+           (log-fest debug @~a{output string: @~v[output]})
            (values output (call-with-input-string output read-json/safe))]
           [else (values "<timed out>" bad-json)]))
   (when (eq? exe-output-json bad-json)
