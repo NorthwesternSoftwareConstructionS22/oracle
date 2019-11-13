@@ -67,22 +67,23 @@
   (log-fest debug
             @~a{@(pretty-path exe-path) done.})
 
-  (close-input-port in-port) ;; close input port before trying to read output
-
   (define-values {exe-output-str exe-output-json}
     (cond [terminated?
            (log-fest debug @~a{Reading exe output})
-           (log-fest debug @~a{exe status: @(subprocess-status proc)})
-           (log-fest debug @~a{port closed? @(port-closed? stdout)})
+           ;; port must NOT be closed before reading output
            (define output (port->string stdout))
            (log-fest debug @~a{output string: @~v[output]})
            (values output (call-with-input-string output read-json/safe))]
           [else (values "<timed out>" bad-json)]))
+
   (when (eq? exe-output-json bad-json)
     (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!})
     (log-fest warning @~a{Output was: @~v[exe-output-str]}))
+
   (log-fest debug @~a{Closing exe ports})
+  (close-input-port in-port)
   (close-input-port stdout)
+
   (log-fest debug
             @~a{Comparing exe output with expected})
   (define pass? (jsexpr=? expected-output exe-output-json))
