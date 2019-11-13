@@ -42,11 +42,8 @@
       read-json/safe
       #:mode 'text))
   (define in-port (open-input-file input-file))
-  (define cust (make-custodian (current-custodian)))
   (define-values {proc stdout _1 _2}
-    (parameterize ([current-directory exe-dir]
-                   [current-custodian cust]
-                   [current-subprocess-custodian-mode 'kill])
+    (parameterize ([current-directory exe-dir])
       (log-fest debug
                 @~a{Running @(pretty-path exe-path) ...})
       (if run-with-racket?
@@ -56,16 +53,15 @@
            #f in-port 'stdout
            'new
            exe-path))))
+
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
   (unless terminated?
     (log-fest warning
               @~a{@(pretty-path exe-path) timed out (@|timeout-seconds|s)}))
 
-  (subprocess-kill proc #t) ;; Ensure the process is always dead
-  ;; (custodian-shutdown-all cust) ;; Ensure the process is always dead
+  (subprocess-kill proc #t) ;; Ensure the process is dead
 
-  (log-fest debug
-            @~a{@(pretty-path exe-path) done.})
+  (log-fest debug @~a{@(pretty-path exe-path) done.})
 
   (define-values {exe-output-str exe-output-json}
     (cond [terminated?
@@ -84,8 +80,7 @@
   (close-input-port in-port)
   (close-input-port stdout)
 
-  (log-fest debug
-            @~a{Comparing exe output with expected})
+  (log-fest debug @~a{Comparing exe output with expected})
   (define pass? (jsexpr=? expected-output exe-output-json))
   (unless pass?
     (log-fest info
