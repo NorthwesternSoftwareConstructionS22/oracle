@@ -53,7 +53,7 @@
           (subprocess/racket-bytecode (list #f in-port 'stdout)
                                       exe-path)
           (subprocess
-           stdout in-port 'stdout
+           #f in-port 'stdout
            'new
            exe-path))))
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
@@ -61,7 +61,8 @@
     (log-fest warning
               @~a{@(pretty-path exe-path) timed out (@|timeout-seconds|s)}))
 
-  (custodian-shutdown-all cust) ;; Ensure the process is always dead
+  (subprocess-kill proc #t) ;; Ensure the process is always dead
+  ;; (custodian-shutdown-all cust) ;; Ensure the process is always dead
 
   (log-fest debug
             @~a{@(pretty-path exe-path) done.})
@@ -73,9 +74,6 @@
            (log-fest debug @~a{Reading exe output})
            (log-fest debug @~a{exe status: @(subprocess-status proc)})
            (log-fest debug @~a{port closed? @(port-closed? stdout)})
-           #;(log-fest debug (begin
-                             (copy-port stdout
-                                        (current-error-port))))
            (define output (port->string stdout))
            (log-fest debug @~a{output string: @~v[output]})
            (values output (call-with-input-string output read-json/safe))]
