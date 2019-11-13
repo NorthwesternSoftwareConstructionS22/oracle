@@ -124,7 +124,7 @@
        Test fest summary for assignment @|assign-number|: @(if failed?
                                                                "FAIL"
                                                                "OK")
-       Submitted @valid-tests-by-team / 5 valid tests
+       Submitted @valid-tests-by-team / @(max-number-tests assign-number) valid tests
        Failed @failed-count / @total-test-count peer tests
        =======================================================
        })
