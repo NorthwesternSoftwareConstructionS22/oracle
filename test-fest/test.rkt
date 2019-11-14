@@ -8,18 +8,8 @@
 (require json
          "util.rkt"
          "test-fest-data.rkt"
-         "logger.rkt")
-
-(define racket-exe (find-executable-path "racket"))
-
-(define/contract (subprocess/racket-bytecode subprocess-args path)
-  (list? path-to-existant-file? . -> . any)
-
-  (call-with-extended-environment
-   (hash "PLT_COMPILED_FILE_CHECK" "exists"
-         "PLTCOMPILEDROOTS" "compiled/@(version):")
-   (thunk (apply subprocess (append subprocess-args
-                                    (list racket-exe path))))))
+         "logger.rkt"
+         "process.rkt")
 
 ;; Values being compared may be large, so they can be suppressed to prevent
 ;; filling up the log when other `info`-level information is desired
@@ -33,7 +23,6 @@
    . ->* .
    boolean?)
 
-  (define-values {exe-dir _3} (basename exe-path #:with-directory? #t))
   (match-define (test input-file output-file timeout-seconds) t)
   (log-fest debug
             @~a{Reading output json from @(pretty-path output-file)})
@@ -42,17 +31,12 @@
       read-json/safe
       #:mode 'text))
   (define in-port (open-input-file input-file))
-  (define-values {proc stdout _1 _2}
-    (parameterize ([current-directory exe-dir])
-      (log-fest debug
-                @~a{Running @(pretty-path exe-path) ...})
-      (if run-with-racket?
-          (subprocess/racket-bytecode (list #f in-port 'stdout)
-                                      exe-path)
-          (subprocess
-           #f in-port 'stdout
-           'new
-           exe-path))))
+  (log-fest debug
+            @~a{Running @(pretty-path exe-path) ...})
+  (define-values {proc stdout}
+    (launch-process! exe-path
+                     #:stdin in-port
+                     #:run-with-racket? run-with-racket?))
 
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
   (unless terminated?
@@ -90,18 +74,6 @@
        info
        @~a{    expected: @~v[expected-output], actual: @~v[exe-output-json]})))
   pass?)
-
-;; Travis CI kills any job that has no output for 10 minutes; prevent that.
-(define (wait/keep-ci-alive proc timeout-seconds)
-  (define waiting-period
-    (min timeout-seconds ci-output-timeout-seconds))
-  (define rounds-to-wait
-    (round-up (/ timeout-seconds waiting-period)))
-  (log-fest debug
-            @~a{Waiting for @rounds-to-wait rounds of @|waiting-period|s})
-  (for/or ([i (in-range rounds-to-wait)])
-    (displayln ".")
-    (sync/timeout waiting-period proc)))
 
 (define/contract (valid-tests repo-path
                               assign-number
