@@ -63,34 +63,39 @@
 
   (log-fest info @~a{
                      Running game
-                     with admin @(actor-path admin)
-                     and remote player @(actor-path player)
+                     with admin @(pretty-path (actor-path admin))
+                     and remote player @(pretty-path (actor-path player))
                      and config @config
+
                      })
 
   (write-config! config config-path)
-  (define-values {admin-proc stdout-1}
+  (define-values {admin-proc admin-stdout}
     (launch-process! (actor-path admin)
                      #:run-with-racket? (actor-run-with-racket? admin)
                      #:run-in (actor-run-in admin)))
-  (define-values {player-proc stdout-2}
+  (define-values {player-proc player-stdout}
     (launch-process! (actor-path player)
                      #:run-with-racket? (actor-run-with-racket? player)
                      #:run-in (actor-run-in player)))
   (define result-admin (watch-for-failure admin-proc))
   (define result-player (watch-for-failure player-proc))
 
-  (subprocess-kill admin-proc #t)
-  (subprocess-kill player-proc #t)
-  (close-input-port stdout-1)
-  (close-input-port stdout-2)
-
   (unless result-admin
     (log-fest warning
-              @~a{Admin @(actor-path admin) crashed! (non-zero exit code)}))
+              @~a{Admin @(pretty-path (actor-path admin)) crashed! (non-zero exit code)})
+    (log-fest warning
+              @~a{Admin output: @~v[(port->string admin-stdout)]}))
   (unless result-player
     (log-fest warning
-              @~a{Player @(actor-path player) crashed! (non-zero exit code)}))
+              @~a{Player @(pretty-path (actor-path player)) crashed! (non-zero exit code)})
+    (log-fest warning
+              @~a{Player output: @~v[(port->string player-stdout)]}))
+
+  (subprocess-kill admin-proc #t)
+  (subprocess-kill player-proc #t)
+  (close-input-port admin-stdout)
+  (close-input-port player-stdout)
 
   (and result-admin result-player))
 
@@ -98,6 +103,7 @@
   (config-hash? path-to-existant-file? . -> . any)
 
   (call-with-output-file path
+    #:exists 'truncate
     (λ (out) (write-json config out))))
 
 (define/contract (watch-for-failure proc)
@@ -125,11 +131,6 @@
       "Path to admin executable to test."
       #:mandatory
       #:collect ["path" take-latest #f]]
-     [("-c" "--config")
-      'config-path
-      "Path to config to test."
-      #:mandatory
-      #:collect ["path" take-latest #f]]
      [("-r" "--repo-root")
       'repo-path
       "Path to root of submission repo"
@@ -139,14 +140,15 @@
                               (hash-ref flags 'minor)))
   (define assign-dir
     (build-path-string (hash-ref flags 'repo-path)
+                       "Deliverables"
                        (assign-number->dir-path assign-number)))
 
   (define admin-path (hash-ref flags 'admin-path))
-  (define config-path (hash-ref flags 'config-path))
+  (define config-path (build-path-string assign-dir "go.config"))
 
   (check-path! admin-path)
   (check-path! config-path)
-  (define config (read/check-config-validity! (hash-ref flags 'config-path)))
+  (define config (read/check-config-validity! config-path))
 
   (define admin (actor (simple-form-path-string admin-path)
                        #f
@@ -158,10 +160,11 @@
   (for ([port (in-list PORTS)])
     (unless (run-game! admin
                        oracle-player
-                       port)
+                       config-path
+                       (hash-set config 'port port))
       (fail! @~a{
                  Abnormal exit for game
-                 with admin @admin-path
-                 and remote palyer @oracle-remote-player-path
+                 with admin @(pretty-path admin-path)
+                 and remote player @(pretty-path oracle-remote-player-path)
                  on port @port
                  }))))
