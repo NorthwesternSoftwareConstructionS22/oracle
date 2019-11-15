@@ -61,4 +61,12 @@ if [[ -f ./ci-debug.sh ]]; then
     source ./ci-debug.sh "$ORACLE_DIR"
 fi
 
-cd "$ORACLE_DIR" && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH" -n $3
+case "$1.$2" in
+    "8.1")
+	racket "$ORACLE_DIR"/test-fest/ci-admin-test.rkt -M $1 -m $2 -a "$EXE_PATH"
+	;;
+    *)
+	cd "$ORACLE_DIR" && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH" -n $3
+	;;
+esac
+
