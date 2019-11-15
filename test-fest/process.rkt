@@ -17,7 +17,7 @@
                                   #:run-in [run-in
                                             (containing-directory exe-path)])
   ({path-to-existant-file?}
-   {#:stdin (or/c output-port? #f)
+   {#:stdin (or/c (and/c input-port? file-stream-port?) #f)
     #:run-with-racket? boolean?
     #:run-in path-string?}
    . ->* .
