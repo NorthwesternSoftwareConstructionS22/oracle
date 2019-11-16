@@ -43,6 +43,7 @@
     (log-fest warning
               @~a{@(pretty-path exe-path) timed out (@|timeout-seconds|s)}))
 
+  (log-fest debug @~a{Killing process})
   (subprocess-kill proc #t) ;; Ensure the process is dead
 
   (log-fest debug @~a{@(pretty-path exe-path) done.})
