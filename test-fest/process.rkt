@@ -51,10 +51,19 @@
 
   (define waiting-period
     (min timeout-seconds ci-output-timeout-seconds))
-  (define rounds-to-wait
-    (round-up (/ timeout-seconds waiting-period)))
-  (log-fest debug
-            @~a{Waiting for @rounds-to-wait rounds of @|waiting-period|s})
-  (for/or ([i (in-range rounds-to-wait)])
-    (displayln ".")
-    (sync/timeout waiting-period proc)))
+  (define output-thd
+    (thread (thunk (let loop ()
+                     (displayln ".")
+                     (sleep (* 8 60))
+                     (loop)))))
+  (define res (sync/timeout timeout-seconds proc))
+  (kill-thread output-thd)
+  res
+  ;; (define rounds-to-wait
+  ;;   (round-up (/ timeout-seconds waiting-period)))
+  ;; (log-fest debug
+  ;;           @~a{Waiting for @rounds-to-wait rounds of @|waiting-period|s})
+  ;; (for/or ([i (in-range rounds-to-wait)])
+  ;;   (displayln ".")
+  ;;   (sync/timeout waiting-period proc))
+  )
