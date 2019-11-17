@@ -98,6 +98,8 @@
   (delete-directory/files test-repos-dir
                           #:must-exist? #f)
   (make-directory test-repos-dir)
+  (log-fest debug
+            @~a{Validation decision based on: @~v[(unbox force-validated-box)]})
   (define using-pre-validated-tests?
     (match (unbox force-validated-box)
       ["0" #f]
