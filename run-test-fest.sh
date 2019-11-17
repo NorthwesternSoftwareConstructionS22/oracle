@@ -1,9 +1,10 @@
 #!/bin/bash
 
-## run-test-fest.sh <major-number> <minor-number> <team-name> [<debug-output?>]
+## run-test-fest.sh <major-number> <minor-number> <team-name> [<debug-output?> <other-flags>]
 # Run a test fest for assignment <major-number>.<minor-number>
 # for team <team-name>
 # Optionally enable debug output
+# Optionally specify other flags to provide to `ci-test-fest.rkt`
 
 if [[ $1 == "" || $2 == "" || $3 == "" ]]; then
     printf "Error: Invalid usage.\n"
@@ -20,6 +21,7 @@ CWD=$(pwd)
 ASSIGN_DIR="$CWD/Deliverables/$1/$1.$2"
 ASSIGN_DIR_LOWER="$CWD/deliverables/$1/$1.$2"
 DEBUG_OUTPUT="$4"
+OTHER_FLAGS="$5"
 
 # Check directory structure
 if [[ ! -d "$ASSIGN_DIR" && ! -d "$ASSIGN_DIR_LOWER" ]]; then
@@ -63,10 +65,10 @@ fi
 
 case "$1.$2" in
     "8.1")
-	racket "$ORACLE_DIR"/test-fest/ci-admin-test.rkt -M $1 -m $2 -a "$EXE_PATH"
+	racket "$ORACLE_DIR"/test-fest/ci-admin-test.rkt -M $1 -m $2 -a "$EXE_PATH" $OTHER_FLAGS
 	;;
     *)
-	cd "$ORACLE_DIR" && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH" -n $3
+	cd "$ORACLE_DIR" && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH" -n $3 $OTHER_FLAGS
 	;;
 esac
 

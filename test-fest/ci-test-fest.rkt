@@ -66,6 +66,7 @@
   (define assign-minor-number-box (box "0"))
   (define test-exe-path (box "echo"))
   (define team-box (box "dummy-team"))
+  (define force-validated-box (box 'auto))
 
   (command-line
    #:once-each
@@ -84,7 +85,12 @@
    [("-n" "--team-name")
     team
     "Team name to report test validity results for."
-    (set-box! team-box team)])
+    (set-box! team-box team)]
+   [("-v" "--force-validated-tests")
+    validated-setting*
+    ("Force use of pre-validated tests (if given 1) or not (if 0)."
+     "Default: use pre-validated tests depending on current day.")
+    (set-box! force-validated-box validated-setting*)])
 
   (define assign-number (cons (unbox assign-major-number-box)
                               (unbox assign-minor-number-box)))
@@ -92,8 +98,13 @@
   (delete-directory/files test-repos-dir
                           #:must-exist? #f)
   (make-directory test-repos-dir)
+  (define using-pre-validated-tests?
+    (match (unbox force-validated-box)
+      ["0" #f]
+      ["1" #t]
+      ['auto (use-pre-validated-tests?)]))
   (define get-valid-tests
-    (if (use-pre-validated-tests?)
+    (if using-pre-validated-tests?
         clone+parse-pre-validated-tests!
         clone+validate-tests-from-repos!))
   (define valid-peer-tests (get-valid-tests assign-number))
