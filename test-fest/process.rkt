@@ -49,16 +49,17 @@
 (define/contract (wait/keep-ci-alive proc timeout-seconds)
   (subprocess? (and/c real? positive?) . -> . (or/c subprocess? #f))
 
-  (define waiting-period
-    (min timeout-seconds ci-output-timeout-seconds))
+  (log-fest debug
+            @~a{Waiting for process with timeout: @|timeout-seconds|s})
   (define output-thd
     (thread (thunk (let loop ()
                      (displayln ".")
                      (sleep (* 8 60))
                      (loop)))))
-  (define res (sync/timeout timeout-seconds proc))
-  (kill-thread output-thd)
-  res
+  (begin0 (sync/timeout timeout-seconds proc)
+    (kill-thread output-thd))
+  ;; (define waiting-period
+  ;;   (min timeout-seconds ci-output-timeout-seconds))
   ;; (define rounds-to-wait
   ;;   (round-up (/ timeout-seconds waiting-period)))
   ;; (log-fest debug
