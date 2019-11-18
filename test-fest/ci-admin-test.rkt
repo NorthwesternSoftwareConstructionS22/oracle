@@ -109,8 +109,8 @@
 (define/contract (watch-for-failure proc)
   (subprocess? . -> . boolean?)
 
-  (wait/keep-ci-alive proc ITERATION-TIMEOUT-SECONDS)
-  (zero? (subprocess-status proc)))
+  (and (wait/keep-ci-alive proc ITERATION-TIMEOUT-SECONDS)
+       (equal? (subprocess-status proc) 0)))
 
 (module+ main
   (match-define (cons flags args)
