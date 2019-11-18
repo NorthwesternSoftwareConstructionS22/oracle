@@ -24,9 +24,9 @@
         #:run-in [run-in path-string?])
        (values [r1 subprocess?]
                [r2 (stdout)
-                   (if (false? stdout)
-                       input-port?
-                       false?)]))
+                   (if (output-port? stdout)
+                       false?
+                       input-port?)]))
 
   (define-values {proc returned-stdout _1 _2}
     (parameterize ([current-directory run-in])
