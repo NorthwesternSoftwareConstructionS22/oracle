@@ -1,9 +1,9 @@
 #!/bin/bash
 
-## run-test-fest.sh <major-number> <minor-number> <team-name> [<debug-output?> <other-flags>]
+## run-test-fest.sh <major-number> <minor-number> <team-name> [<log-level> <other-flags>]
 # Run a test fest for assignment <major-number>.<minor-number>
 # for team <team-name>
-# Optionally enable debug output
+# Optionally specify a certain log level
 # Optionally specify other flags to provide to `ci-test-fest.rkt`
 
 if [[ $1 == "" || $2 == "" || $3 == "" ]]; then
@@ -20,7 +20,7 @@ fi
 CWD=$(pwd)
 ASSIGN_DIR="$CWD/Deliverables/$1/$1.$2"
 ASSIGN_DIR_LOWER="$CWD/deliverables/$1/$1.$2"
-DEBUG_OUTPUT="$4"
+LOG_LEVEL="$4"
 OTHER_FLAGS="$5"
 
 # Check directory structure
@@ -51,8 +51,8 @@ else
     ORACLE_DIR=../oracle
 fi
 
-if [[ "$DEBUG_OUTPUT" != "" ]]; then
-    export PLTSTDERR="debug@fest"
+if [[ "$LOG_LEVEL" != "" ]]; then
+    export PLTSTDERR="$LOG_LEVEL@fest"
 fi
 
 printf "\nPath: %s\n\n" "$PATH"
