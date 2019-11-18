@@ -30,12 +30,20 @@
     (call-with-input-file output-file
       read-json/safe
       #:mode 'text))
-  (define in-port (open-input-file input-file))
+
+  (log-fest debug
+            @~a{Setting up process input & output (to temp file)})
+  (define stdin-port (open-input-file input-file))
+  (define stdout-temp-file (make-temporary-file))
+  (define stdout-file-port (open-output-file stdout-temp-file
+                                           #:exists 'truncate))
+
   (log-fest debug
             @~a{Running @(pretty-path exe-path) ...})
   (define-values {proc stdout}
     (launch-process! exe-path
-                     #:stdin in-port
+                     #:stdin stdin-port
+                     #:stdout stdout-file-port
                      #:run-with-racket? run-with-racket?))
 
   (define terminated? (wait/keep-ci-alive proc timeout-seconds))
@@ -48,22 +56,25 @@
 
   (log-fest debug @~a{@(pretty-path exe-path) done.})
 
+  (log-fest debug @~a{Closing exe ports})
+  (close-input-port stdin-port)
+  (close-output-port stdout-file-port)
+
   (define-values {exe-output-str exe-output-json}
     (cond [terminated?
            (log-fest debug @~a{Reading exe output})
            ;; port must NOT be closed before reading output
-           (define output (port->string stdout))
+           (define output (file->string stdout-temp-file))
            (log-fest debug @~a{output string: @~v[output]})
            (values output (call-with-input-string output read-json/safe))]
           [else (values "<timed out>" bad-json)]))
 
+  (log-fest debug @~a{Cleaning up output file})
+  (delete-file stdout-temp-file)
+
   (when (eq? exe-output-json bad-json)
     (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!})
     (log-fest warning @~a{Output was: @~v[exe-output-str]}))
-
-  (log-fest debug @~a{Closing exe ports})
-  (close-input-port in-port)
-  (close-input-port stdout)
 
   (log-fest debug @~a{Comparing exe output with expected})
   (define pass? (jsexpr=? expected-output exe-output-json))
