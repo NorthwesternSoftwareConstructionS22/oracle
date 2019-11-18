@@ -70,34 +70,34 @@
                      })
 
   (write-config! config config-path)
-  (define-values {admin-proc admin-stdout}
-    (launch-process! (actor-path admin)
-                     #:run-with-racket? (actor-run-with-racket? admin)
-                     #:run-in (actor-run-in admin)))
-  (define-values {player-proc player-stdout}
-    (launch-process! (actor-path player)
-                     #:run-with-racket? (actor-run-with-racket? player)
-                     #:run-in (actor-run-in player)))
-  (define result-admin (watch-for-failure admin-proc))
-  (define result-player (watch-for-failure player-proc))
 
-  (unless result-admin
-    (log-fest warning
-              @~a{Admin @(pretty-path (actor-path admin)) crashed! (non-zero exit code)})
-    (log-fest warning
-              @~a{Admin output: @~v[(port->string admin-stdout)]}))
-  (unless result-player
-    (log-fest warning
-              @~a{Player @(pretty-path (actor-path player)) crashed! (non-zero exit code)})
-    (log-fest warning
-              @~a{Player output: @~v[(port->string player-stdout)]}))
+  (match-define (list wait-for-admin-result wait-for-player-result)
+    (for/list ([an-actor (in-list (list admin player))])
+      (define stdout-temp-file (make-temporary-file))
+      (define stdout (open-output-file stdout-temp-file
+                                       #:exists 'truncate))
+      (define-values {proc _}
+        (launch-process! (actor-path an-actor)
+                         #:stdout stdout
+                         #:run-with-racket? (actor-run-with-racket? an-actor)
+                         #:run-in (actor-run-in an-actor)))
 
-  (subprocess-kill admin-proc #t)
-  (subprocess-kill player-proc #t)
-  (close-input-port admin-stdout)
-  (close-input-port player-stdout)
+      (define (wait&cleanup)
+        (define result (watch-for-failure proc))
+        (subprocess-kill proc #t)
+        (close-output-port stdout)
+        (unless result
+          (log-fest warning
+                    @~a{@(pretty-path (actor-path an-actor)) crashed! (non-zero exit code)})
+          (log-fest warning
+                    @~a{Output: @~v[(file->string stdout-temp-file)]}))
+        (delete-file stdout-temp-file)
+        result)
 
-  (and result-admin result-player))
+      wait&cleanup))
+
+  (and (wait-for-admin-result)
+       (wait-for-player-result)))
 
 (define/contract (write-config! config path)
   (config-hash? path-to-existant-file? . -> . any)
