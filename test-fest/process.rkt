@@ -13,26 +13,31 @@
 
 (define/contract (launch-process! exe-path
                                   #:stdin [stdin #f]
+                                  #:stdout [stdout #f]
                                   #:run-with-racket? [run-with-racket? #f]
                                   #:run-in [run-in
                                             (containing-directory exe-path)])
-  ({path-to-existant-file?}
-   {#:stdin (or/c (and/c input-port? file-stream-port?) #f)
-    #:run-with-racket? boolean?
-    #:run-in path-string?}
-   . ->* .
-   (values subprocess? input-port?))
+  (->i ([exe-path path-to-existant-file?])
+       (#:stdin [stdin (or/c (and/c input-port? file-stream-port?) #f)]
+        #:stdout [stdout (or/c (and/c output-port? file-stream-port?) #f)]
+        #:run-with-racket? [run-with-racket? boolean?]
+        #:run-in [run-in path-string?])
+       (values [r1 subprocess?]
+               [r2 (stdout)
+                   (if (false? stdout)
+                       input-port?
+                       false?)]))
 
-  (define-values {proc stdout _1 _2}
+  (define-values {proc returned-stdout _1 _2}
     (parameterize ([current-directory run-in])
       (if run-with-racket?
-          (subprocess/racket-bytecode (list #f stdin 'stdout)
+          (subprocess/racket-bytecode (list stdout stdin 'stdout)
                                       exe-path)
           (subprocess
-           #f stdin 'stdout
+           stdout stdin 'stdout
            'new
            exe-path))))
-  (values proc stdout))
+  (values proc returned-stdout))
 
 (define racket-exe (find-executable-path "racket"))
 
