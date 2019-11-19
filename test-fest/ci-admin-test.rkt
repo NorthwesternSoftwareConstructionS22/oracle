@@ -52,14 +52,14 @@
                           boolean?
                           path-to-existant-directory?))
 
-;; Checks that NEITHER `admin` NOR `player` crash on `config`
+;; Checks that `admin` doesn't crash
 (define/contract (run-game! admin player config-path config)
   (actor/c
    actor/c
    path-to-existant-file?
    config-hash?
    . -> .
-   any)
+   (or/c false? (not/c false?)))
 
   (log-fest info @~a{
                      Running game
@@ -96,8 +96,8 @@
 
       wait&cleanup))
 
-  (and (wait-for-admin-result)
-       (wait-for-player-result)))
+  (wait-for-player-result)
+  (wait-for-admin-result))
 
 (define/contract (write-config! config path)
   (config-hash? path-to-existant-file? . -> . any)
