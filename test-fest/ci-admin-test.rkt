@@ -71,7 +71,8 @@
 
   (match-define (list wait-for-admin-result wait-for-player-result)
     (for/list ([an-actor (in-list (list admin player))])
-      (define stdout-temp-file (make-temporary-file))
+      (define stdout-temp-file @~a{./temp-stdout-@(eq-hash-code an-actor)})
+      (log-fest info @~a{Sending output to @stdout-temp-file})
       (define stdout (open-output-file stdout-temp-file
                                        #:exists 'truncate))
       (define-values {proc _}
