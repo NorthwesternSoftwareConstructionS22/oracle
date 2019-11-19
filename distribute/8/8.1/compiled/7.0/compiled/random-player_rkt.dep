@@ -1,1 +1,0 @@
-("7.0" ("c8d66e15d5542e90cd41bedd10a43c52cdd4502a" . "bfd38db9d1eda2b5bf81340b9b3ef471c8958676") #"/home/lukas/github_sync/grad/ta/sc/repos/game/player-interface.rkt" #"/home/lukas/github_sync/grad/ta/sc/repos/game/random-strategy.rkt" (collects #"json" #"main.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt") (collects #"rackunit" #"main.rkt"))
