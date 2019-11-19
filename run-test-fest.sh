@@ -65,6 +65,7 @@ fi
 
 case "$1.$2" in
     "8.1")
+	sudo ufw disable
 	racket "$ORACLE_DIR"/test-fest/ci-admin-test.rkt -M $1 -m $2 -a "$EXE_PATH" $OTHER_FLAGS
 	;;
     *)
