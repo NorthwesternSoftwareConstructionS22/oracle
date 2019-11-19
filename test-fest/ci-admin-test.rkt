@@ -12,8 +12,6 @@
 
 (define-runtime-path oracle-remote-player-path
   "../distribute/8/8.1/random-remote-player.rkt")
-(define-runtime-path oracle-admin-path
-  "../distribute/8/8.1/admin.rkt")
 
 (define ITERATION-TIMEOUT-SECONDS (* 10 60))
 
