@@ -93,6 +93,9 @@
         (delete-file stdout-temp-file)
         result)
 
+      ;; Hack to avoid race condition of player crashing bc admin not listening
+      (sleep 10)
+
       wait&cleanup))
 
   (wait-for-player-result)
