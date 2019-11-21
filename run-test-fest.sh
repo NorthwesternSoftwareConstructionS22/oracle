@@ -68,6 +68,10 @@ case "$1.$2" in
 	sudo ufw disable
 	racket "$ORACLE_DIR"/test-fest/ci-admin-test.rkt -M $1 -m $2 -a "$EXE_PATH" $OTHER_FLAGS
 	;;
+    "9.1")
+	sudo ufw disable
+	racket "$ORACLE_DIR"/test-fest/ci-tournament-test.rkt -M $1 -m $2 -t "$EXE_PATH" $OTHER_FLAGS
+	;;
     *)
 	cd "$ORACLE_DIR" && racket test-fest/ci-test-fest.rkt -M $1 -m $2 -t "$EXE_PATH" -n $3 $OTHER_FLAGS
 	;;
