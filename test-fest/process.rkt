@@ -12,13 +12,15 @@
   dir)
 
 (define/contract (launch-process! exe-path
+                                  [args empty]
                                   #:stdin [stdin #f]
                                   #:stdout [stdout #f]
                                   #:run-with-racket? [run-with-racket? #f]
                                   #:run-in [run-in
                                             (containing-directory exe-path)])
   (->i ([exe-path path-to-existant-file?])
-       (#:stdin [stdin (or/c (and/c input-port? file-stream-port?) #f)]
+       ([args (listof string?)]
+        #:stdin [stdin (or/c (and/c input-port? file-stream-port?) #f)]
         #:stdout [stdout (or/c (and/c output-port? file-stream-port?) #f)]
         #:run-with-racket? [run-with-racket? boolean?]
         #:run-in [run-in path-string?])
@@ -32,23 +34,27 @@
     (parameterize ([current-directory run-in])
       (if run-with-racket?
           (subprocess/racket-bytecode (list stdout stdin 'stdout)
-                                      exe-path)
-          (subprocess
-           stdout stdin 'stdout
-           'new
-           exe-path))))
+                                      exe-path
+                                      args)
+          (apply subprocess
+                 stdout stdin 'stdout
+                 'new
+                 exe-path
+                 args))))
   (values proc returned-stdout))
 
 (define racket-exe (find-executable-path "racket"))
 
-(define/contract (subprocess/racket-bytecode subprocess-args path)
-  (list? path-to-existant-file? . -> . any)
+(define/contract (subprocess/racket-bytecode subprocess-args path exe-args)
+  (list? path-to-existant-file? (listof string?) . -> . any)
 
   (call-with-extended-environment
    (hash "PLT_COMPILED_FILE_CHECK" "exists"
          "PLTCOMPILEDROOTS" "compiled/@(version):")
    (thunk (apply subprocess (append subprocess-args
-                                    (list racket-exe path))))))
+                                    (list* racket-exe
+                                           path
+                                           exe-args))))))
 
 ;; Travis CI kills any job that has no output for 10 minutes; prevent that.
 (define/contract (wait/keep-ci-alive proc timeout-seconds)
