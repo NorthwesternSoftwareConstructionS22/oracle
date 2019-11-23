@@ -180,7 +180,7 @@
   (define config (read/check-config-validity! config-path))
 
   (define tournament (actor (simple-form-path-string tournament-path)
-                            #t
+                            #f
                             assign-dir))
   (define oracle-player (actor oracle-remote-player-path
                                #t
