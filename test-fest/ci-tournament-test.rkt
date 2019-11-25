@@ -124,9 +124,9 @@
 
       wait&cleanup))
 
-  (for ([wait (in-list wait-for-player-results)])
-    (wait))
-  (wait-for-tournament-result))
+  (and (for/and ([wait (in-list wait-for-player-results)])
+         (wait))
+       (wait-for-tournament-result)))
 
 (define/contract (write-config! config path)
   (config-hash? path-to-existant-file? . -> . any)
