@@ -124,11 +124,15 @@
 
       wait&cleanup))
 
+  (define player-results
+    ;; put into list and andmap laterZ instead of for/and to force every player
+    ;; to show output
+    (for/list ([wait (in-list wait-for-player-results)])
+      (wait)))
+  (define tournament-results (wait-for-tournament-result))
   (and (andmap identity
-               ;; andmap instead of for/and to force every player to show output
-               (for/list ([wait (in-list wait-for-player-results)])
-                 (wait)))
-       (wait-for-tournament-result)))
+               player-results)
+       tournament-results))
 
 (define/contract (write-config! config path)
   (config-hash? path-to-existant-file? . -> . any)
