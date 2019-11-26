@@ -124,8 +124,10 @@
 
       wait&cleanup))
 
-  (and (for/and ([wait (in-list wait-for-player-results)])
-         (wait))
+  (and (andmap identity
+               ;; andmap instead of for/and to force every player to show output
+               (for/list ([wait (in-list wait-for-player-results)])
+                 (wait)))
        (wait-for-tournament-result)))
 
 (define/contract (write-config! config path)
