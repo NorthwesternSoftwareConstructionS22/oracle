@@ -1,1 +1,0 @@
-("7.0" ("5f4be91569dc233d75044328e956f02be21ce477" . "44021586359aae49597f34ec80be0d4c23326faf") #"/home/lukas/github_sync/grad/ta/sc/repos/try-your-lang/back-end.rkt" (collects #"json" #"main.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))

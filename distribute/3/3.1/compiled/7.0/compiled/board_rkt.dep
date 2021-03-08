@@ -1,1 +1,0 @@
-("7.0" ("262c7e5da34c5687394bacbafc4dbb757fe54d98" . "f85f2bd6e650afc00a136ec53c085bb87eb664cc") #"/home/lukas/github_sync/grad/ta/sc/repos/game/stone.rkt" (collects #"json" #"main.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt") (collects #"rackunit" #"main.rkt"))
