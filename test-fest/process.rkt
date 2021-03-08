@@ -11,6 +11,7 @@
   (define-values {dir _} (basename path #:with-directory? #t))
   dir)
 
+;; lltodo: this shouldn't need to special case racket
 (define/contract (launch-process! exe-path
                                   [args empty]
                                   #:stdin [stdin #f]

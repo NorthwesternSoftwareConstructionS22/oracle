@@ -40,6 +40,7 @@
 
   (log-fest debug
             @~a{Running @(pretty-path exe-path) ...})
+  ;; lltodo: check stderr and fail if it's not empty (print it out)
   (define-values {proc stdout}
     (launch-process! exe-path
                      #:stdin stdin-port
@@ -64,6 +65,7 @@
     (cond [terminated?
            (log-fest debug @~a{Reading exe output})
            ;; port must NOT be closed before reading output
+           ;; lltodo: This should be bytes not a string
            (define output (file->string stdout-temp-file))
            (log-fest debug @~a{output string: @~v[output]})
            (values output (call-with-input-string output read-json/safe))]
@@ -74,7 +76,12 @@
 
   (when (eq? exe-output-json bad-json)
     (log-fest warning @~a{@(pretty-path exe-path) produces invalid json!})
-    (log-fest warning @~a{Output was: @~v[exe-output-str]}))
+    (log-fest warning @~a{
+                          Output was:
+                          ------------------------
+                          @~a[exe-output-str]
+                          ------------------------
+                          }))
 
   (log-fest debug @~a{Comparing exe output with expected})
   (define pass? (jsexpr=? expected-output exe-output-json))
@@ -82,9 +89,15 @@
     (log-fest info
               @~a{@(pretty-path exe-path) fails @(pretty-path input-file)})
     (when (log-test-failure-comparison?)
+      (define expected-json-str (with-output-to-string (thunk (write-json expected-output))))
+      (define exe-json-str (with-output-to-string (thunk (write-json exe-output-json))))
       (log-fest
        info
-       @~a{    expected: @~v[expected-output], actual: @~v[exe-output-json]})))
+       @~a{    expected:
+           @expected-json-str
+
+               actual:
+           @exe-json-str})))
   pass?)
 
 (define/contract (valid-tests repo-path
