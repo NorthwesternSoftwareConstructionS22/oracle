@@ -1,0 +1,4 @@
+#!/bin/sh
+
+racket run3.rkt "$@"
+
