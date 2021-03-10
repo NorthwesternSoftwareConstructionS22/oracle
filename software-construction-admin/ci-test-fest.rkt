@@ -53,7 +53,7 @@
   (define validated-tests-by-team (get-pre-validated-tests-by-team assign-number))
   (log-fest-info
    @~a{
-       Running tests for assignment @(assign-number->string assign-number) on team @team-name's
+       Running tests for assignment @(assign-number->string assign-number) on team @team-name's @;
        submission executable @(pretty-path test-exe-path)
        })
   (define failed-peer-tests
@@ -65,7 +65,7 @@
 
   (define valid-tests-by-team
     (length (hash-ref validated-tests-by-team
-                      (team->test-repo-name team-name)
+                      team-name
                       empty)))
   (define enough-valid-tests? (>= valid-tests-by-team expected-valid-test-count))
 
@@ -93,7 +93,7 @@
                @(pretty-format
                  (for/hash ([(group tests) (in-hash failed-peer-tests)])
                    (values group
-                           (map (λ (t) (pretty-path (test-input-file t)))
+                           (map (λ (t) (basename (test-input-file t)))
                                 tests))))
                })
           1]

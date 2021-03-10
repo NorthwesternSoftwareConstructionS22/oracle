@@ -17,8 +17,8 @@
          "util.rkt"
          "teams.rkt")
 
-(define test-input-file-rx @pregexp{^input_(\w)_(\w)\.json})
-(define test-output-file-rx @pregexp{^output_(\w)_(\w)\.json})
+(define test-input-file-rx @pregexp{^input_([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
+(define test-output-file-rx @pregexp{^output_([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
 
 (define (has-test-input-file-naming-convention? path)
   (regexp-match? test-input-file-rx (basename path)))

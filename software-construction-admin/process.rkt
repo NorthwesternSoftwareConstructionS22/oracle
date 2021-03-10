@@ -12,27 +12,34 @@
   dir)
 
 (define process-stdout-bytes-limit (* 16 1024))
+(define process-stderr-bytes-limit process-stdout-bytes-limit)
 (define/contract (launch-process! exe-path
                                   [args empty]
                                   #:stdin [stdin #f]
                                   #:stdout [stdout #f]
                                   #:stderr [stderr 'stdout]
-                                  #:run-in [run-in
-                                            (containing-directory exe-path)]
-                                  #:limit-stdout? [limit-stdout? #f])
-  (->i ([exe-path path-to-existant-file?])
-       ([args (listof string?)]
+                                  #:run-in [run-in (containing-directory exe-path)]
+                                  #:limit-stdout? [limit-stdout? #f]
+                                  #:limit-stderr? [limit-stderr? #f])
+  (->i {[exe-path path-to-existant-file?]}
+       {[args (listof string?)]
         #:stdin [stdin (or/c (and/c input-port? file-stream-port?) #f)]
         #:stdout [stdout (or/c (and/c output-port? file-stream-port?) #f)]
+        #:stderr [stderr (or/c (and/c output-port? file-stream-port?) 'stdout #f)]
         #:run-in [run-in path-string?]
-        #:limit-stdout? [limit-stdout? boolean?])
+        #:limit-stdout? [limit-stdout? boolean?]
+        #:limit-stderr? [limit-stderr? boolean?]}
        (values [r1 subprocess?]
                [r2 (stdout)
-                   (if (output-port? stdout)
+                   (if (input-port? stdout)
+                       false?
+                       input-port?)]
+               [r3 (stderr)
+                   (if (input-port? stderr)
                        false?
                        input-port?)]))
 
-  (define-values {proc returned-stdout _1 _2}
+  (define-values {proc returned-stdout _ returned-stderr}
     (parameterize ([current-directory run-in])
       (apply subprocess
              stdout stdin stderr
@@ -43,7 +50,11 @@
           (if limit-stdout?
               (make-limited-input-port returned-stdout
                                        process-stdout-bytes-limit)
-              returned-stdout)))
+              returned-stdout)
+          (if limit-stderr?
+              (make-limited-input-port returned-stderr
+                                       process-stderr-bytes-limit)
+              returned-stderr)))
 
 (define ci-no-output-heartbeat-minutes 8)
 
@@ -57,7 +68,7 @@
     (define time-left/less-waiting-time
       (max (- time-left (* ci-no-output-heartbeat-minutes 60))
            0))
-    (define proc-finished? (sync/timeout time-left/less-waiting-time proc))
+    (define proc-finished? (sync/timeout ci-no-output-heartbeat-minutes proc))
     (displayln ".")
     (cond [proc-finished? #t]
           [(zero? time-left/less-waiting-time) #f]
