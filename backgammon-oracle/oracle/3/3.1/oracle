@@ -1,4 +1,3 @@
 #!/bin/sh
 
-racket run3.rkt "$@"
-
+racket run3.1.rkt "$@"
