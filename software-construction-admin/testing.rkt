@@ -96,13 +96,14 @@
                       ------------------------------
                       })
 
-  (define exe-output-json (and exe-output-bytes
-                               (call-with-input-bytes exe-output-bytes read-json/safe)))
   (define oracle-output-json (and oracle-output-bytes
                                (call-with-input-bytes oracle-output-bytes read-json/safe)))
+  (define exe-output-json (and exe-output-bytes
+                               (call-with-input-bytes exe-output-bytes read-json/safe)))
 
-  (cond [(equal? oracle-output-json bad-json)
-         (log-fest-error "The oracle seems to be confused. Giving up now.")
+  (cond [(or (not oracle-output-json)
+             (equal? oracle-output-json bad-json))
+         (log-fest-error "The oracle seems to be confused. Giving up on this test.")
          #f]
         [(not exe-output-bytes)
          (log-fest-error @~a{
