@@ -12,13 +12,13 @@
   (repo-name? . -> . (or/c path-to-existant-directory? #f))
 
   (define repo-url (repo-name->url repo-name (git-remote-access-method)))
-  (log-fest debug @~a{Cloning @repo-name ...})
+  (log-fest-debug @~a{Cloning @repo-name ...})
   (match (system @~a{git clone "@repo-url" > /dev/null 2>&1})
     [#t
-     (log-fest debug @~a{Done.})
+     (log-fest-debug @~a{Done.})
      (build-path-string "." repo-name)]
     [#f
-     (log-fest warning @~a{Failed to clone repo @repo-name from @repo-url})
+     (log-fest-error @~a{Failed to clone repo @repo-name from @repo-url})
      #f]))
 
 (define/contract (clone-repos-into! target-dir repo-names

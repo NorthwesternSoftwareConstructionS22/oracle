@@ -2,7 +2,8 @@
 
 (provide team->test-repo-name
          team->dev-repo-name
-         repo-name->url)
+         repo-name->url
+         repo-name?)
 
 (require "teams.rkt")
 

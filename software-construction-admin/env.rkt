@@ -3,7 +3,7 @@
 (provide write-env!)
 
 (require "util.rkt"
-         "test-fest-data.rkt")
+         "assignments.rkt")
 
 (define/contract (write-env! dir env-file team assign-number)
   (path-to-existant-directory? string? string? assign-number? . -> . any)

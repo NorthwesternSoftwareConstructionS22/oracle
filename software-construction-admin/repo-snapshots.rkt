@@ -10,7 +10,8 @@
 
 (define env-file "env.sh")
 
-(module+ main
+;; lltodo: update this script
+#;(module+ main
   (define assign-major-number-box (box "0"))
   (define assign-minor-number-box (box "0"))
   (define deadline-box (box "2019-10-01 23:59:59"))

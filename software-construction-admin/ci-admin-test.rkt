@@ -1,14 +1,14 @@
 #lang at-exp racket
 
-(require racket/cmdline
-         racket/runtime-path
+(require racket/runtime-path
          json
          "cmdline.rkt"
          "test-fest-data.rkt"
          "util.rkt"
-         "test.rkt"
+         "testing.rkt"
          "logger.rkt"
-         "process.rkt")
+         "process.rkt"
+         "assignments.rkt")
 
 (define-runtime-path oracle-remote-player-path
   "../distribute/8/8.1/random-remote-player.rkt")
@@ -59,7 +59,7 @@
    . -> .
    (or/c false? (not/c false?)))
 
-  (log-fest info @~a{
+  (log-fest-info @~a{
                      Running game
                      with admin @(pretty-path (actor-path admin))
                      and remote player @(pretty-path (actor-path player))
@@ -72,7 +72,7 @@
   (match-define (list wait-for-admin-result wait-for-player-result)
     (for/list ([an-actor (in-list (list admin player))])
       (define stdout-temp-file @~a{./temp-stdout-@(eq-hash-code an-actor)})
-      (log-fest info @~a{Sending output to @stdout-temp-file})
+      (log-fest-info @~a{Sending output to @stdout-temp-file})
       (define stdout (open-output-file stdout-temp-file
                                        #:exists 'truncate))
       (define-values {proc _}
@@ -86,10 +86,8 @@
         (subprocess-kill proc #t)
         (close-output-port stdout)
         (unless result
-          (log-fest warning
-                    @~a{@(pretty-path (actor-path an-actor)) crashed! (non-zero exit code)})
-          (log-fest warning
-                    @~a{Output: @~v[(file->string stdout-temp-file)]}))
+          (log-fest-error @~a{@(pretty-path (actor-path an-actor)) crashed! (non-zero exit code)})
+          (log-fest-error @~a{Output: @~v[(file->string stdout-temp-file)]}))
         (delete-file stdout-temp-file)
         result)
 
@@ -143,7 +141,7 @@
   (define assign-dir
     (build-path-string (hash-ref flags 'repo-path)
                        "Deliverables"
-                       (assign-number->dir-path assign-number)))
+                       (assign-number->dir-path-part assign-number)))
 
   (define admin-path (hash-ref flags 'admin-path))
   (define config-path (build-path-string assign-dir "go.config"))

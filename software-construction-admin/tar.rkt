@@ -1,9 +1,13 @@
 #lang at-exp racket
 
-(provide (all-defined-out))
+(provide zip-repos!
+         zip!
+         unzip-repos!
+         unzip!)
 
 (require "util.rkt"
-         "test-fest-data.rkt")
+         "team-repos.rkt"
+         "assignments.rkt")
 
 (define/contract (zip-repos! repo-map #:delete-original? [delete-original? #t])
   ({(hash/c repo-name? path-to-existant-directory?)}

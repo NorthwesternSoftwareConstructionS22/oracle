@@ -2,11 +2,11 @@
 
 (require racket/cmdline
          racket/runtime-path
-         "test-fest-data.rkt"
+         "assignments.rkt"
          "util.rkt")
 
 (define raco-exe (find-executable-path "raco"))
-(define-runtime-path distribute-dir "../distribute")
+(define-runtime-path distribute-dir "../backgammon-oracle/oracle")
 
 (module+ main
   (define assign-major-number-box (box "0"))
@@ -36,7 +36,7 @@
     (basename oracle-path #:with-directory? #t))
   (define assign-distrib-path
     (build-path-string distribute-dir
-                       (assign-number->dir-path assign-number)))
+                       (assign-number->dir-path-part assign-number)))
   (define oracle-distrib-placeholder-file
     (build-path-string assign-distrib-path
                        oracle-file-name))
