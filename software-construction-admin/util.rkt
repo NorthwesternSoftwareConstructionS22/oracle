@@ -3,6 +3,7 @@
 (provide (all-defined-out))
 
 (require json
+         syntax/parse/define
          "logger.rkt")
 
 (define bad-json
@@ -11,55 +12,23 @@
     (bad)))
 
 (define (read-json/safe port)
-  (with-handlers ([exn:fail:read? (const bad-json)])
+  (with-handlers ([exn:fail:read? (λ (e)
+                                    (log-fest-error (exn-message e))
+                                    bad-json)])
     (read-json port)))
 
 (define (valid-json? port)
   (not (eq? (read-json/safe port) bad-json)))
 
 (define (valid-json-file? path)
-  (log-fest debug
+  (log-fest-debug
             @~a{Checking json validity for file @(pretty-path path)})
   (call-with-input-file path
     valid-json?
     #:mode 'text))
 
 (define (jsexpr=? a b)
-  (equal? a b)
-  #;(or (equal? a b)
-      (match* {a b}
-        [{(? list?) (? list?)}
-         (unordered-list=? a b jsexpr=?)]
-        [{(? hash-eq?) (? hash-eq?)}
-         (and (set=? (hash-keys a) (hash-keys b))
-              (for/and ([(k v/a) (in-hash a)])
-                (jsexpr=? v/a (hash-ref b k))))])))
-
-;; (define (unordered-list=? a b [=? equal?])
-;;   (and (= (length a)
-;;           (length b))
-;;        (for/and ([v/a (in-list a)])
-;;          (member v/a b =?))))
-
-;; (module+ test
-;;   (require rackunit)
-;;   (check-true (unordered-list=? '()
-;;                                 '()))
-;;   (check-true (unordered-list=? '(1)
-;;                                 '(1)))
-;;   (check-true (unordered-list=? '(1 2 3)
-;;                                 '(2 3 1)))
-
-;;   (check-true (jsexpr=? "a" "a"))
-;;   (check-true (jsexpr=? #t #t))
-;;   (check-true (jsexpr=? 1 1))
-;;   (check-true (jsexpr=? 100.2 100.2))
-;;   (check-true (jsexpr=? 'null 'null))
-;;   (check-false (jsexpr=? #t "#t"))
-
-;;   (check-true (jsexpr=? '(1 ))))
-
-
+  (equal? a b))
 
 (define (build-path-string . args)
   (path->string (apply build-path args)))
@@ -109,3 +78,22 @@
      (parameterize ([current-output-port out]
                     [current-error-port out])
        (system cmd)))))
+
+(define-simple-macro (for/hash/fold for-clauses
+                                    {~optional {~seq #:init initial-hash}
+                                               #:defaults ([initial-hash #'(hash)])}
+                                    #:combine combine
+                                    #:default default
+                                    body ...)
+  (for/fold ([result-hash initial-hash])
+            for-clauses
+    (define-values {key value} (let () body ...))
+    (hash-update result-hash
+                 key
+                 (λ (accumulator) (combine value accumulator))
+                 default)))
+
+(define (try-decode-bytes->string bytes)
+  (with-handlers ([exn:fail? (λ _ (~s bytes))])
+    (bytes->string/utf-8 bytes)))
+

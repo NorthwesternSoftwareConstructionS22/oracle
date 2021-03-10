@@ -2,9 +2,9 @@
 
 (provide (all-defined-out))
 
-(require "test-fest-data.rkt"
-         "util.rkt"
-         "logger.rkt")
+(require "util.rkt"
+         "logger.rkt"
+         "team-repos.rkt")
 
 (define git-remote-access-method (make-parameter 'https))
 

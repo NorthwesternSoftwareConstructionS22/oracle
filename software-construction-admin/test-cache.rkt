@@ -1,5 +1,7 @@
 #lang at-exp racket
 
+;; lltodo: None of this is necessary if we're running the oracle every time we test the students.
+;; We can just get the timeout for each test as we run them.
 (provide serialize-test
          deserialize-test
          serialize-tests
