@@ -52,12 +52,12 @@
 
   (log-fest-debug @~a{Reading exe output})
   (define stderr-bytes (port->bytes stderr))
+  (define stderr-empty? (equal? stderr-bytes #""))
   (define stdout-bytes
-    (cond [(not (equal? stderr-bytes #""))
+    (cond [(not stderr-empty?)
            (log-fest-error
             @~a{
-                @(pretty-path exe-path) produced output on stderr, so it fails this test.
-                The stderr output was:
+                @(pretty-path exe-path) produced output on stderr:
                 ------------------------------
                 @(try-decode-bytes->string stderr-bytes)
                 ------------------------------
@@ -105,11 +105,16 @@
          (log-fest-error "The oracle seems to be confused. Giving up now.")
          #f]
         [(not exe-output-bytes)
-         ;; An error has already been logged in this case
+         (log-fest-error @~a{
+                             @(pretty-path exe-path) fails test @(basename input-file) @;
+                             because something went wrong while running it.
+                             })
          #f]
         [(equal? exe-output-json bad-json)
          (log-fest-error @~a{
-                             @(pretty-path exe-path) produced invalid json. The output is below. @;
+                             @(pretty-path exe-path) fails test @(basename input-file) @;
+                             because it produced invalid json.
+                             The output is below. @;
                              @(if (= (bytes-length exe-output-bytes) process-stdout-bytes-limit)
                                   @~a{
                                       It hit the @process-stdout-bytes-limit @;
@@ -123,7 +128,8 @@
          #f]
         [(not (jsexpr=? exe-output-json oracle-output-json))
          (log-fest-error @~a{
-                             @(pretty-path exe-path) fails @(basename input-file)
+                             @(pretty-path exe-path) fails test @(basename input-file) @;
+                             because it produced the wrong result.
                              It produced this:
                              ------------------------------
                              @(with-output-to-string (thunk (write-json exe-output-json)))
