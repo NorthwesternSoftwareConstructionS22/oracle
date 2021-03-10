@@ -147,15 +147,15 @@
 
 (define-simple-macro
   (command-line/declarative {~optional {~seq #:program name:expr}}
-                 {~optional {~seq #:argv argv:expr}}
-                 {~alt {~seq kw:keyword spec:flag-spec ...}
-                       {~seq {~and help-kw:keyword
-                                   {~or* #:usage-help #:help-labels #:ps}}
-                             help-str:str ...}}
-                 ...
-                 {~optional {~seq #:args {~or* (pos-arg:id ...)
-                                               (pos-arg:id ...+ . pos-arg-rest:id)
-                                               pos-arg-rest:id}}})
+                            {~optional {~seq #:argv argv:expr}}
+                            {~alt {~seq kw:keyword spec:flag-spec ...}
+                                  {~seq {~and help-kw:keyword
+                                              {~or* #:usage-help #:help-labels #:ps}}
+                                        help-str:str ...}}
+                            ...
+                            {~optional {~seq #:args {~or* (pos-arg:id ...)
+                                                          (pos-arg:id ...+ . pos-arg-rest:id)
+                                                          pos-arg-rest:id}}})
   #:with [pos-arg-inferred-name ...] #'{~? (pos-arg ... pos-arg-rest)
                                            {~? (pos-arg ...)
                                                {~? (pos-arg-rest)
@@ -205,172 +205,167 @@
   (λ (new _) (p (transform new))))
 
 (module+ test
-  (require ruinit
+  (require rackunit
            racket)
-  (test-begin
-    #:name basic
-    (ignore (define (parse args)
-              (command-line/declarative
-               #:argv args
-               #:once-each
-               [("-v")
-                'verbose
-                "verboseness"
-                #:record]
-               [("--ff")
-                'ff
-                ("ff" "is great" (~a "inside multiline parens can be an expr!"))
-                #:collect ["arg" take-latest "a-default"]]
-               #:multi
-               [("-a")
-                'arg
-                "arg"
-                #:collect ["arg" cons '()]]
-               #:args pos-args)))
-    (test-equal? (parse '("-v"))
-                 (cons (hash 'verbose #t
-                             'ff "a-default"
-                             'arg '())
-                       '()))
-    (test-equal? (parse '("-v" "--ff" "ff-arg" "hello"))
-                 (cons (hash 'verbose #t
-                             'ff "ff-arg"
-                             'arg '())
-                       '("hello")))
-    (test-equal? (parse '("hello"))
-                 (cons (hash 'verbose #f
-                             'ff "a-default"
-                             'arg '())
-                       '("hello")))
-    (test-equal? (parse '())
-                 (cons (hash 'verbose #f
-                             'ff "a-default"
-                             'arg '())
-                       '()))
-    (test-equal? (parse '("-a" "1" "-a" "2" "-a" "3" ))
-                 (cons (hash 'verbose #f
-                             'ff "a-default"
-                             'arg '("3" "2" "1"))
-                       '())))
+  (let ()
+    (define (parse args)
+      (command-line/declarative
+       #:argv args
+       #:once-each
+       [("-v")
+        'verbose
+        "verboseness"
+        #:record]
+       [("--ff")
+        'ff
+        ("ff" "is great" (~a "inside multiline parens can be an expr!"))
+        #:collect ["arg" take-latest "a-default"]]
+       #:multi
+       [("-a")
+        'arg
+        "arg"
+        #:collect ["arg" cons '()]]
+       #:args pos-args))
+    (check-equal? (parse '("-v"))
+                  (cons (hash 'verbose #t
+                              'ff "a-default"
+                              'arg '())
+                        '()))
+    (check-equal? (parse '("-v" "--ff" "ff-arg" "hello"))
+                  (cons (hash 'verbose #t
+                              'ff "ff-arg"
+                              'arg '())
+                        '("hello")))
+    (check-equal? (parse '("hello"))
+                  (cons (hash 'verbose #f
+                              'ff "a-default"
+                              'arg '())
+                        '("hello")))
+    (check-equal? (parse '())
+                  (cons (hash 'verbose #f
+                              'ff "a-default"
+                              'arg '())
+                        '()))
+    (check-equal? (parse '("-a" "1" "-a" "2" "-a" "3" ))
+                  (cons (hash 'verbose #f
+                              'ff "a-default"
+                              'arg '("3" "2" "1"))
+                        '())))
 
-  (test-begin
-    #:name mandatory
-    (ignore (define (parse args)
-              (command-line/declarative
-               #:argv args
-               #:multi
-               [("-n")
-                'thing
-                ("A thing to process" "Mandatory.")
-                #:mandatory
-                #:collect ["name" snoc '()]]
-               #:once-each
-               [("-F" "--only-f")
-                'only-f
-                ("Only do F's"
-                 (number->string (+ 2 2)))
-                #:record]
-               [("-A")
-                'A
-                ("Do Fs?"
-                 "Mandatory unless -F specified.")
-                #:mandatory-unless (λ (flags) (member 'only-f flags))
-                #:record]
-               #:args pos-args)))
-    (test-equal? (parse '("-A" "-n" "1" "-n" "2"))
-                 (cons (hash 'A #t
-                             'thing '("1" "2")
-                             'only-f #f)
-                       '()))
-    (test-exn exn:fail?
-              (parse '("-n" "1" "-n" "2")))
-    (test-exn exn:fail?
-              (parse '("-A")))
-    (test-equal? (parse '("-F" "-n" "1"))
-                 (cons (hash 'A #f
-                             'thing '("1")
-                             'only-f #t)
-                       '()))
-    (test-equal? (parse '("-A" "-F" "-n" "1"))
-                 (cons (hash 'A #t
-                             'thing '("1")
-                             'only-f #t)
-                       '())))
+  (let ()
+    (define (parse args)
+      (command-line/declarative
+       #:argv args
+       #:multi
+       [("-n")
+        'thing
+        ("A thing to process" "Mandatory.")
+        #:mandatory
+        #:collect ["name" snoc '()]]
+       #:once-each
+       [("-F" "--only-f")
+        'only-f
+        ("Only do F's"
+         (number->string (+ 2 2)))
+        #:record]
+       [("-A")
+        'A
+        ("Do Fs?"
+         "Mandatory unless -F specified.")
+        #:mandatory-unless (λ (flags) (member 'only-f flags))
+        #:record]
+       #:args pos-args))
+    (check-equal? (parse '("-A" "-n" "1" "-n" "2"))
+                  (cons (hash 'A #t
+                              'thing '("1" "2")
+                              'only-f #f)
+                        '()))
+    (check-exn exn:fail?
+               (λ _ (parse '("-n" "1" "-n" "2"))))
+    (check-exn exn:fail?
+               (λ _ (parse '("-A"))))
+    (check-equal? (parse '("-F" "-n" "1"))
+                  (cons (hash 'A #f
+                              'thing '("1")
+                              'only-f #t)
+                        '()))
+    (check-equal? (parse '("-A" "-F" "-n" "1"))
+                  (cons (hash 'A #t
+                              'thing '("1")
+                              'only-f #t)
+                        '())))
 
-  (test-begin
-    #:name conflicts
-    (ignore (define (parse args)
-              (command-line/declarative
-               #:argv args
-               #:once-each
-               [("-F" "--only-f")
-                'only-f
-                ("Only do F's"
-                 (number->string (+ 2 2)))
-                #:record]
-               [("-A")
-                'A
-                ("Do everything?"
-                 "Mandatory unless -F specified.")
-                #:mandatory-unless (λ (flags) (member 'only-f flags))
-                #:record]
-               [("-N")
-                'not-f
-                "Don't do F's"
-                #:record
-                #:conflicts '(only-f)]
-               #:args pos-args)))
-    (test-equal? (parse '("-A" "1" "2"))
-                 (cons (hash 'A #t
-                             'only-f #f
-                             'not-f #f)
-                       '("1" "2")))
-    (test-equal? (parse '("-F" "1" "2"))
-                 (cons (hash 'A #f
-                             'only-f #t
-                             'not-f #f)
-                       '("1" "2")))
-    (test-equal? (parse '("-A" "-N" "1" "2"))
-                 (cons (hash 'A #t
-                             'only-f #f
-                             'not-f #t)
-                       '("1" "2")))
-    (test-exn exn:fail?
-              (parse '("-F" "-N" "1" "2"))))
+  (let ()
+    (define (parse args)
+      (command-line/declarative
+       #:argv args
+       #:once-each
+       [("-F" "--only-f")
+        'only-f
+        ("Only do F's"
+         (number->string (+ 2 2)))
+        #:record]
+       [("-A")
+        'A
+        ("Do everything?"
+         "Mandatory unless -F specified.")
+        #:mandatory-unless (λ (flags) (member 'only-f flags))
+        #:record]
+       [("-N")
+        'not-f
+        "Don't do F's"
+        #:record
+        #:conflicts '(only-f)]
+       #:args pos-args))
+    (check-equal? (parse '("-A" "1" "2"))
+                  (cons (hash 'A #t
+                              'only-f #f
+                              'not-f #f)
+                        '("1" "2")))
+    (check-equal? (parse '("-F" "1" "2"))
+                  (cons (hash 'A #f
+                              'only-f #t
+                              'not-f #f)
+                        '("1" "2")))
+    (check-equal? (parse '("-A" "-N" "1" "2"))
+                  (cons (hash 'A #t
+                              'only-f #f
+                              'not-f #t)
+                        '("1" "2")))
+    (check-exn exn:fail?
+               (λ _ (parse '("-F" "-N" "1" "2")))))
 
-  (test-begin
-    #:name help-text-clauses
-    (ignore (define (parse args)
-              (command-line/declarative
-               #:argv args
-               #:usage-help
-               "this"
-               "is"
-               "usage"
-               "text"
-               #:once-each
-               [("-F" "--only-f")
-                'only-f
-                ("Only do F's"
-                 (number->string (+ 2 2)))
-                #:record]
-               #:ps
-               "this"
-               "is"
-               "a ps")))
-    (test-equal? (parse '("-F"))
-                 (cons (hash 'only-f #t)
-                       '()))
-    (test-equal? (parse '())
-                 (cons (hash 'only-f #f)
-                       '())))
+  (let ()
+    (define (parse args)
+      (command-line/declarative
+       #:argv args
+       #:usage-help
+       "this"
+       "is"
+       "usage"
+       "text"
+       #:once-each
+       [("-F" "--only-f")
+        'only-f
+        ("Only do F's"
+         (number->string (+ 2 2)))
+        #:record]
+       #:ps
+       "this"
+       "is"
+       "a ps"))
+    (check-equal? (parse '("-F"))
+                  (cons (hash 'only-f #t)
+                        '()))
+    (check-equal? (parse '())
+                  (cons (hash 'only-f #f)
+                        '())))
 
-  (test-begin
-    #:name pos-args
-    (ignore (define (parse args)
-              (command-line/declarative
-               #:argv args
-               #:args (arg1 arg2 . more-args))))
-    (test-equal? (parse '("1" "2" "3" "4"))
-                 (cons (hash)
-                       '("1" "2" "3" "4")))))
+  (let ()
+    (define (parse args)
+      (command-line/declarative
+       #:argv args
+       #:args (arg1 arg2 . more-args)))
+    (check-equal? (parse '("1" "2" "3" "4"))
+                  (cons (hash)
+                        '("1" "2" "3" "4")))))
