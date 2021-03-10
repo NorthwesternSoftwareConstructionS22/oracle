@@ -191,13 +191,13 @@
                  (define expected-output-json (call-with-input-file out read-json/safe))
                  (jsexpr=? oracle-output-json expected-output-json))))
 
-(define/contract (test-failures-for exe-path oracle-path peer-tests)
-  (path-to-existant-file? test-set/c . -> . test-set/c)
+(define/contract (test-failures-for exe-path oracle-path tests-by-group)
+  (path-to-existant-file? path-to-existant-file? test-set/c . -> . test-set/c)
 
   (define (passes-test? t)
     (exe-passes-test? exe-path oracle-path t))
-  (for*/hash ([group (in-list (sort (hash-keys peer-tests) string<?))]
-              [tests (in-value (hash-ref peer-tests group))]
+  (for*/hash ([group (in-list (sort (hash-keys tests-by-group) string<?))]
+              [tests (in-value (hash-ref tests-by-group group))]
               [failed-tests (in-value (filter-not passes-test? tests))]
               #:unless (empty? failed-tests))
     (values group failed-tests)))

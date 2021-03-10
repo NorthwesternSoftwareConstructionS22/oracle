@@ -58,6 +58,7 @@
        })
   (define failed-peer-tests
     (test-failures-for test-exe-path
+                       (assign-number->oracle-path assign-number)
                        validated-tests-by-team))
   (log-fest-info @~a{Done running tests.})
 
