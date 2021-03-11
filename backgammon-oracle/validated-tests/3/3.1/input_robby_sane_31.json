@@ -1,1 +1,1 @@
-{"ends-with-board":[{"black":["bar","bar","bar",2,2,3,4,7,7,9,10,11,11,12,12],"white":["bar","bar",15,16,16,16,17,17,18,18,18,20,22,23,23]},["black",3,10],["white","bar",23],["white",20,5],["black",3,"bar"]]}
+{"ends-with-board":[{"black":["bar","bar","bar",2,2,3,4,7,7,9,10,11,11,12,12],"white":["bar","bar",15,16,16,16,17,17,18,18,18,20,22,23,23]},["black",3,10],["white","bar","home"],["white",20,5],["black",2,"bar"]]}
