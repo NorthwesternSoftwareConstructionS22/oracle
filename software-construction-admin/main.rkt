@@ -21,9 +21,8 @@
             test)))
 
 (module+ main
-  (match-define (cons (hash-table ['major major-number]
-                                  ['minor minor-number]
-                                  ['test-exe (app path->complete-path test-exe-path)]
+  (match-define (cons (hash-table ['major major]
+                                  ['minor minor]
                                   ['team team-name])
                       args)
     (command-line/declarative
@@ -38,19 +37,34 @@
       "Assignment minor number. E.g. for 5.2 this is 2."
       #:collect {"number" take-latest #f}
       #:mandatory]
-     [("-t" "--test-exe")
-      'test-exe
-      "Path to executable to test."
-      #:collect {"path" take-latest #f}
-      #:mandatory]
      [("-n" "--team-name")
       'team
       "Team name to report test validity results for."
       #:collect {"path" take-latest #f}
       #:mandatory]))
 
-  (define assign-number (cons major-number minor-number))
+  (define major-number (string->number major))
+  (define minor-number (string->number minor))
+  (unless ((integer-in 1 10) major-number)
+    (raise-user-error 'software-construction-admin
+                      "expected a natural number between 1 and 10 for the major number\n  got: ~a"
+                      major))
+  (unless ((integer-in 0 2) minor-number)
+    (raise-user-error 'software-construction-admin
+                      "expected a natural number between 0 and 2 for the minor number\n  got: ~a"
+                      minor))
+  
+  (define test-exe-path
+    (path->complete-path (format "Deliverables/~a/~a.~a/run" major-number major-number minor-number)))
+
+  (unless (file-exists? test-exe-path)
+    (raise-user-error 'software-construction-admin
+                      "could not find the `run` executable\n  expected location: ~a"
+                      test-exe-path))
+  
+  (define assign-number (cons major minor))
   (define validated-tests-by-team (get-pre-validated-tests-by-team assign-number))
+  
   (log-fest-info
    @~a{
        Running tests for assignment @(assign-number->string assign-number) on team @team-name's @;
