@@ -7,7 +7,6 @@
 
 (require json
          "util.rkt"
-         "test-fest-data.rkt"
          "logger.rkt"
          "process.rkt"
          "tests.rkt")
@@ -43,7 +42,7 @@
 
   (close-input-port stdin) ;; Make sure process gets eof
 
-  (define terminated? (wait/keep-ci-alive proc timeout-seconds))
+  (define terminated? (sync/timeout timeout-seconds proc))
 
   (subprocess-kill proc #t) ;; Ensure the process is dead
 

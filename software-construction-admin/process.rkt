@@ -1,11 +1,9 @@
 #lang at-exp racket
 
 (provide launch-process!
-         wait/keep-ci-alive
          process-stdout-bytes-limit)
 
-(require "util.rkt"
-         "logger.rkt")
+(require "util.rkt")
 
 (define (containing-directory path)
   (define-values {dir _} (basename path #:with-directory? #t))
@@ -56,20 +54,3 @@
                                        process-stderr-bytes-limit)
               returned-stderr)))
 
-(define ci-no-output-heartbeat-minutes 8)
-
-;; Travis CI kills any job that has no output for 10 minutes; prevent that.
-;; Returns whether proc completed
-(define/contract (wait/keep-ci-alive proc timeout-seconds)
-  (subprocess? (and/c real? positive?) . -> . boolean?)
-
-  (log-fest-debug @~a{Waiting for process with timeout: @|timeout-seconds|s})
-  (let loop ([time-left timeout-seconds])
-    (define time-left/less-waiting-time
-      (max (- time-left (* ci-no-output-heartbeat-minutes 60))
-           0))
-    (define proc-finished? (sync/timeout ci-no-output-heartbeat-minutes proc))
-    (printf "~as left\r" time-left)
-    (cond [proc-finished? #t]
-          [(zero? time-left/less-waiting-time) #f]
-          [else (loop time-left/less-waiting-time)])))

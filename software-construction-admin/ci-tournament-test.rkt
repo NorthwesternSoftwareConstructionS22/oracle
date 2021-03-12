@@ -142,7 +142,7 @@
 (define/contract (watch-for-failure proc)
   (subprocess? . -> . boolean?)
 
-  (and (wait/keep-ci-alive proc ITERATION-TIMEOUT-SECONDS)
+  (and (sync/timeout ITERATION-TIMEOUT-SECONDS proc)
        (equal? (subprocess-status proc) 0)))
 
 (module+ main
