@@ -1,4 +1,4 @@
-#lang s-exp software-construction-admin/decode-lang
+#lang simple-obfuscation
 rZRLcsMgDIb3PoWmWRQWtL1A04NkunBsuaYhkAqcTM7WO/RMBWEn5NXOdOqFDUj8SJ+EBeHH
 oAnh3TsLd0tXU/tAq3Anq0q02GmLoO1mCCAI61axm2gGIrRBsUVtHAUp5eSvtrUZ0INgsbxj
 7bbo8/BjQNrLCqKKs238AixEX/teEXbjWfdoW692OvSK3WHWSfaE53n+iq9PEGZcjNPpTKN9
