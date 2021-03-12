@@ -3,7 +3,6 @@
 (require "cmdline.rkt"
          "assignments.rkt"
          "assignment-paths.rkt"
-         "team-repos.rkt"
          "util.rkt"
          "testing.rkt"
          "tests.rkt"
@@ -54,7 +53,7 @@
                       "expected a natural number between 0 and 2 for the minor number\n  got: ~a"
                       minor))
 
-  (define assign-number (cons (~a major) (~a minor))
+  (define assign-number (cons (~a major) (~a minor)))
   (define test-exe-path
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
 
