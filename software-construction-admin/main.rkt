@@ -86,7 +86,7 @@
   (define total-test-count (test-set-count-tests validated-tests-by-team))
   (define failed-count (test-set-count-tests failed-peer-tests))
   (define failed? (not (zero? failed-count)))
-  (log-fest-info
+  (displayln
    @~a{
 
 
@@ -100,7 +100,7 @@
        })
   (exit
    (cond [failed?
-          (log-fest-info
+          (displayln
            @~a{
 
                Failed tests:
