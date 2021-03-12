@@ -28,12 +28,7 @@
 (define/contract (assign-number->oracle-path assign-number)
   (assign-number? . -> . (or/c path-to-existant-file? #f))
 
-  (define assign-dir
-    (build-path oracle-binary-dir
-                (assign-number->dir-path-part assign-number)))
-  (and (directory-exists? assign-dir)
-       (build-path assign-dir "oracle")
-       #;(for/first ([f (in-directory assign-dir)]
-                   #:when (equal? (path-get-extension f) #".rkt"))
-         f)))
-
+  (define candidate
+    (build-path oracle-binary-dir (format "oracle~a.~a" (car assign-number) (cdr assign-number))))
+  (and (file-exists? candidate)
+       candidate))
