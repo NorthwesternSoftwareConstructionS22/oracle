@@ -69,7 +69,7 @@
       (max (- time-left (* ci-no-output-heartbeat-minutes 60))
            0))
     (define proc-finished? (sync/timeout ci-no-output-heartbeat-minutes proc))
-    (displayln ".")
+    (printf "~as left\r" time-left)
     (cond [proc-finished? #t]
           [(zero? time-left/less-waiting-time) #f]
           [else (loop time-left/less-waiting-time)])))

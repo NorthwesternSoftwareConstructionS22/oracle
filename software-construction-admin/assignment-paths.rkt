@@ -2,7 +2,8 @@
 
 (provide assign-number->oracle-path
          assign-number->validated-tests-path
-         assign-number->submitted-tests-path)
+         assign-number->submitted-tests-path
+         assign-number->deliverable-exe-path)
 
 (require racket/runtime-path
          "assignments.rkt"
@@ -23,6 +24,13 @@
 
   (build-path submitted-tests-dir
               (assign-number->dir-path-part assign-number)))
+
+(define/contract (assign-number->deliverable-exe-path assign-number)
+  (assign-number? . -> . path-string?)
+
+  (build-path "Deliverables"
+              (assign-number->dir-path-part assign-number)
+              "run"))
 
 
 (define/contract (assign-number->oracle-path assign-number)

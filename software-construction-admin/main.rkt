@@ -53,18 +53,18 @@
     (raise-user-error 'software-construction-admin
                       "expected a natural number between 0 and 2 for the minor number\n  got: ~a"
                       minor))
-  
+
+  (define assign-number (cons (~a major) (~a minor))
   (define test-exe-path
-    (path->complete-path (format "Deliverables/~a/~a.~a/run" major-number major-number minor-number)))
+    (path->complete-path (assign-number->deliverable-exe-path assign-number)))
 
   (unless (file-exists? test-exe-path)
     (raise-user-error 'software-construction-admin
                       "could not find the `run` executable\n  expected location: ~a"
                       test-exe-path))
-  
-  (define assign-number (cons major minor))
+
   (define validated-tests-by-team (get-pre-validated-tests-by-team assign-number))
-  
+
   (log-fest-info
    @~a{
        Running tests for assignment @(assign-number->string assign-number) on team @team-name's @;
