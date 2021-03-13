@@ -8,14 +8,16 @@
 
 (define bad-json
   (let ()
-    (struct bad ())
-    (bad)))
+    (struct bad-json ())
+    (bad-json)))
 
 (define (read-json/safe port)
   (with-handlers ([exn:fail:read? (λ (e)
                                     (log-fest-error (exn-message e))
                                     bad-json)])
-    (read-json port)))
+    (match (read-json port)
+      [(? eof-object?) bad-json]
+      [json json])))
 
 (define (valid-json? port)
   (not (eq? (read-json/safe port) bad-json)))

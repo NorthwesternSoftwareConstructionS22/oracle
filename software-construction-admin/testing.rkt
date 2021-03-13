@@ -95,15 +95,16 @@
                       ------------------------------
                       })
 
-  (define oracle-output-json (and oracle-output-bytes
-                                  (not (equal? exe-output-bytes #""))
-                                  (call-with-input-bytes oracle-output-bytes read-json/safe)))
-  (define exe-output-json (and exe-output-bytes
-                               (not (equal? exe-output-bytes #""))
-                               (call-with-input-bytes exe-output-bytes read-json/safe)))
+  (define oracle-output-json
+    (if (not oracle-output-bytes)
+        bad-json
+        (call-with-input-bytes oracle-output-bytes read-json/safe)))
+  (define exe-output-json
+    (if (not exe-output-bytes)
+        bad-json
+        (call-with-input-bytes exe-output-bytes read-json/safe)))
 
-  (cond [(or (not oracle-output-json)
-             (equal? oracle-output-json bad-json))
+  (cond [(equal? oracle-output-json bad-json)
          (log-fest-error "The oracle seems to be confused. Giving up on this test.")
          #f]
         [(not exe-output-bytes)
@@ -112,8 +113,7 @@
                              because something went wrong while running it.
                              })
          #f]
-        [(or (not exe-output-json)
-             (equal? exe-output-json bad-json))
+        [(equal? exe-output-json bad-json)
          (log-fest-error @~a{
                              @(pretty-path exe-path) fails test @(basename input-file) @;
                              because it produced invalid json.
