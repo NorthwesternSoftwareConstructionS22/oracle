@@ -209,7 +209,7 @@
   (define (passes-test? t)
     (exe-passes-test? exe-path oracle-path t))
   (for*/hash ([group (in-list (sort (hash-keys tests-by-group) string<?))]
-              [tests (in-value (hash-ref tests-by-group group))]
+              [tests (in-value (sort (hash-ref tests-by-group group) string<?))]
               [failed-tests (in-value (filter-not passes-test? tests))]
               #:unless (empty? failed-tests))
     (values group failed-tests)))
