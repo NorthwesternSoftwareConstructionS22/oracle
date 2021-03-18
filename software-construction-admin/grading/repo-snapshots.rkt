@@ -8,6 +8,38 @@
          "logger.rkt"
          "env.rkt")
 
+(provide team/assign-number->snapshot-path
+         unpack-snapshot-into!)
+
+(define/contract (team/assign-number->snapshot-path team assign-number)
+  (team-name? assign-number/c . -> . path-string?)
+  todo)
+
+(define/contract (unpack-snapshot-into! snapshot-path
+                                        destination
+                                        preserve-files)
+  (path-to-existant-file?
+   path-to-existant-directory?
+   (listof string?)
+   . -> .
+   sha?)
+
+  todo
+
+  (define team-repo-path
+    (unzip! team-repo-zip))
+
+  (for ([f (in-list (directory-list team-repo-path))]
+        #:unless (matches-any? preserve-files (path->string f)))
+    (define f-path (build-path team-repo-path f))
+    (displayln @~a{Copying @f-path to @to})
+    (if (file-exists? f-path)
+        (copy-file f-path (build-path to f))
+        (copy-directory/files f-path
+                              (build-path to f)
+                              #:preserve-links? #t)))
+  (delete-directory/files team-repo-path))
+
 (define env-file "env.sh")
 
 ;; lltodo: update this script

@@ -105,3 +105,8 @@
   (with-handlers ([exn:fail? (λ _ (~s bytes))])
     (bytes->string/utf-8 bytes)))
 
+(define/contract (matches-any? los some-str)
+  ((listof string?) string? . -> . boolean?)
+
+  (for/or ([s (in-list los)])
+    (string-contains? s some-str)))

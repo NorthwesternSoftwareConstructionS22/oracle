@@ -2,8 +2,8 @@
 
 (provide write-env!)
 
-(require "util.rkt"
-         "assignments.rkt")
+(require "../common/util.rkt"
+         "../common/assignments.rkt")
 
 (define/contract (write-env! dir env-file team assign-number)
   (path-to-existant-directory? string? string? assign-number? . -> . any)

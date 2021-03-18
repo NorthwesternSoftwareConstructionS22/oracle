@@ -73,3 +73,8 @@
     (system @~a{git commit -m "@msg"})
     (system @~a{git push @remote @branch}))
   (close-output-port /dev/null))
+
+(define (get-head-commit-sha [repo-dir (current-directory)]
+                             #:short? [short? #f])
+  (parameterize ([current-directory repo-dir])
+    (system/string @~a{git rev-parse @(if short? "--short" "") HEAD})))
