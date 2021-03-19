@@ -23,14 +23,14 @@
 (define log-test-failure-comparison? (make-parameter #t))
 
 (define/contract (run-exe-on-input exe-path
-                                   input-json-file
+                                   input-json
                                    [timeout-seconds absolute-max-timeout-seconds])
-  ({path-to-existant-file? path-to-existant-file?}
+  ({path-to-existant-file? (or/c path-to-existant-file? input-port?)}
    {natural?}
    . ->* .
    (or/c bytes? #f))
 
-  (define stdin (open-input-file input-json-file))
+  (define stdin (if (input-port? input-json) input-json (open-input-file input-json)))
   (define-values {proc stdout stderr}
     ;; ll: Can't use pipe here because that's not a `file-stream-port?`
     (launch-process! exe-path
@@ -40,7 +40,7 @@
                      #:limit-stdout? #t
                      #:limit-stderr? #t))
 
-  (close-input-port stdin) ;; Make sure process gets eof
+  (unless (input-port? input-json) (close-input-port stdin)) ;; Make sure process gets eof
 
   (define terminated? (sync/timeout timeout-seconds proc))
 
@@ -72,21 +72,21 @@
   (close-input-port stderr)
   stdout-bytes)
 
-(define/contract (exe-passes-test? exe-path oracle-path t)
+(define/contract (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?)
   (path-to-existant-file?
    path-to-existant-file?
    test/c
+   #:oracle-needs-student-output? boolean?
    . -> .
    boolean?)
 
   (define input-file (test-input-file t))
 
-  (log-fest-debug @~a{Running the oracle on test @(basename input-file) ...})
-  (match-define-values {(list oracle-output-bytes) _ oracle-time-ms _}
-    (time-apply run-exe-on-input (list oracle-path input-file oracle-timeout-seconds)))
-
   (log-fest-debug @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
-  (define exe-timeout-seconds (ceiling (oracle->student-timeout (/ oracle-time-ms 1000))))
+  ;; this used to depend on the amount time the oracle took but since
+  ;; the oracle sometimes needs the student's output, this is a
+  ;; constant number of seconds for now
+  (define exe-timeout-seconds 5)
   (define exe-output-bytes (run-exe-on-input exe-path input-file exe-timeout-seconds))
   (log-fest-debug @~a{
                       The output of @(pretty-path exe-path) was:
@@ -94,15 +94,30 @@
                       @(try-decode-bytes->string exe-output-bytes)
                       ------------------------------
                       })
+  (define exe-output-json
+    (if (not exe-output-bytes)
+        bad-json
+        (call-with-input-bytes exe-output-bytes read-json/safe)))
+
+  (log-fest-debug @~a{Running the oracle on test @(basename input-file) ...})
+  (define oracle-input (if oracle-needs-student-output?
+                           (input-port-append #t
+                                              ;; this file gets closed because
+                                              ;; the call to copy-port in launch-process!
+                                              ;; will copy all of the data out of this
+                                              ;; port (which'll trigger the close
+                                              ;; via input-port-append)
+                                              (open-input-file input-file)
+                                              (open-input-bytes #"\n")
+                                              (open-input-bytes (jsexpr->bytes exe-output-json)))
+                           input-file))
+  (match-define-values {(list oracle-output-bytes) _ oracle-time-ms _}
+    (time-apply run-exe-on-input (list oracle-path oracle-input oracle-timeout-seconds)))
 
   (define oracle-output-json
     (if (not oracle-output-bytes)
         bad-json
         (call-with-input-bytes oracle-output-bytes read-json/safe)))
-  (define exe-output-json
-    (if (not exe-output-bytes)
-        bad-json
-        (call-with-input-bytes exe-output-bytes read-json/safe)))
 
   (cond [(equal? oracle-output-json bad-json)
          (log-fest-error "The oracle seems to be confused. Giving up on this test.")
@@ -129,7 +144,19 @@
                              ------------------------------
                              })
          #f]
-        [(not (jsexpr=? exe-output-json oracle-output-json))
+        [(and oracle-needs-student-output?
+              (not oracle-output-json))
+         (log-fest-error @~a{
+          @(pretty-path exe-path) fails test @(basename input-file) @;
+          because it produced an invalid result
+          It produced this:
+          ------------------------------
+          @(with-output-to-string (thunk (write-json exe-output-json)))
+          ------------------------------
+          })
+         #f]
+        [(and (not oracle-needs-student-output?)
+              (not (jsexpr=? exe-output-json oracle-output-json)))
          (log-fest-error @~a{
                              @(pretty-path exe-path) fails test @(basename input-file) @;
                              because it produced the wrong result.
@@ -203,11 +230,14 @@
                  (define expected-output-json (call-with-input-file out read-json/safe))
                  (jsexpr=? oracle-output-json expected-output-json))))
 
-(define/contract (test-failures-for exe-path oracle-path tests-by-group)
-  (path-to-existant-file? path-to-existant-file? test-set/c . -> . test-set/c)
+(define (test-failures-for exe-path oracle-path tests-by-group
+                           #:oracle-needs-student-output? [oracle-needs-student-output? #f])
+  (->* (path-to-existant-file? path-to-existant-file? test-set/c)
+       (#:oracle-needs-student-output? boolean?)
+       test-set/c)
 
   (define (passes-test? t)
-    (exe-passes-test? exe-path oracle-path t))
+    (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?))
   (for*/hash ([group (in-list (sort (hash-keys tests-by-group) string<?))]
               [tests (in-value (sort (hash-ref tests-by-group group)
                                      string<?

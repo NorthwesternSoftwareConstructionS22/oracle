@@ -21,7 +21,7 @@
                                   #:limit-stderr? [limit-stderr? #f])
   (->i {[exe-path path-to-existant-file?]}
        {[args (listof string?)]
-        #:stdin [stdin (or/c (and/c input-port? file-stream-port?) #f)]
+        #:stdin [stdin (or/c input-port? #f)]
         #:stdout [stdout (or/c (and/c output-port? file-stream-port?) #f)]
         #:stderr [stderr (or/c (and/c output-port? file-stream-port?) 'stdout #f)]
         #:run-in [run-in path-string?]
@@ -37,13 +37,20 @@
                        false?
                        input-port?)]))
 
-  (define-values {proc returned-stdout _ returned-stderr}
+  (define-values {proc returned-stdout returned-stdin returned-stderr}
     (parameterize ([current-directory run-in])
       (apply subprocess
-             stdout stdin stderr
+             stdout (and (file-stream-port? stdin) stdin) stderr
              'new
              exe-path
              args)))
+
+  (when returned-stdin
+    (thread
+     (λ ()
+       (copy-port stdin returned-stdin)
+       (close-output-port returned-stdin))))
+
   (values proc
           (if limit-stdout?
               (make-limited-input-port returned-stdout

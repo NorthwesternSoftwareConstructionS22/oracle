@@ -57,6 +57,8 @@
   (define test-exe-path
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
 
+  (define oracle-needs-student-output? (and (member major-number '(5 9)) #t))
+  
   (unless (file-exists? test-exe-path)
     (raise-user-error 'software-construction-admin
                       "could not find the `run` executable\n  expected location: ~a"
@@ -72,7 +74,8 @@
   (define failed-peer-tests
     (test-failures-for test-exe-path
                        (assign-number->oracle-path assign-number)
-                       validated-tests-by-team))
+                       validated-tests-by-team
+                       #:oracle-needs-student-output? oracle-needs-student-output?))
   (log-fest-info @~a{Done running tests.})
 
 
