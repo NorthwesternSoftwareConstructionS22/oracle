@@ -1,19 +1,45 @@
 #lang at-exp racket
 
-(require racket/cmdline
-         "util.rkt"
-         "test-fest-data.rkt"
-         "git.rkt"
-         "tar.rkt"
-         "logger.rkt"
-         "env.rkt")
+(require racket/runtime-path
+         "../common/cmdline.rkt"
+         "../common/util.rkt"
+         "../common/git.rkt"
+         "../common/tar.rkt"
+         "../common/logger.rkt"
+         "../common/assignments.rkt"
+         "../common/teams.rkt"
+         "../common/team-repos.rkt")
 
 (provide team/assign-number->snapshot-path
          unpack-snapshot-into!)
 
+(define-runtime-path default-snapshots-repo-path "../../../snapshots")
+(define current-snapshots-repo-path (make-parameter default-snapshots-repo-path))
+
+(define/contract (assign-number->snapshots-dir assign-number)
+  (assign-number? . -> . path-string?)
+
+  (build-path (current-snapshots-repo-path)
+              (assign-number->dir-path-part assign-number)))
+
 (define/contract (team/assign-number->snapshot-path team assign-number)
-  (team-name? assign-number/c . -> . path-string?)
-  todo)
+  (team-name? assign-number? . -> . path-string?)
+
+  (build-path (assign-number->snapshots-dir assign-number)
+              (~a team ".zip")))
+
+(define system-temp-dir (find-system-path 'temp-dir))
+
+;; Call f with a new temp directory.
+;; Delete the directory after f returns.
+;; Result is whatever f produces.
+(define (call-with-temp-directory f #:name [name (~a (current-milliseconds))])
+  (define temp-dir (build-path system-temp-dir name))
+  (log-sc-debug @~a{Making temp dir at @temp-dir})
+  (dynamic-wind
+    (thunk (make-directory temp-dir))
+    (thunk (f temp-dir))
+    (thunk (delete-directory/files temp-dir))))
 
 (define/contract (unpack-snapshot-into! snapshot-path
                                         destination
@@ -24,99 +50,144 @@
    . -> .
    sha?)
 
-  todo
+  (call-with-temp-directory
+   (λ (snapshot-unpack-path)
+     (define snapshot-name (basename snapshot-path))
+     (log-sc-info @~a{Unpacking @(pretty-path snapshot-path) into @snapshot-unpack-path})
+     (define snapshot-copy-path (build-path snapshot-unpack-path snapshot-name))
+     (copy-file snapshot-path snapshot-copy-path)
 
-  (define team-repo-path
-    (unzip! team-repo-zip))
+     (define repo-snapshot-path (unzip-in-place! snapshot-copy-path))
 
-  (for ([f (in-list (directory-list team-repo-path))]
-        #:unless (matches-any? preserve-files (path->string f)))
-    (define f-path (build-path team-repo-path f))
-    (displayln @~a{Copying @f-path to @to})
-    (if (file-exists? f-path)
-        (copy-file f-path (build-path to f))
-        (copy-directory/files f-path
-                              (build-path to f)
-                              #:preserve-links? #t)))
-  (delete-directory/files team-repo-path))
+     (define snapshot-commit-sha (get-head-commit-sha repo-snapshot-path))
+
+     (for ([f (in-list (directory-list repo-snapshot-path))]
+           #:unless (matches-any? preserve-files (path->string f)))
+       (define f-path (build-path repo-snapshot-path f))
+       (log-sc-info @~a{Copying @f-path to @destination})
+       (rename-file-or-directory f-path (build-path destination f)))
+
+     snapshot-commit-sha)))
+
+(define/contract (take-snapshots! teams destination-dir)
+  ((listof team-name?) path-to-existant-directory? . -> . (listof path-to-existant-file?))
+
+  (call-with-temp-directory
+   (λ (temp-dir)
+     (parameterize ([current-directory temp-dir])
+       (for/list ([team (in-list teams)])
+         (define repo (clone-repo! (team->dev-repo-name team)))
+         (define snapshot (zip! repo))
+         (define destination (build-path destination-dir
+                                         (basename snapshot)))
+         (if (file-exists? destination)
+             (match (user-prompt!* @~a{
+                                       @(pretty-path destination) already exists. @;
+                                       Delete it, skip, or abort?
+                                       }
+                                   '(d s a))
+               ['d
+                (delete-file destination)
+                (rename-file-or-directory snapshot destination)]
+               ['s (void)]
+               [else (raise-user-error 'take-snapshots!
+                                       "Aborting due to already existant snapshot.")])
+             (rename-file-or-directory snapshot destination))
+         destination)))))
+
+(define/contract (take-snapshot! team destination-dir)
+  (team-name? path-to-existant-directory? . -> . path-to-existant-file?)
+
+  (first (take-snapshots! (list team) destination-dir)))
 
 (define env-file "env.sh")
 
-;; lltodo: update this script
-#;(module+ main
-  (define assign-major-number-box (box "0"))
-  (define assign-minor-number-box (box "0"))
-  (define deadline-box (box "2019-10-01 23:59:59"))
+(define (parse-human-date->ISO str)
+  (match (with-output-to-string
+           (thunk (system* (find-executable-path "date")
+                           "+%Y-%m-%d %H:%M:%S"
+                           "-d"
+                           str)))
+    ["" (raise-user-error 'repo-snapshots "bad date")]
+    [other other]))
 
-  (command-line
-   #:once-each
-   [("-M" "--Major")
-    assign-number*
-    "Assignment major number. E.g. for 5.2 this is 5."
-    (set-box! assign-major-number-box assign-number*)]
-   [("-m" "--minor")
-    assign-number*
-    "Assignment minor number. E.g. for 5.2 this is 2."
-    (set-box! assign-minor-number-box assign-number*)]
-   [("-d" "--deadline")
-    deadline
-    "Deadline for assignment in format \"YYYY-MM-DD HH:MM:SS\""
-    (set-box! deadline-box deadline)]
-   [("-r" "--grading-repo-path")
-    path
-    "Path to the root of the grading repo."
-    (current-directory path)])
+(module+ main
+  (match-define (cons (hash-table ['major major-number]
+                                  ['minor minor-number]
+                                  ['deadline deadline-string]
+                                  ['deadline-hr human-deadline-string]
+                                  ['alternative-snapshot-repo _]
+                                  ['team specific-teams])
+                      args)
+    (command-line/declarative
+     #:once-each
+     [("-M" "--Major")
+      'major
+      "Assignment major number. E.g. for 5.2 this is 5."
+      #:collect {"N" take-latest #f}
+      #:mandatory]
+     [("-m" "--minor")
+      'minor
+      "Assignment minor number. E.g. for 5.2 this is 2."
+      #:collect {"N" take-latest #f}
+      #:mandatory]
+     [("-D" "--deadline")
+      'deadline
+      ("Deadline for assignment in format \"YYYY-MM-DD HH:MM:SS\""
+       "Either this or -d must be specified.")
+      #:collect {"N" take-latest #f}
+      #:mandatory-unless (λ (flags) (member 'deadline-hr flags))]
+     [("-d" "--human-readable-deadline")
+      'deadline-hr
+      ("Deadline for assignment in human-readable format. E.g. 'last friday'"
+       "Either this or -D must be specified.")
+      #:collect {"date" take-latest #f}
+      #:mandatory-unless (λ (flags) (member 'deadline flags))]
+     [("-r" "--snapshot-repo-path")
+      'alternative-snapshot-repo
+      ("Specify an alternative snapshot repo in which to place snapshots."
+       @~a{Default: @(pretty-path (current-snapshots-repo-path))})
+      #:collect {"path" (set-parameter current-snapshots-repo-path) #f}]
+     #:multi
+     [("-t" "--team")
+      'team
+      ("Only snapshot the specified team(s). Can be provided multiple times."
+       "Default: snapshot all active teams.")
+      #:collect {"name" cons empty}]))
 
-  (unless (regexp-match? ".*/grading" (current-directory))
-    (displayln
-     @~a{
-         Warning: grading repo path is currently @(current-directory)
-         Is this right? Press enter to continue.
-         })
-    (void (read-line)))
+  (define assign-number (cons major-number minor-number))
+  (define deadline
+    (match* {deadline-string human-deadline-string}
+      [{(regexp @pregexp{(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})} (list _ day time))
+        #f}
+       (~a day "T" time)]
+      [{#f (? string? human-date)}
+       (parse-human-date->ISO human-date)]))
+  (define teams (match specific-teams
+                  ['()
+                   (log-sc-info
+                    @~a{Snapshotting all active teams for @(assign-number->string assign-number)})
+                   (assign-number->active-team-names assign-number)]
+                  [other
+                   (log-sc-info @~a{Snapshotting only teams @~v[other]})
+                   other]))
 
-  (define assign-number (cons (unbox assign-major-number-box)
-                              (unbox assign-minor-number-box)))
-  (define repo-cache-file (find-repo-cache-file assign-number))
-  (define deadline-parts (string-split (unbox deadline-box)))
-  (define deadline @~a{@(first deadline-parts)T@(second deadline-parts)})
+  (define snapshot-dir (assign-number->snapshots-dir assign-number))
+  (make-directory* snapshot-dir)
+  (log-sc-info @~a{Taking dev repo snapshots in @snapshot-dir ...})
+  (void (take-snapshots! teams snapshot-dir))
+  (log-sc-info @~a{Done.})
+  (cond [(user-prompt! @~a{Commit snapshots in @(pretty-path (current-snapshots-repo-path))?})
+         (add! (current-snapshots-repo-path) snapshot-dir)
+         (commit! (current-snapshots-repo-path)
+                  @~a{
+                      Snapshot: @(assign-number->string assign-number) @;
+                      @deadline @;
+                      @(if (empty? specific-teams)
+                           "all teams"
+                           "some teams")
 
-  (define snapshot-dir (build-path "."
-                                   (assign-number->string assign-number)))
-  (delete-directory/files snapshot-dir #:must-exist? #f)
-  (make-directory snapshot-dir)
-  (log-fest info @~a{Cloning dev repos into @snapshot-dir ...})
-  (define student-dev-repos/active
-    (map group->dev-repo-name
-         (assign->active-groups assign-number)))
-  (define dev-repos
-    (parameterize ([git-remote-access-method 'ssh])
-      (clone-repos-into! snapshot-dir
-                         student-dev-repos/active
-                         #:setup-repos (checkout-last-commit-before deadline))))
-  (log-fest info @~a{Done. Zipping dev repos ...})
-  (define dev-zips (zip-repos! dev-repos #:delete-original? #t))
-  (log-fest info @~a{Done. Writing cache file @repo-cache-file ...})
-  (call-with-output-file repo-cache-file
-    (λ (out)
-      (write (for/hash ([(name path) (in-hash dev-zips)])
-               (values name
-                       (path->string
-                        (find-relative-path (current-directory)
-                                            (simple-form-path path)))))
-             out))
-    #:mode 'text
-    #:exists 'truncate)
-  (log-fest info @~a{Done. Writing env ...})
-  (write-env! (current-directory) env-file "dummy" assign-number)
-  (log-fest info @~a{Done. git-adding snapshot ...})
-  (void (git-add repo-cache-file)
-        (git-add snapshot-dir)
-        (git-add env-file))
-  (displayln @~a{
-
-
-
-                 Git-added snapshot of student dev repos.
-                 Commit and then push to kick off grading.
-                 }))
+                      teams:
+                      @(pretty-write teams)
+                      })]
+        [else (displayln "\nSkipping.")]))
