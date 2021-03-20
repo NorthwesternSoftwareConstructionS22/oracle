@@ -6,10 +6,10 @@
          log-test-failure-comparison?)
 
 (require json
-         "util.rkt"
-         "logger.rkt"
-         "process.rkt"
-         "tests.rkt")
+         "tests.rkt"
+         "common/util.rkt"
+         "common/logger.rkt"
+         "common/process.rkt")
 
 ;; The CI kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
@@ -184,7 +184,7 @@
                                   #f]
                                  [else #t])])
             all-tests))
-  (take valid (min max-count (length valid))))
+  (take valid (inexact->exact (truncate (min max-count (length valid))))))
 
 (define/contract (valid-tests/passing-oracle test-directory
                                              oracle-path

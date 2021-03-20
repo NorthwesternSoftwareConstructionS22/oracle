@@ -49,7 +49,7 @@
        (unpack-snapshot-into! snapshot "." empty)
        (define tests (directory->tests (assign-number->deliverables-path assign-number)))
        (for-each (install-submitted-test! team submitted-tests-path) tests))))
-  (log-fest-info @~a{Commiting submitted tests in @(pretty-path oracle-repo-path) and pushing})
+  (log-fest-info @~a{Committing submitted tests in @(pretty-path oracle-repo-path) and pushing})
   (commit-and-push! oracle-repo-path
                     @~a{Add @(assign-number->string assign-number) submitted tests}
                     #:add (list submitted-tests-path)))

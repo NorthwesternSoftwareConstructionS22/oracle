@@ -16,9 +16,9 @@
          test-set-count-tests
          max-number-tests)
 
-(require "assignments.rkt"
-         "util.rkt"
-         "teams.rkt")
+(require "common/assignments.rkt"
+         "common/util.rkt"
+         "common/teams.rkt")
 
 (define test-file-rx @~a{([a-zA-Z0-9_-]+).json$})
 (define validated-test-file-rx @~a{([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
@@ -46,7 +46,10 @@
     [else #f]))
 
 (define/contract (test-file-name->validated filename team)
-  ((or/c test-input-file-rx test-output-file-rx) . -> . (or/c validated-test-input-file-rx
+  ((or/c test-input-file-rx test-output-file-rx)
+   team-name?
+   . -> .
+   (or/c validated-test-input-file-rx
                                                               validated-test-output-file-rx))
 
   (define prefix (match filename
