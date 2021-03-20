@@ -11,7 +11,6 @@
          "../common/cmdline.rkt"
          "../common/assignments.rkt"
          "../common/util.rkt"
-         "../common/tar.rkt"
          "../common/git.rkt"
          "../common/option.rkt"
          "../common/teams.rkt"

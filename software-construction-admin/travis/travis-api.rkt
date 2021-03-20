@@ -9,7 +9,7 @@
 (require net/url
          json
          racket/runtime-path
-         "../util.rkt")
+         "../common/util.rkt")
 
 
 (define-values {GET POST} (values 'get 'post))

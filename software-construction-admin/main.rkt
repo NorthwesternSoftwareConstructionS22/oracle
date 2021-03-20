@@ -1,12 +1,11 @@
 #lang at-exp racket
 
-(require "cmdline.rkt"
-         "assignments.rkt"
-         "assignment-paths.rkt"
-         "util.rkt"
-         "testing.rkt"
+(require "testing.rkt"
          "tests.rkt"
-         "logger.rkt")
+         "common/cmdline.rkt"
+         "common/assignments.rkt"
+         "common/util.rkt"
+         "common/logger.rkt")
 
 (define expected-valid-test-count 5)
 
@@ -16,7 +15,7 @@
   (for/hash/fold ([test (in-list all-tests)])
     #:combine cons
     #:default empty
-    (values (test-input-file->team-name (test-input-file test))
+    (values (validated-test-input-file->team-name (test-input-file test))
             test)))
 
 (module+ main
