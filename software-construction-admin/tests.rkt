@@ -6,7 +6,10 @@
 
          has-test-input-file-naming-convention?
          has-test-output-file-naming-convention?
-         test-input-file->team-name
+         has-validated-test-input-file-naming-convention?
+         has-validated-test-output-file-naming-convention?
+         validated-test-input-file->team-name
+         test-file-name->validated
 
          directory->tests
 
@@ -17,19 +20,39 @@
          "util.rkt"
          "teams.rkt")
 
-(define test-input-file-rx @pregexp{^input_([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
-(define test-output-file-rx @pregexp{^output_([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
+(define test-file-rx @~a{([a-zA-Z0-9_-]+).json$})
+(define validated-test-file-rx @~a{([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
+
+(define test-input-file-rx (pregexp @~a{^input@test-file-rx}))
+(define test-output-file-rx (pregexp @~a{^output@test-file-rx}))
+(define validated-test-input-file-rx (pregexp @~a{^input@validated-test-file-rx}))
+(define validated-test-output-file-rx (pregexp @~a{^output@validated-test-file-rx}))
 
 (define (has-test-input-file-naming-convention? path)
   (regexp-match? test-input-file-rx (basename path)))
 (define (has-test-output-file-naming-convention? path)
   (regexp-match? test-output-file-rx (basename path)))
+(define (has-validated-test-input-file-naming-convention? path)
+  (regexp-match? validated-test-input-file-rx (basename path)))
+(define (has-validated-test-output-file-naming-convention? path)
+  (regexp-match? validated-test-output-file-rx (basename path)))
 
-(define (test-input-file->team-name path)
+(define/contract (validated-test-input-file->team-name path)
+  (validated-test-input-file-rx . -> . team-name?)
+
   (match (basename path)
-    [(regexp test-input-file-rx (list _ name test-id))
+    [(regexp validated-test-input-file-rx (list _ name test-id))
      name]
     [else #f]))
+
+(define/contract (test-file-name->validated filename team)
+  ((or/c test-input-file-rx test-output-file-rx) . -> . (or/c validated-test-input-file-rx
+                                                              validated-test-output-file-rx))
+
+  (define prefix (match filename
+                   [(regexp test-input-file-rx  (list _ prefix)) (~a "input"  prefix)]
+                   [(regexp test-output-file-rx (list _ prefix)) (~a "output" prefix)]))
+  (~a prefix "_" team ".json"))
 
 
 (struct test (input-file output-file) #:transparent)
@@ -38,7 +61,7 @@
                                 has-test-input-file-naming-convention?)
                          (or/c #f
                                (and/c path-to-existant-file?
-                                      has-test-input-file-naming-convention?))))
+                                      has-test-output-file-naming-convention?))))
 
 (define test-set/c (hash/c team-name? (listof test/c)))
 

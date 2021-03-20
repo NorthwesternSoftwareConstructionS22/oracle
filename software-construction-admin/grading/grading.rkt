@@ -1,5 +1,11 @@
 #lang at-exp racket
 
+(provide preserve-files
+         grading-repo-remote
+         grading-repo-branch
+         grading-repo-owner
+         grading-repo-name)
+
 (require racket/runtime-path
          racket/pretty
          "../common/cmdline.rkt"
@@ -10,19 +16,19 @@
          "../common/option.rkt"
          "../common/teams.rkt"
          "../travis/env.rkt"
-         "../travis/travis-api.rkt"
+         "../travis/travis.rkt"
          "repo-snapshots.rkt")
 
 (define-runtime-path snapshot-repo-path "../../../snapshots")
 (define-runtime-path grading-repo-path "../../../grading")
-(define-runtime-path grading-job-info-cache "jobs.rktd")
+(define-runtime-path grading-job-info-cache "grading-jobs.rktd")
 (define env-file "env.sh")
 (define preserve-files `(".travis.yml"
                          ".git"
                          ,env-file))
 (define grading-repo-remote "origin")
 (define grading-repo-branch "master")
-(define github-user "llazarek")
+(define grading-repo-owner "llazarek")
 (define grading-repo-name "nu-sc-f19-grading")
 
 
@@ -120,7 +126,7 @@
                          assign-number
                          grading-repo-path
                          preserve-files)
-  (write-env! grading-repo-path env-file team assign-number)
+  (write-env! grading-repo-path env-file team assign-number "grade")
   (commit-and-push! grading-repo-path
                     @~a{[skip travis] @team @(assign-number->string assign-number)}
                     #:remote grading-repo-remote
@@ -128,7 +134,7 @@
                     #:add ".")
   (parameterize ([current-directory grading-repo-path])
     (travis:trigger-build! grading-repo-branch
-                           github-user
+                           grading-repo-owner
                            grading-repo-name
                            grading-repo-branch
                            @~a{@team @(assign-number->string assign-number)})))
@@ -170,7 +176,8 @@
      #:multi
      [("-t" "--team")
       'team
-      "Only grade the specified team(s). Can be provided multiple times."
+      ("Only grade the specified team(s). Can be provided multiple times."
+       "Default: grade all active teams.")
       #:collect {"name" cons empty}]
      #:once-each
      [("-M" "--Major")
@@ -195,7 +202,7 @@
       ("Action: Extract grades from grading jobs on Travis."
        "Conflicts with -k.")
       #:record
-      #:conflicts '(extract?)
+      #:conflicts '(kick-off?)
       #:mandatory-unless (λ (flags) (member 'kick-off? flags))]
 
      [("-s" "--status-only")

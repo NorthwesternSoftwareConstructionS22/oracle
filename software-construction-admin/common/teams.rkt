@@ -4,9 +4,11 @@
          assign-number->active-team-names
          team-name?)
 
+(define instructor-team-names
+  '("robby"))
+
 (define teams-1
-  '("testTeam"
-    "robby"))
+  '("f19-dummy-team"))
 
 (define teams-2
   '())
@@ -16,7 +18,7 @@
           teams-2))
 
 (define (team-name? name)
-  (member name all-teams))
+  (member name (append all-teams instructor-team-names)))
 
 (define (assign-number->active-team-names assign)
   (match assign

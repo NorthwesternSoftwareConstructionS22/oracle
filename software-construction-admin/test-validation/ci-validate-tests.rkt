@@ -1,11 +1,15 @@
 #lang at-exp racket
 
+(provide validated-test-log-delimeter)
+
 (require racket/pretty
-         "cmdline.rkt"
-         "tests.rkt"
-         "testing.rkt"
-         "util.rkt"
-         "assignment-paths.rkt")
+         "../tests.rkt"
+         "../testing.rkt"
+         "../common/cmdline.rkt"
+         "../common/util.rkt"
+         "../common/assignments.rkt")
+
+(define validated-test-log-delimeter "-----validated-----")
 
 (module+ main
   (match-define (cons (hash-table ['major major-number]
@@ -30,8 +34,8 @@
                                 (assign-number->oracle-path assign-number)
                                 #:check-json-validity? #t))
 
-  (displayln "-----begin-validated-----")
+  (displayln validated-test-log-delimeter)
   (pretty-write
    (for/list ([test (in-list all-valid-tests)])
      (basename (test-input-file test))))
-  (displayln "-----end-validated-----"))
+  (displayln validated-test-log-delimeter))

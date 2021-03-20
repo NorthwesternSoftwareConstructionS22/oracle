@@ -3,7 +3,7 @@
 (provide zip-repos!
          zip!
          unzip-repos!
-         unzip!)
+         unzip-in-place!)
 
 (require "util.rkt"
          "team-repos.rkt"
@@ -41,9 +41,9 @@
    (hash/c repo-name? path-to-existant-directory?))
 
   (for/hash ([(name zip) (in-hash repo-caches)])
-    (values name (unzip! zip))))
+    (values name (unzip-in-place! zip))))
 
-(define/contract (unzip! zip-file)
+(define/contract (unzip-in-place! zip-file)
   (path-to-existant-file? . -> . path-to-existant-directory?)
 
   (define-values {containing-dir filename}

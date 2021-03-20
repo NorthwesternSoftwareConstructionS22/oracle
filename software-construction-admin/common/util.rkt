@@ -110,3 +110,33 @@
 
   (for/or ([s (in-list los)])
     (string-contains? s some-str)))
+
+(define (user-prompt!* msg raw-options [none-result 'none])
+  (define options (map (compose1 string-downcase ~a) raw-options))
+  (display @~a{@msg [@(string-upcase (first options))/@(string-join (rest options) "/")]: })
+  (flush-output)
+  (define answer (string-trim (string-downcase (read-line))))
+  (or (and (string=? answer "") (first raw-options))
+      (for/first ([raw-option (in-list raw-options)]
+                  [option-str (in-list options)]
+                  #:when (string-prefix? answer option-str))
+        raw-option)
+      none-result))
+
+(define (user-prompt! msg)
+  (match (user-prompt!* msg '(y n))
+    ['y #t]
+    [else #f]))
+
+(define system-temp-dir (find-system-path 'temp-dir))
+;; Call f with a new temp directory.
+;; Delete the directory after f returns.
+;; Result is whatever f produces.
+(define (call-with-temp-directory f #:name [name (~a (current-milliseconds))])
+  (define temp-dir (build-path system-temp-dir name))
+  (log-sc-debug @~a{Making temp dir at @temp-dir})
+  (dynamic-wind
+    (thunk (make-directory temp-dir))
+    (thunk (f temp-dir))
+    (thunk (delete-directory/files temp-dir))))
+

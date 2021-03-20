@@ -1,5 +1,10 @@
 #lang at-exp racket
 
+
+(provide team/assign-number->snapshot-path
+         unpack-snapshot-into!
+         current-snapshots-repo-path)
+
 (require racket/runtime-path
          "../common/cmdline.rkt"
          "../common/util.rkt"
@@ -10,10 +15,7 @@
          "../common/teams.rkt"
          "../common/team-repos.rkt")
 
-(provide team/assign-number->snapshot-path
-         unpack-snapshot-into!)
-
-(define-runtime-path default-snapshots-repo-path "../../../snapshots")
+(define-runtime-path default-snapshots-repo-path "../../../test-snapshots")
 (define current-snapshots-repo-path (make-parameter default-snapshots-repo-path))
 
 (define/contract (assign-number->snapshots-dir assign-number)
@@ -27,19 +29,6 @@
 
   (build-path (assign-number->snapshots-dir assign-number)
               (~a team ".zip")))
-
-(define system-temp-dir (find-system-path 'temp-dir))
-
-;; Call f with a new temp directory.
-;; Delete the directory after f returns.
-;; Result is whatever f produces.
-(define (call-with-temp-directory f #:name [name (~a (current-milliseconds))])
-  (define temp-dir (build-path system-temp-dir name))
-  (log-sc-debug @~a{Making temp dir at @temp-dir})
-  (dynamic-wind
-    (thunk (make-directory temp-dir))
-    (thunk (f temp-dir))
-    (thunk (delete-directory/files temp-dir))))
 
 (define/contract (unpack-snapshot-into! snapshot-path
                                         destination
