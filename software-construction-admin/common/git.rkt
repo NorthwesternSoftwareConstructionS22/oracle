@@ -156,13 +156,14 @@
   (match (get-status repo-dir)
     ['clean (void)]
     [dirty-status
-     #:when (user-prompt!* @~a{
-                               Warning: @repo-dir is in a dirty state:
-                               @dirty-status
+     #:when (equal? (user-prompt!* @~a{
+                                       Warning: @repo-dir is in a dirty state:
+                                       @dirty-status
 
-                               Continue modifying it anyway?
-                               }
-                           '(n y))
+                                       Continue modifying it anyway?
+                                       }
+                                   '(n y))
+                    'y)
      (void)]
     [else
      (raise-user-error 'git "Aborting due to dirty state.")]))

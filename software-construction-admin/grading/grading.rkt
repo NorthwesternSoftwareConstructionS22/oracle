@@ -16,23 +16,14 @@
          "../common/teams.rkt"
          "../travis/env.rkt"
          "../travis/travis.rkt"
+         "../config.rkt"
          "repo-snapshots.rkt")
 
-(define-runtime-path snapshot-repo-path "../../../snapshots")
-(define-runtime-path grading-repo-path "../../../grading")
 (define-runtime-path grading-job-info-cache "grading-jobs.rktd")
 (define env-file "env.sh")
 (define preserve-files `(".travis.yml"
                          ".git"
                          ,env-file))
-(define grading-repo-remote "origin")
-(define grading-repo-branch "master")
-(define grading-repo-owner "llazarek")
-(define grading-repo-name "nu-sc-f19-grading")
-
-
-(define build-other-failure "Build went wrong! Giving up.~n")
-(define ping-timer-seconds (make-parameter (* 2 60)))
 
 (define/contract (clean-directory! dir preserve)
   (path-to-existant-directory? (listof string?) . -> . any)

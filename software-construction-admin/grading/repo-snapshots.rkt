@@ -13,9 +13,9 @@
          "../common/logger.rkt"
          "../common/assignments.rkt"
          "../common/teams.rkt"
-         "../common/team-repos.rkt")
+         "../common/team-repos.rkt"
+         "../config.rkt")
 
-(define-runtime-path default-snapshots-repo-path "../../../test-snapshots")
 (define current-snapshots-repo-path (make-parameter default-snapshots-repo-path))
 
 (define/contract (assign-number->snapshots-dir assign-number)

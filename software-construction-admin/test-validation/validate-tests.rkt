@@ -13,15 +13,12 @@
          "../common/teams.rkt"
          "../common/option.rkt"
          "../tests.rkt"
-         "../grading/grading.rkt")
+         "../grading/grading.rkt"
+         "../config.rkt")
 
 (define env-file "env.sh")
 
-(define-runtime-path grading-repo-path "../../../grading")
-(define-runtime-path oracle-repo-path "../..")
-(define-runtime-path test-snapshots-repo-path "../../../test-snapshots")
 (define-runtime-path validation-job-info-cache "test-validation-jobs.rktd")
-
 (define-runtime-path bad-log-dump-path "bad-log.txt")
 
 (define/contract (kick-off-test-validation-job! assign-number)
@@ -50,6 +47,8 @@
   (log-fest-info @~a{Committing submitted tests in @(pretty-path oracle-repo-path) and pushing})
   (commit-and-push! oracle-repo-path
                     @~a{Add @(assign-number->string assign-number) submitted tests}
+                    #:remote oracle-repo-remote
+                    #:branch oracle-repo-branch
                     #:add (list submitted-tests-path)))
 
 (define ((install-submitted-test! team destination) a-test)
@@ -79,6 +78,8 @@
                      })
   (commit-and-push! grading-repo-path
                     @~a{@(assign-number->string assign-number) test validation}
+                    #:remote grading-repo-remote
+                    #:branch grading-repo-branch
                     #:add (list env-file)))
 
 

@@ -13,7 +13,8 @@
          assign-number->deliverable-exe-path)
 
 (require racket/runtime-path
-         "util.rkt")
+         "util.rkt"
+         "../config.rkt")
 
 (define major-number? (and/c string? #rx"[0-9]+"))
 (define minor-number? major-number?)
@@ -33,11 +34,6 @@
 
 (define/contract assign-major-number (assign-number? . -> . major-number?) car)
 (define/contract assign-minor-number (assign-number? . -> . minor-number?) cdr)
-
-
-(define-runtime-path validated-tests-dir "../../backgammon-oracle/validated-tests")
-(define-runtime-path submitted-tests-dir "../../backgammon-oracle/submitted-tests")
-(define-runtime-path oracle-binary-dir "../../backgammon-oracle/oracle")
 
 (define/contract (assign-number->validated-tests-path assign-number)
   (assign-number? . -> . path-string?)
