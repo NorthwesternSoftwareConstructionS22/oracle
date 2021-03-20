@@ -21,17 +21,6 @@
 (define-runtime-path validation-job-info-cache "test-validation-jobs.rktd")
 (define-runtime-path bad-log-dump-path "bad-log.txt")
 
-(define/contract (kick-off-test-validation-job! assign-number)
-  (assign-number? . -> . (option/c travis:job-id/c))
-
-  (install-and-push-submitted-tests! assign-number)
-  (setup-and-push-grading-repo-for-test-validation! assign-number)
-  (travis:trigger-build! grading-repo-branch
-                         grading-repo-owner
-                         grading-repo-name
-                         grading-repo-branch
-                         @~a{@(assign-number->string assign-number) test validation}))
-
 (define (install-and-push-submitted-tests! assign-number)
   (define submitted-tests-path (assign-number->submitted-tests-path assign-number))
   (check/confirm-dirty-state! oracle-repo-path)
@@ -167,8 +156,15 @@
   (current-snapshots-repo-path test-snapshots-repo-path)
   (define assign-number (cons major-number minor-number))
   (cond [kick-off?
+         (install-and-push-submitted-tests! assign-number)
+         (setup-and-push-grading-repo-for-test-validation! assign-number)
          (option-let*
-          [job-id (kick-off-test-validation-job! assign-number)]
+          [job-id (travis:trigger-build!
+                   grading-repo-branch
+                   grading-repo-owner
+                   grading-repo-name
+                   grading-repo-branch
+                   @~a{@(assign-number->string assign-number) test validation})]
           [_ (write-to-file job-id
                             validation-job-info-cache
                             #:exists? 'replace)]
