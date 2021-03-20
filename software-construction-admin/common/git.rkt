@@ -21,7 +21,7 @@
 (define (sha? str)
   (and (string? str)
        (= (string-length str) 40)
-       (regexp-match? #rx"^[a-z0-9]+$")))
+       (regexp-match? #rx"^[a-z0-9]+$" str)))
 
 (define/contract (clone-repo! repo-name)
   (repo-name? . -> . (or/c path-to-existant-directory? #f))
@@ -96,7 +96,7 @@
 (define/contract (commit! repo-dir msg
                           #:add [paths-to-add empty])
   ({path-to-existant-directory? string?}
-   {#:add (listof string?)}
+   {#:add (listof path-string?)}
    . ->* .
    any)
 
@@ -137,7 +137,7 @@
   ({path-to-existant-directory? string?}
    {#:remote string?
     #:branch string?
-    #:add (listof string?)}
+    #:add (listof path-string?)}
    . ->* .
    any)
 
