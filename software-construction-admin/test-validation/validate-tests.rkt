@@ -24,7 +24,8 @@
 (define (install-and-push-submitted-tests! assign-number)
   (define submitted-tests-path (assign-number->submitted-tests-path assign-number))
   (check/confirm-dirty-state! oracle-repo-path)
-  (log-fest-info @~a{Installing submitted tests into @(pretty-path oracle-repo-path) ...})
+  (make-directory* submitted-tests-path)
+  (log-sc-info @~a{Installing submitted tests into @(pretty-path oracle-repo-path) ...})
   (for ([team (in-list (assign-number->active-team-names assign-number))])
     (define snapshot (team/assign-number->snapshot-path team assign-number))
     (log-fest-info @~a{Extracting tests from @team's snapshot at @(pretty-path snapshot)})
@@ -32,9 +33,11 @@
      #:name-seed "validate-tests"
      (λ (temp-dir)
        (unpack-snapshot-into! snapshot temp-dir empty)
-       (define tests (directory->tests (assign-number->deliverables-path assign-number)))
+       (define tests
+         (directory->tests (build-path temp-dir
+                                       (assign-number->deliverables-path assign-number))))
        (for-each (install-submitted-test! team submitted-tests-path) tests))))
-  (log-fest-info @~a{Committing submitted tests in @(pretty-path oracle-repo-path) and pushing})
+  (log-sc-info @~a{Committing submitted tests in @(pretty-path oracle-repo-path) and pushing})
   (commit-and-push! oracle-repo-path
                     @~a{Add @(assign-number->string assign-number) submitted tests}
                     #:remote oracle-repo-remote
@@ -48,12 +51,13 @@
                      empty]
                     [(test in out) (list in out)]))
   (for ([f (in-list to-move)])
-    (define new-name (test-file-name->validated (basename f)))
+    (define new-name (test-file-name->validated (basename f) team))
     (define new-path (build-path destination new-name))
+    (log-sc-debug @~a{Moving @(simple-form-path f) to @(simple-form-path new-path)})
     (unless (and (file-exists? new-path)
                  (not (user-prompt!
                        @~a{@new-path already exists. Overwrite it? (No means skip it.)})))
-      (rename-file-or-directory f new-path))))
+      (rename-file-or-directory f new-path #t))))
 
 (define (setup-and-push-grading-repo-for-test-validation! assign-number)
   (check/confirm-dirty-state! grading-repo-path)
@@ -67,7 +71,7 @@
                      Committing and pushing.
                      })
   (commit-and-push! grading-repo-path
-                    @~a{@(assign-number->string assign-number) test validation}
+                    @~a{[skip travis] @(assign-number->string assign-number) test validation}
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
                     #:add (list env-file)))
@@ -161,7 +165,6 @@
          (setup-and-push-grading-repo-for-test-validation! assign-number)
          (option-let*
           [job-id (travis:trigger-build!
-                   grading-repo-branch
                    grading-repo-owner
                    grading-repo-name
                    grading-repo-branch
