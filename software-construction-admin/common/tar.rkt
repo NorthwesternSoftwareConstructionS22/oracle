@@ -48,11 +48,11 @@
 
   (define-values {containing-dir filename}
     (basename zip-file #:with-directory? #t))
-  (parameterize ([current-directory containing-dir])
-    (system @~a{tar -xzf @filename}))
-  ;; twice to remove .tar.gz
-  (path-replace-extension (path-replace-extension zip-file "")
-                          ""))
+  (define tar-output
+    (parameterize ([current-directory containing-dir])
+      (system/string @~a{tar -xzvf @filename})))
+  (define extracted-directory-name (first (string-split tar-output "/\n")))
+  (build-path containing-dir extracted-directory-name))
 
 (define/contract (find-repo-cache-file assign)
   (assign-number? . -> . path-string?)

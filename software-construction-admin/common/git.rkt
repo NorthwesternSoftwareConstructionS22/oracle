@@ -150,7 +150,7 @@
 (define (get-head-commit-sha [repo-dir (current-directory)]
                              #:short? [short? #f])
   (parameterize ([current-directory repo-dir])
-    (system/string @~a{git rev-parse @(if short? "--short" "") HEAD})))
+    (string-trim (system/string @~a{git rev-parse @(if short? "--short" "") HEAD}))))
 
 (define (check/confirm-dirty-state! repo-dir)
   (match (get-status repo-dir)

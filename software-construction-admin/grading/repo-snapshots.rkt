@@ -24,11 +24,15 @@
   (build-path (current-snapshots-repo-path)
               (assign-number->dir-path-part assign-number)))
 
+(define/contract (team->snapshot-name team)
+  (team-name? . -> . string?)
+  (~a team ".zip"))
+
 (define/contract (team/assign-number->snapshot-path team assign-number)
   (team-name? assign-number? . -> . path-string?)
 
   (build-path (assign-number->snapshots-dir assign-number)
-              (~a team ".zip")))
+              (team->snapshot-name team)))
 
 (define/contract (unpack-snapshot-into! snapshot-path
                                         destination
@@ -39,10 +43,16 @@
    . -> .
    sha?)
 
+  (log-sc-info @~a{Unpacking @snapshot-path to @(simple-form-path destination)})
   (call-with-temp-directory
+   #:name-seed "unpack-snapshot"
    (λ (snapshot-unpack-path)
      (define snapshot-name (basename snapshot-path))
-     (log-sc-info @~a{Unpacking @(pretty-path snapshot-path) into @snapshot-unpack-path})
+     (log-sc-debug
+      @~a{
+          Unpacking @(pretty-path snapshot-path) into @snapshot-unpack-path first, @;
+          then moving each file to @(simple-form-path destination)
+          })
      (define snapshot-copy-path (build-path snapshot-unpack-path snapshot-name))
      (copy-file snapshot-path snapshot-copy-path)
 
@@ -53,7 +63,7 @@
      (for ([f (in-list (directory-list repo-snapshot-path))]
            #:unless (matches-any? preserve-files (path->string f)))
        (define f-path (build-path repo-snapshot-path f))
-       (log-sc-info @~a{Copying @f-path to @destination})
+       (log-sc-info @~a{Moving @f-path to @(simple-form-path destination)})
        (rename-file-or-directory f-path (build-path destination f)))
 
      snapshot-commit-sha)))
@@ -62,13 +72,14 @@
   ((listof team-name?) path-to-existant-directory? . -> . (listof path-to-existant-file?))
 
   (call-with-temp-directory
+   #:name-seed "take-snapshot"
    (λ (temp-dir)
      (parameterize ([current-directory temp-dir])
        (for/list ([team (in-list teams)])
          (define repo (clone-repo! (team->dev-repo-name team)))
-         (define snapshot (zip! repo))
-         (define destination (build-path destination-dir
-                                         (basename snapshot)))
+         (define repo-zip (zip! repo))
+         (define snapshot-name (team->snapshot-name team))
+         (define destination (build-path destination-dir snapshot-name))
          (if (file-exists? destination)
              (match (user-prompt!* @~a{
                                        @(pretty-path destination) already exists. @;
@@ -77,11 +88,11 @@
                                    '(d s a))
                ['d
                 (delete-file destination)
-                (rename-file-or-directory snapshot destination)]
+                (rename-file-or-directory repo-zip destination)]
                ['s (void)]
                [else (raise-user-error 'take-snapshots!
                                        "Aborting due to already existant snapshot.")])
-             (rename-file-or-directory snapshot destination))
+             (rename-file-or-directory repo-zip destination))
          destination)))))
 
 (define/contract (take-snapshot! team destination-dir)

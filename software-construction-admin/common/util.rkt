@@ -132,7 +132,9 @@
 ;; Call f with a new temp directory.
 ;; Delete the directory after f returns.
 ;; Result is whatever f produces.
-(define (call-with-temp-directory f #:name [name (~a (current-milliseconds))])
+(define (call-with-temp-directory f
+                                  #:name-seed [seed "sc"]
+                                  #:name [name (~a seed (current-milliseconds))])
   (define temp-dir (build-path system-temp-dir name))
   (log-sc-debug @~a{Making temp dir at @temp-dir})
   (dynamic-wind

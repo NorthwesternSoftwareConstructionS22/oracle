@@ -29,8 +29,9 @@
     (define snapshot (team/assign-number->snapshot-path team assign-number))
     (log-fest-info @~a{Extracting tests from @team's snapshot at @(pretty-path snapshot)})
     (call-with-temp-directory
+     #:name-seed "validate-tests"
      (λ (temp-dir)
-       (unpack-snapshot-into! snapshot "." empty)
+       (unpack-snapshot-into! snapshot temp-dir empty)
        (define tests (directory->tests (assign-number->deliverables-path assign-number)))
        (for-each (install-submitted-test! team submitted-tests-path) tests))))
   (log-fest-info @~a{Committing submitted tests in @(pretty-path oracle-repo-path) and pushing})
