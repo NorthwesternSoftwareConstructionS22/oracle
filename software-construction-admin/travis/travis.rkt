@@ -21,7 +21,7 @@
    [build-info
     (travis-request!
      @~a{/repo/@|repo-owner|%2F@|repo-name|/requests}
-     #:request-type POST
+     #:method POST
      #:data (string->bytes/utf-8
              ;; lltodo: does the message need to be the commit message without [skip travis]?
              ;; That's what I had before.
