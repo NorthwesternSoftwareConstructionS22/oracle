@@ -29,7 +29,7 @@
 
 (define/contract current-travis-api-base-url
   (parameter/c #rx"^https://.+[^/]$")
-  (make-parameter "https://api.travis.com"))
+  (make-parameter "https://api.travis-ci.com"))
 (define-runtime-path token-file "../../../../.travis-token.gpg")
 (define current-travis-token
   (make-parameter (and (file-exists? token-file)
