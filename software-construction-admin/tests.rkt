@@ -21,7 +21,7 @@
          "common/teams.rkt")
 
 (define test-file-rx @~a{([a-zA-Z0-9_-]+).json$})
-(define validated-test-file-rx @~a{([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
+(define validated-test-file-rx @~a{([a-zA-Z0-9_-]+)_([a-zA-Z0-9-]+).json$})
 
 (define test-input-file-rx (pregexp @~a{^input@test-file-rx}))
 (define test-output-file-rx (pregexp @~a{^output@test-file-rx}))
@@ -41,7 +41,7 @@
   (validated-test-input-file-rx . -> . team-name?)
 
   (match (basename path)
-    [(regexp validated-test-input-file-rx (list _ name test-id))
+    [(regexp validated-test-input-file-rx (list _ test-id name))
      name]
     [else #f]))
 
@@ -50,12 +50,8 @@
    team-name?
    . -> .
    (or/c validated-test-input-file-rx
-                                                              validated-test-output-file-rx))
-
-  (define prefix (match filename
-                   [(regexp test-input-file-rx  (list _ prefix)) (~a "input"  prefix)]
-                   [(regexp test-output-file-rx (list _ prefix)) (~a "output" prefix)]))
-  (~a prefix "_" team ".json"))
+         validated-test-output-file-rx))
+  (~a (path-replace-extension filename #"") "_" team ".json"))
 
 
 (struct test (input-file output-file) #:transparent)

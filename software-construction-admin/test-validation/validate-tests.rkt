@@ -171,7 +171,7 @@
                    @~a{@(assign-number->string assign-number) test validation})]
           [_ (write-to-file job-id
                             validation-job-info-cache
-                            #:exists? 'replace)]
+                            #:exists 'replace)]
           'ok)]
         [extract?
          (option-let*
