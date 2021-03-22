@@ -28,7 +28,7 @@
 
 (define-runtime-path grading-repo-path "../../grading")
 (define grading-repo-owner "llazarek")
-(define grading-repo-name "nu-sc-f19-grading")
+(define grading-repo-name "nu-sc-grading")
 (define grading-repo-remote (~a "git@github.com:"
                                 grading-repo-owner
                                 "/"
