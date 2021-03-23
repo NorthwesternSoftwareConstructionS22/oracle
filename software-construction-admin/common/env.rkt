@@ -2,8 +2,8 @@
 
 (provide write-env!)
 
-(require "../common/util.rkt"
-         "../common/assignments.rkt")
+(require "util.rkt"
+         "assignments.rkt")
 
 (define/contract (write-env! dir
                              env-file

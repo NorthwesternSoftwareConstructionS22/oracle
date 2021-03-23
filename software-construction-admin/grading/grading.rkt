@@ -14,14 +14,16 @@
          "../common/git.rkt"
          "../common/option.rkt"
          "../common/teams.rkt"
-         "../travis/env.rkt"
-         "../travis/travis.rkt"
+         "../common/env.rkt"
+         "../common/logger.rkt"
+         "../github-actions/actions.rkt"
+         "../tests.rkt"
          "../config.rkt"
          "repo-snapshots.rkt")
 
 (define-runtime-path grading-job-info-cache "grading-jobs.rktd")
 (define env-file "env.sh")
-(define preserve-files `(".travis.yml"
+(define preserve-files `(".github"
                          ".git"
                          ,env-file))
 
@@ -52,105 +54,73 @@
   (define snapshot-path
     (team/assign-number->snapshot-path team
                                        assign-number))
-  (displayln @~a{Unzipping @(pretty-path snapshot-path)})
+  (log-sc-info @~a{Unzipping @team's snapshot at @(pretty-path snapshot-path)})
   (define commit-sha (unpack-snapshot-into! snapshot-path
                                             to
                                             file-exceptions))
-  (displayln commit-sha))
+  (log-sc-debug @~a{Team's submission sha: @commit-sha}))
 
-#;(define (travis:trigger-build/wait-for-results! debug-dir
-                                                team
-                                                assign-number)
-  (parameterize ([current-directory debug-dir])
-    ;; (define commit-hash
-    ;;   (system/string "git rev-parse --short HEAD"))
-    ;; (displayln @~a{Trying to do hash: @commit-hash})
-    (option-let*
-     [job-id (travis:trigger-build! "master"
-                                    team
-                                    assign-number)]
-     [log-text (let loop ()
-                 (sleep (ping-timer-seconds))
-                 (match (travis:get-log! job-id
-                                         #:must-be-complete? #t)
-                   [(failure (== build-other-failure))
-                    (failure build-other-failure)]
-                   [(failure other-msg)
-                    (displayln other-msg)
-                    (loop)]
-                   [(present v)
-                    (present v)]))]
-     log-text)))
-
-(define (extract-grade-info log-text)
+(define (extract-score log-text)
   (define matches
     (regexp-match*
-     #px"Submitted (\\d+) / \\d+ valid tests\\s+Failed (\\d+) / (\\d+) peer tests"
+     #px"Submitted \\d+ / \\d+ valid tests\\s+Failed (\\d+) / (\\d+) peer tests"
      log-text
      #:match-select cdr))
   (match matches
-    [(list _ ... (list valid-test-count failed-test-count total-test-count))
-     (present (list (string->number valid-test-count)
-                 (- 1 (/ (string->number failed-test-count)
-                         (string->number total-test-count)))))]
+    [(list _ ... (list failed-test-count total-test-count))
+     (present (- 1 (/ (string->number failed-test-count)
+                      (string->number total-test-count))))]
     [else
-     #:when (regexp-match? #px"makefile failed to build an executable"
-                           log-text)
-     (failure "No run exe")]
-    [else
-     #:when (regexp-match? #px"Unable to locate deliverable folder at"
-                           log-text)
-     (failure "No submission directory")]
-    [else
-     (failure "No grade info found!")]))
+     (failure "No grading results found in log text: something went wrong before grading")]))
 
 (define/contract (kick-off-submission-grading team assign-number grading-repo-path)
   (team-name?
    assign-number?
    path-to-existant-directory?
    . -> .
-   (option/c travis:job-id/c))
+   (option/c ci-run?))
 
+  (log-sc-info
+   @~a{Kicking off a grading job for @team @(assign-number->string assign-number) ...})
   (clean-directory! grading-repo-path preserve-files)
+
+  (log-sc-debug @~a{Copying team submission to repo @(pretty-path grading-repo-path)})
   (copy-team-submission! team
                          assign-number
                          grading-repo-path
                          preserve-files)
   (write-env! grading-repo-path env-file team assign-number "grade")
+  (log-sc-debug @~a{Committing and pushing})
   (commit-and-push! grading-repo-path
-                    @~a{[skip travis] @team @(assign-number->string assign-number)}
+                    @~a{@team @(assign-number->string assign-number)}
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
-                    #:add ".")
+                    #:add grading-repo-path)
+  (log-sc-debug @~a{Launching CI run})
   (parameterize ([current-directory grading-repo-path])
-    (travis:trigger-build! grading-repo-branch
-                           grading-repo-owner
-                           grading-repo-name
-                           grading-repo-branch
-                           @~a{@team @(assign-number->string assign-number)})))
+    (launch-run! grading-repo-owner
+                 grading-repo-name
+                 "grading.yml"
+                 grading-repo-branch
+                 @~a{@team @(assign-number->string assign-number)})))
 
-(define (get-grading-results grading-job-info)
+(define (get-score-from-log job-id)
   (option-let*
-   [log-text (travis:get-log! grading-job-info
-                              #:must-be-completed? #t)]
+   [_ (fail-if (not (equal? (ci-run-status job-id) "completed"))
+               @~a{Job @job-id is not done yet.})]
+   [log-text (get-run-log! job-id)]
    [_ (display-to-file log-text
                        "last-log.txt"
                        #:exists 'truncate)]
-   [grades (extract-grade-info log-text)]
+   [grades (extract-score log-text)]
    grades))
 
-(define (add-test-count-if-failure team-name assign-number results)
-  (match results
-    [(? present?) results]
-    [(failure msg)
-     (define valid-tests-path (assign-number->validated-tests-path assign-number))
-     (define valid-tests
-       (if (directory-exists? valid-tests-path)
-           (directory-list valid-tests-path)
-           '()))
-     (define valid-test-count
-       (/ (length valid-tests) 2))
-     (failure @~a{@valid-test-count 0 #| @msg |#})]))
+(define (count-valid-tests team-name assign-number)
+  (define valid-tests-path (assign-number->validated-tests-path assign-number))
+  (count (λ (valid-test)
+           (equal? (validated-test-input-file->team-name valid-test)
+                   team-name))
+         (directory-list valid-tests-path)))
 
 ;; (present '(217162539 261662772))
 
@@ -216,18 +186,35 @@
                                                grading-repo-path))))
       (call-with-output-file grading-job-info-cache
         #:exists 'truncate
-        (λ (out) (pretty-write grading-jobs-info out)))]
+        (λ (out)
+          (pretty-write (for/hash ([{team job-id} (in-hash grading-jobs-info)]
+                                   #:when (or (present? job-id)
+                                              (begin0 #f
+                                                (log-sc-error
+                                                 @~a{
+                                                     Failed to launch grading job for @team :
+                                                     @job-id
+                                                     }))))
+                          (values team (ci-run-url (present-v job-id))))
+                        out)))]
      [extract?
-      (define get-the-grade-results (if extract-status-only?
-                                        travis:get-job-status!
-                                        get-grading-results))
-      (define grading-jobs-info
-        (call-with-input-file grading-job-info-cache read))
+      (define grading-job-urls-by-team (file->value grading-job-info-cache))
       (define grades
-        (for/hash ([(team info) (in-hash grading-jobs-info)])
-          (define results (get-the-grade-results info))
-          (define results+tests-for-failures
-            (add-test-count-if-failure team assign-number results))
-          (values team
-                  results+tests-for-failures)))
-      (displayln (~v grades))])))
+        (option-let*
+         [grading-job-ids (get-runs-by-url! grading-repo-owner
+                                            grading-repo-name
+                                            (hash-values (grading-job-urls-by-team)))]
+         (for/hash ([(team url) (in-hash grading-job-urls-by-team)])
+           (log-sc-info @~a{Getting info for @team's job})
+           (values team
+                   (option-let*
+                    [job-id (hash-ref grading-job-ids url)]
+                    (if extract-status-only?
+                        (ci-run-status job-id)
+                        (list (count-valid-tests team assign-number)
+                              (match (get-score-from-log job-id)
+                                [(present score) score]
+                                [failure
+                                 ;; keep the (failure ...) wrapper, it's marks the output nicely
+                                 failure]))))))))
+      (pretty-write grades)])))

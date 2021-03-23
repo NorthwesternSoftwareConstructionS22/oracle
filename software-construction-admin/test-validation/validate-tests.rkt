@@ -6,14 +6,13 @@
          "../common/util.rkt"
          "../common/git.rkt"
          "../common/logger.rkt"
-         "../travis/env.rkt"
-         "../grading/repo-snapshots.rkt"
-         "../travis/travis.rkt"
          "../common/assignments.rkt"
          "../common/teams.rkt"
          "../common/option.rkt"
+         "../common/env.rkt"
+         "../github-actions/actions.rkt"
+         "../grading/repo-snapshots.rkt"
          "../tests.rkt"
-         "../grading/grading.rkt"
          "../config.rkt")
 
 (define env-file "env.sh")
@@ -71,19 +70,19 @@
                      Committing and pushing.
                      })
   (commit-and-push! grading-repo-path
-                    @~a{[skip travis] @(assign-number->string assign-number) test validation}
+                    @~a{@(assign-number->string assign-number) test validation}
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
                     #:add (list env-file)))
 
 
 (define/contract (extract-valid-test-names job-id)
-  (travis:job-id/c . -> . (option/c
-                           (listof (and/c string?
-                                          has-validated-test-input-file-naming-convention?))))
+  (ci-run? . -> . (option/c
+                   (listof (and/c string?
+                                  has-validated-test-input-file-naming-convention?))))
 
   (option-let*
-   [log-text (travis:get-log! job-id)]
+   [log-text (get-run-log! job-id)]
    [names (parse-validated-inputs log-text)]
    names))
 
@@ -164,18 +163,21 @@
          (install-and-push-submitted-tests! assign-number)
          (setup-and-push-grading-repo-for-test-validation! assign-number)
          (option-let*
-          [job-id (travis:trigger-build!
+          [job-id (launch-run!
                    grading-repo-owner
                    grading-repo-name
-                   grading-repo-branch
-                   @~a{@(assign-number->string assign-number) test validation})]
-          [_ (write-to-file job-id
+                   "validate.yml"
+                   grading-repo-branch)]
+          [_ (write-to-file (ci-run-url job-id)
                             validation-job-info-cache
                             #:exists 'replace)]
           'ok)]
         [extract?
          (option-let*
-          [job-id (file->value validation-job-info-cache)]
+          [job-url (file->value validation-job-info-cache)]
+          [(list job-id) (get-runs-by-url! grading-repo-owner
+                                           grading-repo-name
+                                           (list job-url))]
           [valid-tests (extract-valid-test-names job-id)]
           [_ (install-valid-tests! assign-number valid-tests)]
           'ok)]))
