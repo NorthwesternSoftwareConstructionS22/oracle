@@ -59,6 +59,7 @@
       (rename-file-or-directory f new-path #t))))
 
 (define (setup-and-push-grading-repo-for-test-validation! assign-number)
+  (log-sc-info @~a{Setting up the grading repo for validation job.})
   (check/confirm-dirty-state! grading-repo-path)
   (write-env! grading-repo-path
               env-file
@@ -161,6 +162,7 @@
   (cond [kick-off?
          (install-and-push-submitted-tests! assign-number)
          (setup-and-push-grading-repo-for-test-validation! assign-number)
+         (log-sc-info @~a{Launching validation job.})
          (option-let*
           [job-id (launch-run!
                    grading-repo-owner
@@ -174,9 +176,17 @@
         [extract?
          (option-let*
           [job-url (file->value validation-job-info-cache)]
-          [(list job-id) (get-runs-by-url! grading-repo-owner
-                                           grading-repo-name
-                                           (list job-url))]
+          [_ (log-sc-info @~a{Finding job with url @job-url})]
+          [runs-by-url (get-runs-by-url! grading-repo-owner
+                                         grading-repo-name
+                                         (list job-url))]
+          [job-id (hash-ref runs-by-url job-url)]
+          [_ (log-sc-info @~a{Found the job})]
+          [_ (fail-if (not (equal? (ci-run-status job-id) "completed"))
+                      @~a{Job is not done yet.})]
+          [_ (fail-if (not (equal? (ci-run-conclusion job-id) "success"))
+                      @~a{Something went wrong with the validation job, check it out on github.})]
+          [_ (log-sc-info @~a{Extracting valid tests from log})]
           [valid-tests (extract-valid-test-names job-id)]
           [_ (install-valid-tests! assign-number valid-tests)]
           'ok)]))
