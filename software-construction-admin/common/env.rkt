@@ -16,11 +16,11 @@
    any)
 
   (display-to-file @~a{
-                       export ASSIGN_MAJOR=@(car assign-number)
-                       export ASSIGN_MINOR=@(cdr assign-number)
-                       export TEAM_NAME=@team
+                       ASSIGN_MAJOR=@(car assign-number)
+                       ASSIGN_MINOR=@(cdr assign-number)
+                       TEAM_NAME=@team
                        @(if action
-                            (~a "export ACTION=" action)
+                            (~a "ACTION=" action)
                             "")
 
                        }

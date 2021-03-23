@@ -63,8 +63,7 @@
   (write-env! grading-repo-path
               env-file
               "test-validation"
-              assign-number
-              "test-validation")
+              assign-number)
   (log-fest-info @~a{
                      @(pretty-path grading-repo-path) set up for test validation.
                      Committing and pushing.

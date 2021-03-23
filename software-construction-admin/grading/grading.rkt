@@ -89,7 +89,7 @@
                          assign-number
                          grading-repo-path
                          preserve-files)
-  (write-env! grading-repo-path env-file team assign-number "grade")
+  (write-env! grading-repo-path env-file team assign-number)
   (log-sc-debug @~a{Committing and pushing})
   (commit-and-push! grading-repo-path
                     @~a{@team @(assign-number->string assign-number)}
@@ -100,7 +100,7 @@
   (parameterize ([current-directory grading-repo-path])
     (launch-run! grading-repo-owner
                  grading-repo-name
-                 "grading.yml"
+                 "grade.yml"
                  grading-repo-branch
                  @~a{@team @(assign-number->string assign-number)})))
 
