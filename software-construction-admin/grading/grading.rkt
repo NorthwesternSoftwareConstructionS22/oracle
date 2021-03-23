@@ -180,21 +180,21 @@
      [kick-off?
       (define grading-jobs-info
         (for/hash ([team (in-list teams)])
-          (values team
-                  (kick-off-submission-grading team
-                                               assign-number
-                                               grading-repo-path))))
+          (define maybe-job-id (kick-off-submission-grading team
+                                                            assign-number
+                                                            grading-repo-path))
+          (when (failure? maybe-job-id)
+            (log-sc-error
+             @~a{
+                 Failed to launch grading job for @team :
+                 @maybe-job-id
+                 }))
+          (values team maybe-job-id)))
       (call-with-output-file grading-job-info-cache
         #:exists 'truncate
         (λ (out)
           (pretty-write (for/hash ([{team job-id} (in-hash grading-jobs-info)]
-                                   #:when (or (present? job-id)
-                                              (begin0 #f
-                                                (log-sc-error
-                                                 @~a{
-                                                     Failed to launch grading job for @team :
-                                                     @job-id
-                                                     }))))
+                                   #:when (present? job-id))
                           (values team (ci-run-url (present-v job-id))))
                         out)))]
      [extract?
