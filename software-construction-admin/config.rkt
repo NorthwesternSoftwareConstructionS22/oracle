@@ -16,7 +16,7 @@
                                         "backgammon-oracle/submitted-tests"))
 (define oracle-binary-dir (build-path oracle-repo-path
                                       "backgammon-oracle/oracle"))
-(define oracle-repo-owner "llazarek")
+(define oracle-repo-owner "LLazarek")
 (define oracle-repo-name "nu-sc-oracle")
 (define oracle-repo-remote (~a "git@github.com:"
                                oracle-repo-owner
@@ -27,7 +27,7 @@
 
 
 (define-runtime-path grading-repo-path "../../grading")
-(define grading-repo-owner "llazarek")
+(define grading-repo-owner "LLazarek")
 (define grading-repo-name "nu-sc-grading")
 (define grading-repo-remote (~a "git@github.com:"
                                 grading-repo-owner
