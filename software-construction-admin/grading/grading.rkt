@@ -58,19 +58,6 @@
                                             file-exceptions))
   (log-sc-debug @~a{Team's submission sha: @commit-sha}))
 
-(define (extract-score log-text)
-  (define matches
-    (regexp-match*
-     #px"Submitted \\d+ / \\d+ valid tests\\s+Failed (\\d+) / (\\d+) peer tests"
-     log-text
-     #:match-select cdr))
-  (match matches
-    [(list _ ... (list failed-test-count total-test-count))
-     (present (- 1 (/ (string->number failed-test-count)
-                      (string->number total-test-count))))]
-    [else
-     (failure "No grading results found in log text: something went wrong before grading")]))
-
 (define/contract (kick-off-submission-grading team assign-number grading-repo-path)
   (team-name?
    assign-number?
@@ -137,10 +124,23 @@
    [grades (extract-score log-text)]
    grades))
 
+(define (extract-score log-text)
+  (define matches
+    (regexp-match*
+     #px"Submitted \\d+ / \\d+ valid tests.+?Failed (\\d+) / (\\d+) peer tests"
+     log-text
+     #:match-select cdr))
+  (match matches
+    [(list _ ... (list failed-test-count total-test-count))
+     (present (- 1 (/ (string->number failed-test-count)
+                      (string->number total-test-count))))]
+    [else
+     (failure "No grading results found in log text: something went wrong before grading")]))
+
 (define (count-valid-tests team-name assign-number)
   (define valid-tests-path (assign-number->validated-tests-path assign-number))
   (count (λ (valid-test)
-           (equal? (validated-test-input-file->team-name valid-test)
+           (equal? (validated-test-input-file->team-name (~a valid-test))
                    team-name))
          (directory-list valid-tests-path)))
 
