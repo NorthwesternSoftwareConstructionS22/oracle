@@ -115,7 +115,8 @@
                   A copy of the log has been dumped to @(pretty-path bad-log-dump-path)
                   })]))
 
-(define (install-valid-tests! assign-number valid-test-input-names)
+
+(define/contract (install-and-push-valid-tests! assign-number valid-test-input-names)
   (assign-number?
    (listof (and/c string? has-validated-test-input-file-naming-convention?))
    . -> .
@@ -137,7 +138,14 @@
     (define dst (build-path validated-tests-path valid-test-input))
     (unless (and (file-exists? dst)
                  (not (user-prompt! @~a{@dst already exists. Overwrite it? (No means skip it.)})))
-      (copy-file src dst #t))))
+      (copy-file src dst #t)))
+
+  (log-sc-info @~a{Committing validated tests in @(pretty-path oracle-repo-path) and pushing})
+  (commit-and-push! oracle-repo-path
+                    @~a{Add @(assign-number->string assign-number) validated tests}
+                    #:remote oracle-repo-remote
+                    #:branch oracle-repo-branch
+                    #:add (list validated-tests-path)))
 
 (module+ main
   (match-define (cons (hash-table ['major major-number]
@@ -204,5 +212,5 @@
                       @~a{Something went wrong with the validation job, check it out on github.})]
           [_ (log-sc-info @~a{Extracting valid tests from log})]
           [valid-tests (extract-valid-test-names job-id)]
-          [_ (install-valid-tests! assign-number valid-tests)]
+          [_ (install-and-push-valid-tests! assign-number valid-tests)]
           'ok)]))
