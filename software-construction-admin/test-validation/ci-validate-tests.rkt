@@ -4,9 +4,11 @@
 
 (require "../tests.rkt"
          "../testing.rkt"
+         "../config.rkt"
          "../common/cmdline.rkt"
          "../common/util.rkt"
-         "../common/assignments.rkt")
+         "../common/assignments.rkt"
+         "../common/teams.rkt")
 
 (define validated-test-log-delimeter "-----validated-----")
 
@@ -17,6 +19,13 @@
   (define test-inputs (list->set (map test->input-json tests)))
   (λ (a-test)
     (set-member? test-inputs (test->input-json a-test))))
+
+(define (instructor-test? a-test)
+  (member (validated-test-input-file->team-name (test-input-file a-test))
+          instructor-team-names))
+(define/contract (get-instructor-tests assign-number)
+  (assign-number? . -> . (listof (and/c test/c instructor-test?)))
+  (directory->tests (assign-number->validated-tests-path assign-number)))
 
 (module+ main
   (match-define (cons (hash-table ['major major-number]
@@ -40,14 +49,26 @@
     (valid-tests/passing-oracle (assign-number->submitted-tests-path assign-number)
                                 (assign-number->oracle-path assign-number)
                                 #:check-json-validity? #t))
-  (define instructor-tests
-    (directory->tests (assign-number->validated-tests-path assign-number)))
+  (define instructor-tests (get-instructor-tests assign-number))
   (define valid-tests-different-than-instructor
     (filter-not (same-input-exists-in instructor-tests)
                 all-valid-tests))
 
+  (define valid-tests-different-than-past-assignments
+    (cond [(member assign-number assigns-conflicting-with-past-tests)
+           (define all-past-assignments
+             (take assign-sequence
+                   (index-of assign-sequence assign-number)))
+           (define all-past-tests
+             (append-map (compose1 directory->tests
+                                   assign-number->validated-tests-path)
+                         all-past-assignments))
+           (filter-not (same-input-exists-in all-past-tests)
+                       valid-tests-different-than-instructor)]
+          [else valid-tests-different-than-instructor]))
+
   (display validated-test-log-delimeter)
   (write
-   (for/list ([test (in-list valid-tests-different-than-instructor)])
+   (for/list ([test (in-list valid-tests-different-than-past-assignments)])
      (basename (test-input-file test))))
   (displayln validated-test-log-delimeter))

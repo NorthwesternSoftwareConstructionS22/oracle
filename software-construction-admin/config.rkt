@@ -36,6 +36,24 @@
                                 ".git"))
 (define grading-repo-branch "master")
 
+(define assign-sequence
+  '(("1" . "2")
+    ("2" . "1")
+    ("2" . "2")
+    ("3" . "1")
+    ("4" . "1")
+    ("5" . "1")
+    ("5" . "2")
+    ("6" . "1")
+    ("7" . "1")
+    ("8" . "1")
+    ("9" . "1")))
+(define assigns-conflicting-with-past-tests
+  '(("5" . "1")
+    ("5" . "2")
+    ("6" . "1")
+    ("9" . "1")))
+
 ;; ;; sunday is 0, saturday is 6
 ;; (define pre-validated-test-days '(1 2 3 4)) ;; monday - thursday
 ;; (define (use-pre-validated-tests?)

@@ -1,6 +1,7 @@
 #lang at-exp racket
 
 (provide all-teams
+         instructor-team-names
          assign-number->active-team-names
          team-name?)
 
