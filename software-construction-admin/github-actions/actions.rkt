@@ -5,12 +5,16 @@
          cancel-run!
          launch-run!
          get-run-log!
-         (struct-out ci-run))
+         (struct-out ci-run)
+
+         install-workflow-config!
+         write-workflow-env!)
 
 (require "github-api.rkt"
          "../common/option.rkt"
          "../common/git.rkt"
          "../common/util.rkt"
+         "../config.rkt"
          gregor
          file/unzip)
 
@@ -193,3 +197,53 @@
    [contents (url->log-contents log-download-url)]
    contents))
 
+(define (install-workflow-config! repo-path
+                                  name
+                                  steps)
+  (define workflows-path (build-path repo-path
+                                     ".github"
+                                     "workflows"))
+  (make-directory* workflows-path)
+  (display-to-file (make-workflow-config-contents name steps)
+                   (build-path workflows-path
+                               (~a name ".yml"))
+                   #:exists 'replace))
+
+(define workflow-env-file "env.sh")
+(define/contract (write-workflow-env! repo-path env)
+  (path-to-existant-directory? dict? . -> . any)
+
+  (display-to-file (string-join (for/list ([{var value} (in-dict env)])
+                                  @~a{@|var|=@|value|}))
+                   (build-path repo-path workflow-env-file)
+                   #:exists 'truncate))
+
+(define (make-workflow-config-contents name steps)
+  @~a{
+      on:
+        - workflow_dispatch
+
+      jobs:
+        @|name|:
+          runs-on: ubuntu-20.04
+          steps:
+            - name: Checkout
+              uses: actions/checkout@"@"main
+            - name: Install Racket
+              uses: Bogdanp/setup-racket@"@"v0.11
+              with:
+                architecture: 'x64'
+                distribution: 'full'
+                version: '8.0'
+            - name: Set up environment
+              run: cat @workflow-env-file >> $GITHUB_ENV
+            - name: Install oracle
+              run: raco pkg install --auto https://github.com/@|oracle-repo-owner|/@|oracle-repo-name|.git
+      @(string-join
+        (for/list ([{step-name step-cmd} (in-dict steps)])
+          @~a{
+              @"      "- name: @step-name
+              @"      "  run: @step-cmd
+              })
+        "\n")
+      })

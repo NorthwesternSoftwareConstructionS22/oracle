@@ -9,13 +9,12 @@
          "../common/assignments.rkt"
          "../common/teams.rkt"
          "../common/option.rkt"
-         "../common/env.rkt"
          "../github-actions/actions.rkt"
          "../grading/repo-snapshots.rkt"
          "../tests.rkt"
          "../config.rkt")
 
-(define env-file "env.sh")
+(define validation-workflow-name "validate")
 
 (define-runtime-path validation-job-info-cache "test-validation-jobs.rktd")
 (define-runtime-path bad-log-dump-path "bad-log.txt")
@@ -61,10 +60,21 @@
 (define (setup-and-push-grading-repo-for-test-validation! assign-number)
   (log-sc-info @~a{Setting up the grading repo for validation job.})
   (check/confirm-dirty-state! grading-repo-path)
-  (write-env! grading-repo-path
-              env-file
-              "test-validation"
-              assign-number)
+  (install-workflow-config!
+   grading-repo-path
+   validation-workflow-name
+   (list (cons "Validate tests"
+               @~a{
+                   racket -O debug@"@"sc @;
+                   -l software-construction-admin/test-validation/ci-validate-tests -- @;
+                   -M $MAJOR @;
+                   -m $MINOR
+                   })))
+  (write-workflow-env! grading-repo-path
+                       `(("MAJOR" . ,(assign-major-number assign-number))
+                         ("MINOR" . ,(assign-minor-number assign-number))))
+  (displayln "Check on config contents... Hit enter to continue.")
+  (read-line)
   (log-fest-info @~a{
                      @(pretty-path grading-repo-path) set up for test validation.
                      Committing and pushing.
@@ -73,7 +83,7 @@
                     @~a{@(assign-number->string assign-number) test validation}
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
-                    #:add (list env-file)))
+                    #:add (build-path grading-repo-path ".github")))
 
 
 (define/contract (extract-valid-test-names job-id)
@@ -167,7 +177,7 @@
           [job-id (launch-run!
                    grading-repo-owner
                    grading-repo-name
-                   "validate.yml"
+                   (~a validation-workflow-name ".yml")
                    grading-repo-branch)]
           [_ (write-to-file (ci-run-url job-id)
                             validation-job-info-cache
