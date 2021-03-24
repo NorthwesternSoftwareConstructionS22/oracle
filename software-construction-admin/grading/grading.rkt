@@ -112,14 +112,13 @@
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
                     ;; Add everything since who knows what files the student code has
-                    #:add grading-repo-path)
+                    #:add (list grading-repo-path))
   (log-sc-debug @~a{Launching CI run})
   (parameterize ([current-directory grading-repo-path])
     (launch-run! grading-repo-owner
                  grading-repo-name
                  (~a grading-workflow-name ".yml")
-                 grading-repo-branch
-                 @~a{@team @(assign-number->string assign-number)})))
+                 grading-repo-branch)))
 
 (define (get-score-from-log job-id)
   (option-let*
@@ -147,7 +146,8 @@
                                   ['minor minor-number]
                                   ['kick-off? kick-off?]
                                   ['extract? extract?]
-                                  ['extract-status-only? extract-status-only?])
+                                  ['extract-status-only? extract-status-only?]
+                                  ['snapshot-repo (app current-snapshots-repo-path _)])
                       args)
     (command-line/declarative
      #:multi
@@ -186,8 +186,15 @@
       'extract-status-only?
       ("Collect grading job statuses instead of extracting grade info."
        "Only has an effect when -e is specified.")
-      #:record]))
+      #:record]
 
+     [("-r" "--snapshot-repo")
+      'snapshot-repo
+      ("Specify a snapshot repo to use."
+       @~a{Default: @(simple-form-path submission-snapshots-repo-path)})
+      #:collect {"path" take-latest submission-snapshots-repo-path}]))
+
+  (log-sc-info @~a{Using snapshot repo: @(pretty-path (current-snapshots-repo-path))})
   (define assign-number (cons major-number minor-number))
   (define teams (match specific-teams
                   ['() (assign-number->active-team-names assign-number)]
@@ -213,14 +220,15 @@
           (pretty-write (for/hash ([{team job-id} (in-hash grading-jobs-info)]
                                    #:when (present? job-id))
                           (values team (ci-run-url (present-v job-id))))
-                        out)))]
+                        out)))
+      'ok]
      [extract?
       (define grading-job-urls-by-team (file->value grading-job-info-cache))
       (define grades
         (option-let*
          [grading-job-ids (get-runs-by-url! grading-repo-owner
                                             grading-repo-name
-                                            (hash-values (grading-job-urls-by-team)))]
+                                            (hash-values grading-job-urls-by-team))]
          (for/hash ([(team url) (in-hash grading-job-urls-by-team)])
            (log-sc-info @~a{Getting info for @team's job})
            (values team

@@ -151,7 +151,8 @@
   (match-define (cons (hash-table ['major major-number]
                                   ['minor minor-number]
                                   ['kick-off? kick-off?]
-                                  ['extract? extract?])
+                                  ['extract? extract?]
+                                  ['snapshot-repo (app current-snapshots-repo-path _)])
                       args)
     (command-line/declarative
      #:once-each
@@ -179,9 +180,15 @@
        "Conflicts with -k.")
       #:record
       #:conflicts '(kick-off?)
-      #:mandatory-unless (λ (flags) (member 'kick-off? flags))]))
+      #:mandatory-unless (λ (flags) (member 'kick-off? flags))]
 
-  (current-snapshots-repo-path test-snapshots-repo-path)
+     [("-r" "--snapshot-repo")
+      'snapshot-repo
+      ("Specify a snapshot repo to use."
+       @~a{Default: @(simple-form-path test-snapshots-repo-path)})
+      #:collect {"path" take-latest test-snapshots-repo-path}]))
+
+  (log-sc-info @~a{Using snapshot repo: @(pretty-path (current-snapshots-repo-path))})
   (define assign-number (cons major-number minor-number))
   (cond [kick-off?
          (install-and-push-submitted-tests! assign-number)
