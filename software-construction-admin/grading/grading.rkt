@@ -14,18 +14,16 @@
          "../common/git.rkt"
          "../common/option.rkt"
          "../common/teams.rkt"
-         "../common/env.rkt"
          "../common/logger.rkt"
          "../github-actions/actions.rkt"
          "../tests.rkt"
          "../config.rkt"
          "repo-snapshots.rkt")
 
+(define grading-workflow-name "grade")
+
 (define-runtime-path grading-job-info-cache "grading-jobs.rktd")
-(define env-file "env.sh")
-(define preserve-files `(".github"
-                         ".git"
-                         ,env-file))
+(define preserve-files '(".github" ".git"))
 
 (define/contract (clean-directory! dir preserve)
   (path-to-existant-directory? (listof string?) . -> . any)
@@ -89,18 +87,37 @@
                          assign-number
                          grading-repo-path
                          preserve-files)
-  (write-env! grading-repo-path env-file team assign-number)
+  ;; Make sure the config is set up. If it's already there and has the right
+  ;; contents, committing this is a no-op.
+  ;; That's what we want, since these configs aren't really supposed to change per-commit.
+  ;; Hence the need for the indirection with the env file below.
+  (install-workflow-config!
+   grading-repo-path
+   grading-workflow-name
+   (list (cons "Grade assignment"
+               @~a{
+                   racket -O debug@"@"sc @;
+                   -l software-construction-admin -- @;
+                   -M $MAJOR @;
+                   -m $MINOR @;
+                   -n $TEAM
+                   })))
+  (write-workflow-env! grading-repo-path
+                       `(("MAJOR" . ,(assign-major-number assign-number))
+                         ("MINOR" . ,(assign-minor-number assign-number))
+                         ("TEAM" . ,team)))
   (log-sc-debug @~a{Committing and pushing})
   (commit-and-push! grading-repo-path
                     @~a{@team @(assign-number->string assign-number)}
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
+                    ;; Add everything since who knows what files the student code has
                     #:add grading-repo-path)
   (log-sc-debug @~a{Launching CI run})
   (parameterize ([current-directory grading-repo-path])
     (launch-run! grading-repo-owner
                  grading-repo-name
-                 "grade.yml"
+                 (~a grading-workflow-name ".yml")
                  grading-repo-branch
                  @~a{@team @(assign-number->string assign-number)})))
 

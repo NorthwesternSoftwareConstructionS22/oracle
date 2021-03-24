@@ -60,21 +60,25 @@
 (define (setup-and-push-grading-repo-for-test-validation! assign-number)
   (log-sc-info @~a{Setting up the grading repo for validation job.})
   (check/confirm-dirty-state! grading-repo-path)
-  (install-workflow-config!
-   grading-repo-path
-   validation-workflow-name
-   (list (cons "Validate tests"
-               @~a{
-                   racket -O debug@"@"sc @;
-                   -l software-construction-admin/test-validation/ci-validate-tests -- @;
-                   -M $MAJOR @;
-                   -m $MINOR
-                   })))
-  (write-workflow-env! grading-repo-path
-                       `(("MAJOR" . ,(assign-major-number assign-number))
-                         ("MINOR" . ,(assign-minor-number assign-number))))
-  (displayln "Check on config contents... Hit enter to continue.")
-  (read-line)
+  (define config-path
+    ;; Make sure the config is set up. If it's already there and has the right
+    ;; contents, committing this is a no-op.
+    ;; That's what we want, since these configs aren't really supposed to change per-commit.
+    ;; Hence the need for the indirection with the env file below.
+    (install-workflow-config!
+     grading-repo-path
+     validation-workflow-name
+     (list (cons "Validate tests"
+                 @~a{
+                     racket -O debug@"@"sc @;
+                     -l software-construction-admin/test-validation/ci-validate-tests -- @;
+                     -M $MAJOR @;
+                     -m $MINOR
+                     }))))
+  (define env-path
+    (write-workflow-env! grading-repo-path
+                         `(("MAJOR" . ,(assign-major-number assign-number))
+                           ("MINOR" . ,(assign-minor-number assign-number)))))
   (log-fest-info @~a{
                      @(pretty-path grading-repo-path) set up for test validation.
                      Committing and pushing.
@@ -83,7 +87,8 @@
                     @~a{@(assign-number->string assign-number) test validation}
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
-                    #:add (build-path grading-repo-path ".github")))
+                    #:add (list config-path
+                                env-path)))
 
 
 (define/contract (extract-valid-test-names job-id)

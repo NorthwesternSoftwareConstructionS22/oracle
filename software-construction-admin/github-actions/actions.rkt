@@ -197,26 +197,32 @@
    [contents (url->log-contents log-download-url)]
    contents))
 
-(define (install-workflow-config! repo-path
-                                  name
-                                  steps)
+(define/contract (install-workflow-config! repo-path
+                                           name
+                                           steps)
+  (path-to-existant-directory? string? dict? . -> . path-to-existant-file?)
+
   (define workflows-path (build-path repo-path
                                      ".github"
                                      "workflows"))
   (make-directory* workflows-path)
+  (define config-path (build-path workflows-path
+                                  (~a name ".yml")))
   (display-to-file (make-workflow-config-contents name steps)
-                   (build-path workflows-path
-                               (~a name ".yml"))
-                   #:exists 'replace))
+                   config-path
+                   #:exists 'replace)
+  config-path)
 
 (define workflow-env-file "env.sh")
 (define/contract (write-workflow-env! repo-path env)
-  (path-to-existant-directory? dict? . -> . any)
+  (path-to-existant-directory? dict? . -> . path-to-existant-file?)
 
+  (define env-path (build-path repo-path workflow-env-file))
   (display-to-file (string-join (for/list ([{var value} (in-dict env)])
                                   @~a{@|var|=@|value|}))
-                   (build-path repo-path workflow-env-file)
-                   #:exists 'truncate))
+                   env-path
+                   #:exists 'truncate)
+  env-path)
 
 (define (make-workflow-config-contents name steps)
   @~a{
