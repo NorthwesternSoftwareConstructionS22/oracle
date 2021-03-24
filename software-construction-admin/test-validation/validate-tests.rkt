@@ -26,7 +26,7 @@
   (log-sc-info @~a{Installing submitted tests into @(pretty-path oracle-repo-path) ...})
   (for ([team (in-list (assign-number->active-team-names assign-number))])
     (define snapshot (team/assign-number->snapshot-path team assign-number))
-    (log-fest-info @~a{Extracting tests from @team's snapshot at @(pretty-path snapshot)})
+    (log-sc-info @~a{Extracting tests from @team's snapshot at @(pretty-path snapshot)})
     (call-with-temp-directory
      #:name-seed "validate-tests"
      (λ (temp-dir)
@@ -79,10 +79,10 @@
     (write-workflow-env! grading-repo-path
                          `(("MAJOR" . ,(assign-major-number assign-number))
                            ("MINOR" . ,(assign-minor-number assign-number)))))
-  (log-fest-info @~a{
-                     @(pretty-path grading-repo-path) set up for test validation.
-                     Committing and pushing.
-                     })
+  (log-sc-info @~a{
+                   @(pretty-path grading-repo-path) set up for test validation.
+                   Committing and pushing.
+                   })
   (commit-and-push! grading-repo-path
                     @~a{@(assign-number->string assign-number) test validation}
                     #:remote grading-repo-remote
@@ -121,14 +121,15 @@
    . -> .
    any)
 
-  (log-fest-info @~a{
-                     Copying valid tests @;
-                     from @(pretty-path submitted-tests-path) to @(pretty-path validated-tests-path)
-                     Valid tests are:
-                     @(pretty-format valid-test-input-names)
-                     })
   (define submitted-tests-path (assign-number->submitted-tests-path assign-number))
   (define validated-tests-path (assign-number->validated-tests-path assign-number))
+  (make-directory* validated-tests-path)
+  (log-sc-info @~a{
+                   Copying valid tests @;
+                   from @(pretty-path submitted-tests-path) to @(pretty-path validated-tests-path)
+                   Valid tests are:
+                   @(pretty-format valid-test-input-names)
+                   })
   (check/confirm-dirty-state! oracle-repo-path)
 
   (for ([valid-test-input (in-list valid-test-input-names)])
