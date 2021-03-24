@@ -3,10 +3,10 @@
 
 (provide team/assign-number->snapshot-path
          unpack-snapshot-into!
-         current-snapshots-repo-path)
+         current-snapshots-repo-path
+         take-snapshot!)
 
-(require racket/runtime-path
-         "../common/cmdline.rkt"
+(require "../common/cmdline.rkt"
          "../common/util.rkt"
          "../common/git.rkt"
          "../common/tar.rkt"
@@ -68,8 +68,12 @@
 
      snapshot-commit-sha)))
 
-(define/contract (take-snapshots! teams destination-dir)
-  ((listof team-name?) path-to-existant-directory? . -> . (listof path-to-existant-file?))
+(define/contract (take-snapshots! teams destination-dir configure-repo!)
+  ((listof team-name?)
+   path-to-existant-directory?
+   (path-to-existant-directory? . -> . any)
+   . -> .
+   (listof path-to-existant-file?))
 
   (call-with-temp-directory
    #:name-seed "take-snapshot"
@@ -77,6 +81,7 @@
      (parameterize ([current-directory temp-dir])
        (for/list ([team (in-list teams)])
          (define repo (clone-repo! (team->dev-repo-name team)))
+         (configure-repo! repo)
          (define repo-zip (zip! repo))
          (define snapshot-name (team->snapshot-name team))
          (define destination (build-path destination-dir snapshot-name))
@@ -95,12 +100,14 @@
              (rename-file-or-directory repo-zip destination))
          destination)))))
 
-(define/contract (take-snapshot! team destination-dir)
-  (team-name? path-to-existant-directory? . -> . path-to-existant-file?)
+(define/contract (take-snapshot! team destination-dir configure-repo!)
+  (team-name?
+   path-to-existant-directory?
+   (path-to-existant-directory? . -> . any)
+   . -> .
+   path-to-existant-file?)
 
-  (first (take-snapshots! (list team) destination-dir)))
-
-(define env-file "env.sh")
+  (first (take-snapshots! (list team) destination-dir configure-repo!)))
 
 (define (parse-human-date->ISO str)
   (match (with-output-to-string
@@ -175,7 +182,9 @@
   (define snapshot-dir (assign-number->snapshots-dir assign-number))
   (make-directory* snapshot-dir)
   (log-sc-info @~a{Taking dev repo snapshots in @snapshot-dir ...})
-  (void (take-snapshots! teams snapshot-dir))
+  (void (take-snapshots! teams
+                         snapshot-dir
+                         (checkout-last-commit-before deadline)))
   (log-sc-info @~a{Done.})
   (cond [(user-prompt! @~a{Commit snapshots in @(pretty-path (current-snapshots-repo-path))?})
          (add! (current-snapshots-repo-path) snapshot-dir)

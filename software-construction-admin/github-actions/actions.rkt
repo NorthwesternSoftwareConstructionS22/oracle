@@ -20,6 +20,7 @@
 
 (struct ci-run (id
                 url
+                html-url
                 commit
                 status
                 conclusion
@@ -60,6 +61,7 @@
   (match run-info-json
     [(hash-table ['id id]
                  ['url url]
+                 ['html_url html-url]
                  ['head_sha commit]
                  ['status status]
                  ['conclusion conclusion]
@@ -69,6 +71,7 @@
                  _ ...)
      (ci-run id
              url
+             html-url
              commit
              status
              conclusion

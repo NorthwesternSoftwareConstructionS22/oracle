@@ -1,10 +1,7 @@
 #lang at-exp racket
 
-(provide preserve-files
-         grading-repo-remote
-         grading-repo-branch
-         grading-repo-owner
-         grading-repo-name)
+(provide grading-repo-preserve-files
+         kick-off-submission-job!)
 
 (require racket/runtime-path
          racket/pretty
@@ -23,73 +20,47 @@
 (define grading-workflow-name "grade")
 
 (define-runtime-path grading-job-info-cache "grading-jobs.rktd")
-(define preserve-files '(".github" ".git"))
+(define grading-repo-preserve-files '(".github" ".git"))
 
-(define/contract (clean-directory! dir preserve)
-  (path-to-existant-directory? (listof string?) . -> . any)
-
-  (for ([f (in-list (directory-list dir))]
-        #:unless (matches-any? preserve (path->string f)))
-    (define f-path (build-path dir f))
-    (displayln @~a{Deleting @f-path})
-    (if (file-exists? f-path)
-        (delete-file f-path)
-        (delete-directory/files f-path))))
-
-(define/contract (copy-team-submission! team
-                                        assign-number
-                                        to
-                                        file-exceptions
-                                        #:before-copy [do-before-copy void])
-  ({team-name?
-    assign-number?
-    path-to-existant-directory?
-    (listof string?)}
-   {#:before-copy (-> any)}
-   . ->* .
-   any)
-
-  (define snapshot-path
-    (team/assign-number->snapshot-path team
-                                       assign-number))
-  (log-sc-info @~a{Unzipping @team's snapshot at @(pretty-path snapshot-path)})
-  (define commit-sha (unpack-snapshot-into! snapshot-path
-                                            to
-                                            file-exceptions))
-  (log-sc-debug @~a{Team's submission sha: @commit-sha}))
-
-(define/contract (kick-off-submission-grading team assign-number grading-repo-path)
+(define/contract (kick-off-submission-job! team
+                                           assign-number
+                                           grading-repo-path
+                                           #:type type
+                                           #:get-team-submission get-team-submission!
+                                           #:workflow workflow-name
+                                           #:log-level log-level)
   (team-name?
    assign-number?
    path-to-existant-directory?
+   #:type string?
+   #:get-team-submission (team-name? assign-number? path-to-existant-directory? . -> . any)
+   #:workflow string?
+   #:log-level string?
    . -> .
    (option/c ci-run?))
 
   (log-sc-info
-   @~a{Kicking off a grading job for @team @(assign-number->string assign-number) ...})
-  (clean-directory! grading-repo-path preserve-files)
+   @~a{Kicking off a @type job for @team @(assign-number->string assign-number) ...})
+  (clean-directory! grading-repo-path grading-repo-preserve-files)
 
-  (log-sc-debug @~a{Copying team submission to repo @(pretty-path grading-repo-path)})
-  (copy-team-submission! team
-                         assign-number
-                         grading-repo-path
-                         preserve-files)
+  (log-sc-debug @~a{Getting team submission into repo @(pretty-path grading-repo-path)})
+  (get-team-submission! team assign-number grading-repo-path)
   ;; Make sure the config is set up. If it's already there and has the right
   ;; contents, committing this is a no-op.
   ;; That's what we want, since these configs aren't really supposed to change per-commit.
   ;; Hence the need for the indirection with the env file below.
   (install-workflow-config!
    grading-repo-path
-   grading-workflow-name
+   workflow-name
    (list (cons "Build submission"
                @~a{
                    pushd @(assign-number->deliverables-path assign-number) && @;
                    make && @;
                    popd
                    })
-         (cons "Grade assignment"
+         (cons (~a type " assignment")
                @~a{
-                   racket -O debug@"@"fest @;
+                   racket -O @|log-level|@"@"fest @;
                    -l software-construction-admin -- @;
                    -M $MAJOR @;
                    -m $MINOR @;
@@ -101,26 +72,56 @@
                          ("TEAM" . ,team)))
   (log-sc-debug @~a{Committing and pushing})
   (commit-and-push! grading-repo-path
-                    @~a{@team @(assign-number->string assign-number)}
+                    @~a{@type @team @(assign-number->string assign-number)}
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
                     ;; Add everything since who knows what files the student code has
                     #:add (list grading-repo-path))
   (log-sc-debug @~a{Launching CI run...})
-  (parameterize ([current-directory grading-repo-path])
-    (launch-run! grading-repo-owner
-                 grading-repo-name
-                 (~a grading-workflow-name ".yml")
-                 grading-repo-branch)))
+  (launch-run! grading-repo-owner
+               grading-repo-name
+               (~a workflow-name ".yml")
+               grading-repo-branch))
+
+;; Note: Uses `current-snapshots-repo-path` to find snapshot
+(define/contract (kick-off-submission-grading-job! team
+                                                   assign-number
+                                                   grading-repo-path)
+  (team-name?
+   assign-number?
+   path-to-existant-directory?
+   . -> .
+   (option/c ci-run?))
+
+  (kick-off-submission-job! team
+                            assign-number
+                            grading-repo-path
+                            #:type "grade"
+                            #:get-team-submission unzip-team-snapshot!
+                            #:workflow grading-workflow-name
+                            #:log-level "error"))
+
+(define/contract (unzip-team-snapshot! team assign-number to)
+  (team-name?
+   assign-number?
+   path-to-existant-directory?
+   . -> .
+   any)
+
+  (define snapshot-path
+    (team/assign-number->snapshot-path team
+                                       assign-number))
+  (log-sc-info @~a{Unzipping @team's snapshot at @(pretty-path snapshot-path)})
+  (define commit-sha (unpack-snapshot-into! snapshot-path
+                                            to
+                                            grading-repo-preserve-files))
+  (log-sc-debug @~a{Team's submission sha: @commit-sha}))
 
 (define (get-score-from-log job-id)
   (option-let*
    [_ (fail-if (not (equal? (ci-run-status job-id) "completed"))
                @~a{Job @job-id is not done yet.})]
    [log-text (get-run-log! job-id)]
-   [_ (display-to-file log-text
-                       "last-log.txt"
-                       #:exists 'truncate)]
    [grades (extract-score log-text)]
    grades))
 
@@ -209,9 +210,9 @@
      [kick-off?
       (define grading-jobs-info
         (for/hash ([team (in-list teams)])
-          (define maybe-job-id (kick-off-submission-grading team
-                                                            assign-number
-                                                            grading-repo-path))
+          (define maybe-job-id (kick-off-submission-grading-job! team
+                                                                 assign-number
+                                                                 grading-repo-path))
           (if (failure? maybe-job-id)
               (log-sc-error
                @~a{

@@ -142,3 +142,13 @@
     (thunk (f temp-dir))
     (thunk (delete-directory/files temp-dir))))
 
+(define/contract (clean-directory! dir preserve)
+  (path-to-existant-directory? (listof string?) . -> . any)
+
+  (for ([f (in-list (directory-list dir))]
+        #:unless (matches-any? preserve (path->string f)))
+    (define f-path (build-path dir f))
+    (displayln @~a{Deleting @f-path})
+    (if (file-exists? f-path)
+        (delete-file f-path)
+        (delete-directory/files f-path))))

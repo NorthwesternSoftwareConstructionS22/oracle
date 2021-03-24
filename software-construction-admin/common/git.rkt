@@ -10,7 +10,8 @@
          get-head-commit-sha
          get-status
          sha?
-         check/confirm-dirty-state!)
+         check/confirm-dirty-state!
+         checkout!)
 
 (require "util.rkt"
          "logger.rkt"
@@ -73,17 +74,15 @@
                       -----
                       })))
 
-(define/contract ((checkout-last-commit-before iso-date-deadline))
-  (string? . -> . (-> any))
+(define/contract ((checkout-last-commit-before iso-date-deadline) repo-dir)
+  (string? . -> . (path-to-existant-directory? . -> . any))
 
-  (define pre-deadline-commit
-    (let ([time-str (format "--before='~a'" iso-date-deadline)])
-      (system/string
-       @~a{git rev-list --date=iso --reverse -n 1 @time-str master})))
-  (log-sc-debug @~a{Checking out commit @pre-deadline-commit})
-  ;; ll: This sometimes produces output despite the redirections. WTF?
-  ;; hack for now: stuff it in a string
-  (system/string @~a{git checkout @pre-deadline-commit > /dev/null 2>&1}))
+  (parameterize ([current-directory repo-dir])
+    (define pre-deadline-commit
+      (let ([time-str (format "--before='~a'" iso-date-deadline)])
+        (system/string
+         @~a{git rev-list --date=iso --reverse -n 1 @time-str master})))
+    (checkout! repo-dir pre-deadline-commit)))
 
 (define/contract (get-status repo-dir)
   (path-to-existant-directory? . -> . (or/c 'clean string?))
@@ -167,3 +166,10 @@
      (void)]
     [else
      (raise-user-error 'git "Aborting due to dirty state.")]))
+
+(define (checkout! repo-dir ref)
+  (parameterize ([current-directory repo-dir])
+    (log-sc-debug @~a{git: checking out @ref})
+    ;; ll: This sometimes produces output despite the redirections. WTF?
+    ;; hack for now: stuff it in a string
+    (system/string @~a{git checkout @ref > /dev/null 2>&1})))
