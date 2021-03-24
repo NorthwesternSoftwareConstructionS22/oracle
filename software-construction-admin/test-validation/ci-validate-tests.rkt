@@ -2,14 +2,21 @@
 
 (provide validated-test-log-delimeter)
 
-(require racket/pretty
-         "../tests.rkt"
+(require "../tests.rkt"
          "../testing.rkt"
          "../common/cmdline.rkt"
          "../common/util.rkt"
          "../common/assignments.rkt")
 
 (define validated-test-log-delimeter "-----validated-----")
+
+(define (same-input-exists-in tests)
+  (define (test->input-json a-test)
+    (call-with-input-file (test-input-file a-test)
+      read-json/safe))
+  (define test-inputs (list->set (map test->input-json tests)))
+  (λ (a-test)
+    (set-member? test-inputs (test->input-json a-test))))
 
 (module+ main
   (match-define (cons (hash-table ['major major-number]
@@ -33,9 +40,14 @@
     (valid-tests/passing-oracle (assign-number->submitted-tests-path assign-number)
                                 (assign-number->oracle-path assign-number)
                                 #:check-json-validity? #t))
+  (define instructor-tests
+    (directory->tests (assign-number->validated-tests-path assign-number)))
+  (define valid-tests-different-than-instructor
+    (filter-not (same-input-exists-in instructor-tests)
+                all-valid-tests))
 
   (display validated-test-log-delimeter)
   (write
-   (for/list ([test (in-list all-valid-tests)])
+   (for/list ([test (in-list valid-tests-different-than-instructor)])
      (basename (test-input-file test))))
   (displayln validated-test-log-delimeter))
