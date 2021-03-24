@@ -119,7 +119,7 @@
                     #:branch grading-repo-branch
                     ;; Add everything since who knows what files the student code has
                     #:add (list grading-repo-path))
-  (log-sc-debug @~a{Launching CI run})
+  (log-sc-debug @~a{Launching CI run...})
   (parameterize ([current-directory grading-repo-path])
     (launch-run! grading-repo-owner
                  grading-repo-name
@@ -213,12 +213,13 @@
           (define maybe-job-id (kick-off-submission-grading team
                                                             assign-number
                                                             grading-repo-path))
-          (when (failure? maybe-job-id)
-            (log-sc-error
-             @~a{
-                 Failed to launch grading job for @team :
-                 @maybe-job-id
-                 }))
+          (if (failure? maybe-job-id)
+              (log-sc-error
+               @~a{
+                   Failed to launch grading job for @team :
+                   @maybe-job-id
+                   })
+              (log-sc-info @~a{@team grading job launched.}))
           (values team maybe-job-id)))
       (call-with-output-file grading-job-info-cache
         #:exists 'truncate
