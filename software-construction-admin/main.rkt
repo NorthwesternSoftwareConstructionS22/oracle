@@ -43,7 +43,8 @@
 
   (define major-number (string->number major))
   (define minor-number (string->number minor))
-  (unless ((integer-in 1 10) major-number)
+  (unless (or ((integer-in 1 10) major-number)
+              (equal? team-name "f19-dummy-team"))
     (raise-user-error 'software-construction-admin
                       "expected a natural number between 1 and 10 for the major number\n  got: ~a"
                       major))
@@ -52,7 +53,7 @@
                       "expected a natural number between 0 and 2 for the minor number\n  got: ~a"
                       minor))
 
-  (define assign-number (cons (~a major) (~a minor)))
+  (define assign-number (cons major minor))
   (define test-exe-path
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
 
