@@ -141,7 +141,7 @@
 (define (count-valid-tests team-name assign-number)
   (define valid-tests-path (assign-number->validated-tests-path assign-number))
   (count (λ (valid-test)
-           (equal? (validated-test-input-file->team-name (~a valid-test))
+           (equal? (validated-test-input-file->team-name valid-test)
                    team-name))
          (directory-list valid-tests-path)))
 

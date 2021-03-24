@@ -37,8 +37,10 @@
 (define (has-validated-test-output-file-naming-convention? path)
   (regexp-match? validated-test-output-file-rx (basename path)))
 
+(define ((path-string-ending-with/c pat) path)
+  (regexp-match? pat (~a (basename path))))
 (define/contract (validated-test-input-file->team-name path)
-  (validated-test-input-file-rx . -> . team-name?)
+  ((path-string-ending-with/c validated-test-input-file-rx) . -> . team-name?)
 
   (match (basename path)
     [(regexp validated-test-input-file-rx (list _ test-id name))

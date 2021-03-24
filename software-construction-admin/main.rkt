@@ -15,7 +15,7 @@
   (for/hash/fold ([test (in-list all-tests)])
     #:combine cons
     #:default empty
-    (values (validated-test-input-file->team-name (basename (test-input-file test)))
+    (values (validated-test-input-file->team-name (test-input-file test))
             test)))
 
 (module+ main
