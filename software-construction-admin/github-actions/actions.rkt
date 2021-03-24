@@ -219,7 +219,8 @@
 
   (define env-path (build-path repo-path workflow-env-file))
   (display-to-file (string-join (for/list ([{var value} (in-dict env)])
-                                  @~a{@|var|=@|value|}))
+                                  @~a{@|var|=@|value|})
+                                "\n")
                    env-path
                    #:exists 'truncate)
   env-path)
