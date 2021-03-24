@@ -34,8 +34,8 @@
                                 (assign-number->oracle-path assign-number)
                                 #:check-json-validity? #t))
 
-  (displayln validated-test-log-delimeter)
-  (pretty-write
+  (display validated-test-log-delimeter)
+  (write
    (for/list ([test (in-list all-valid-tests)])
      (basename (test-input-file test))))
   (displayln validated-test-log-delimeter))
