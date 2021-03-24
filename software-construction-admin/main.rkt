@@ -60,7 +60,7 @@
   (unless (file-exists? test-exe-path)
     (raise-user-error 'software-construction-admin
                       "could not find the `run` executable\n  expected location: ~a"
-                      test-exe-path))
+                      (pretty-path test-exe-path)))
 
   (define validated-tests-by-team (get-pre-validated-tests-by-team assign-number))
 

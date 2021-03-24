@@ -94,7 +94,13 @@
   (install-workflow-config!
    grading-repo-path
    grading-workflow-name
-   (list (cons "Grade assignment"
+   (list (cons "Build submission"
+               @~a{
+                   pushd @(assign-number->deliverables-path assign-number) && @;
+                   make && @;
+                   popd
+                   })
+         (cons "Grade assignment"
                @~a{
                    racket -O debug@"@"sc @;
                    -l software-construction-admin -- @;
