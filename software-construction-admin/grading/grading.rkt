@@ -102,7 +102,7 @@
                    })
          (cons "Grade assignment"
                @~a{
-                   racket -O debug@"@"sc @;
+                   racket -O debug@"@"fest @;
                    -l software-construction-admin -- @;
                    -M $MAJOR @;
                    -m $MINOR @;
@@ -144,7 +144,6 @@
                    team-name))
          (directory-list valid-tests-path)))
 
-;; (present '(217162539 261662772))
 
 (module+ main
   (match-define (cons (hash-table ['team specific-teams]
