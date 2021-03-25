@@ -200,9 +200,11 @@
          (define results
            (for/hash ([assign-number (in-list (assign-numbers-up-to assign-number))])
              (define summary (assignment-test-fest team-name assign-number #f))
+             (define failed-test-count
+               (apply + (map length (hash-values (fest-summary-failed-tests summary)))))
              (values assign-number
                      (list (fest-summary-valid-submitted-test-count summary)
-                           (length (fest-summary-failed-tests summary))
+                           failed-test-count
                            (fest-summary-test-count summary)))))
          (display grading-log-delimiter)
          (write results)
