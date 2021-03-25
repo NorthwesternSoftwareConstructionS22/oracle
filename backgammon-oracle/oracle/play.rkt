@@ -1,12 +1,4 @@
-#lang simple-obfuscation
-rVVNb9swDL37VxAZikoo1KE57DBs6Q/JcpBtJhWiSJksp9hlv336tuy4wA41EtgyycfHR0pu
-iMHfozAIm1Zz0z+bs93A5ir5HzRpcdE3DI+0IVejb6LHBkinlTW8s0yPtgHY+xAgbAdEDIy/
-fu0ggvx42NH/fUcPlDYN6fEoFAIxWkrWiw6pS5DfqpdiQDozbJcGR7F3d0eO/PRxauuySjHY
-sEg/eoguKAesrNvABWDBRmnFej22EofPJHWHPSN143LEoaJ1JxE6jCfwJLjq9QW+0ZlX6E2U
-+SXdt4HMgKovhsFyY9mJXxAeW8m789JlO3N5fxO27gxLNEnC87RyYKJ4V+Za+FGYwbIYCAN6
-vfKqNrFOS21o0GkS1cta53+GnfvPWaRECz1yzYeMM9M+O+WgVH2cESLRgtT6CmQfdhEQy8/I
-7GjUjDMQhe8suNCVYtL4faRfoZaufQrS16tWqOyaPMsQ++Z23Zq2947crsl+WFPcDwRzp4R5
-hVhcBovTU2O5dZyfKNQXe+c7EVz6HotvhTjrV8GK3Zi6UMNGtCTedMbQuQKTrNWglasisDSU
-RH466l04sVkhsjzmgl+9+eKbGFL4lmOm9UN44pJVXhNwiI0Bo3L7zp0lbWwjGuN8Hgu1upiN
-kAET/Afgl4JE5Dv8HfwqJMmLkCsvfMr87EH986ZG/qD+iaZqvXAX3Y8Sn+DChSc2fapOo2DV
-JyoUFr8/bn/BZH2YuhYs8XQsRt+dfw==
+#lang racket
+
+(provide play)
+(define (play a b c) (void))
