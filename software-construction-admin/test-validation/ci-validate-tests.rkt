@@ -22,10 +22,11 @@
 
 (define (instructor-test? a-test)
   (member (validated-test-input-file->team-name (test-input-file a-test))
-          instructor-team-names))
+                 instructor-team-names))
 (define/contract (get-instructor-tests assign-number)
   (assign-number? . -> . (listof (and/c test/c instructor-test?)))
-  (directory->tests (assign-number->validated-tests-path assign-number)))
+  (filter instructor-test?
+          (directory->tests (assign-number->validated-tests-path assign-number))))
 
 (module+ main
   (match-define (cons (hash-table ['major major-number]
