@@ -78,5 +78,5 @@
 ;; inclusive of `assign-number` itself!
 (define/contract (assign-numbers-up-to assign-number)
   (assign-number? . -> . (listof assign-number?))
-  (take (add1 (index-of assign-sequence assign-number))
-        assign-sequence))
+  (take assign-sequence
+        (add1 (index-of assign-sequence assign-number))))
