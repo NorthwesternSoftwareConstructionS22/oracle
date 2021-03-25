@@ -15,6 +15,7 @@
          "../github-actions/actions.rkt"
          "../tests.rkt"
          "../config.rkt"
+         "../main.rkt"
          "repo-snapshots.rkt")
 
 (define grading-workflow-name "grade")
@@ -122,26 +123,39 @@
                                             grading-repo-preserve-files))
   (log-sc-debug @~a{Team's submission sha: @commit-sha}))
 
-(define (get-score-from-log job-id)
+(define (get-scores-from-log team assign-number job-id)
   (option-let*
    [_ (fail-if (not (equal? (ci-run-status job-id) "completed"))
                @~a{Job @job-id is not done yet.})]
    [log-text (get-run-log! job-id)]
-   [grades (extract-score log-text)]
+   [grades (extract-scores team assign-number log-text)]
    grades))
 
-(define (extract-score log-text)
+(define (extract-scores team assign-number log-text)
   (define matches
     (regexp-match*
-     #px"Submitted \\d+ / \\d+ valid tests.+?Failed (\\d+) / (\\d+) peer tests"
+     (~a grading-log-delimiter "(.+?)" grading-log-delimiter)
      log-text
      #:match-select cdr))
+  ;; Only take the last one, in case some student code "happens" to print a
+  ;; message with this exact format
   (match matches
-    [(list _ ... (list failed-test-count total-test-count))
-     (present (- 1 (/ (string->number failed-test-count)
-                      (string->number total-test-count))))]
+    [(list _ ... scores)
+     (define scores-by-assign (with-input-from-string scores read))
+     (for/hash ([{assign assign-score} (in-hash scores-by-assign)])
+       (match-define (list valid-test-count failed-test-count total-test-count) assign-score)
+       (values assign
+               (list valid-test-count
+                     (- 1 (/ (string->number failed-test-count)
+                             (string->number total-test-count))))))]
     [else
-     (failure "No grading results found in log text: something went wrong before grading")]))
+     (for/hash ([assign-number (in-list (assign-numbers-up-to assign-number))])
+       (values assign-number
+               (list (count-valid-tests team assign-number)
+                     (failure @~a{
+                                  No grading results found in log text, @;
+                                  something went wrong before grading.
+                                  }))))]))
 
 (define (count-valid-tests team-name assign-number)
   (define valid-tests-path (assign-number->validated-tests-path assign-number))
@@ -246,12 +260,8 @@
            (values team
                    (option-let*
                     [job-id (hash-ref grading-job-ids url)]
-                    (if extract-status-only?
-                        (ci-run-status job-id)
-                        (list (count-valid-tests team assign-number)
-                              (match (get-score-from-log job-id)
-                                [(present score) score]
-                                [failure
-                                 ;; keep the (failure ...) wrapper, it's marks the output nicely
-                                 failure]))))))))
+                    [result (if extract-status-only?
+                                (ci-run-status job-id)
+                                (get-scores-from-log team assign-number job-id))]
+                    result)))))
       (pretty-write grades)])))

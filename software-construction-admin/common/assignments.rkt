@@ -10,7 +10,9 @@
          assign-number->validated-tests-path
          assign-number->submitted-tests-path
          assign-number->deliverables-path
-         assign-number->deliverable-exe-path)
+         assign-number->deliverable-exe-path
+
+         assign-numbers-up-to)
 
 (require racket/runtime-path
          "util.rkt"
@@ -73,3 +75,8 @@
   (and (file-exists? candidate)
        candidate))
 
+;; inclusive of `assign-number` itself!
+(define/contract (assign-numbers-up-to assign-number)
+  (assign-number? . -> . (listof assign-number?))
+  (take (add1 (index-of assign-sequence assign-number))
+        assign-sequence))

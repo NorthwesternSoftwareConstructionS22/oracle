@@ -1,13 +1,23 @@
 #lang at-exp racket
 
-(require gregor
-         "testing.rkt"
+(provide grading-log-delimiter)
+
+(require "testing.rkt"
          "tests.rkt"
          "config.rkt"
          "common/cmdline.rkt"
          "common/assignments.rkt"
          "common/util.rkt"
          "common/logger.rkt")
+
+(define grading-log-delimiter "-----score-----")
+
+(struct fest-summary (assign-number
+                      valid-submitted-test-count
+                      enough-valid-tests?
+                      failed-tests
+                      test-count)
+  #:transparent)
 
 (define (get-pre-validated-tests-by-team assign-number)
   (define all-tests
@@ -18,45 +28,7 @@
     (values (validated-test-input-file->team-name (test-input-file test))
             test)))
 
-(module+ main
-  (match-define (cons (hash-table ['major major]
-                                  ['minor minor]
-                                  ['team team-name]
-                                  ['force-test-validation? force-test-validation?])
-                      args)
-    (command-line/declarative
-     #:once-each
-     [("-M" "--Major")
-      'major
-      "Assignment major number. E.g. for 5.2 this is 5."
-      #:collect {"number" take-latest #f}
-      #:mandatory]
-     [("-m" "--minor")
-      'minor
-      "Assignment minor number. E.g. for 5.2 this is 2."
-      #:collect {"number" take-latest #f}
-      #:mandatory]
-     [("-n" "--team-name")
-      'team
-      "Team name to report test validity results for."
-      #:collect {"path" take-latest #f}
-      #:mandatory]
-
-     [("-v" "--validate-tests")
-      'force-test-validation?
-      ("Force test validation regardless of the day and assignment."
-       @~a{This can also be done by setting the evironment variable @force-validation-env-var})
-      #:record]))
-
-  (define assign-number (cons major minor))
-  (unless (or (member assign-number assign-sequence)
-              (equal? team-name "f19-dummy-team"))
-    (raise-user-error 'software-construction-admin
-                      @~a{
-                          expected an assigned assignment number, @;
-                          i.e. one of @(map assign-number->string assign-sequence)
-                            got: @(assign-number->string assign-number)
-                          }))
+(define (assignment-test-fest team-name assign-number force-test-validation?)
   (define test-exe-path
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
 
@@ -104,7 +76,7 @@
        Running tests for assignment @(assign-number->string assign-number) on team @team-name's @;
        submission executable @(pretty-path test-exe-path)
        })
-  (define failed-peer-tests
+  (define failed-tests
     (test-failures-for test-exe-path
                        oracle-path
                        validated-tests-by-team
@@ -121,10 +93,24 @@
                           team-name
                           empty))))
   (define enough-valid-tests? (or (not assign-has-student-tests?)
-                                  (>= this-teams-valid-tests expected-valid-test-count)))
+                                  (>= this-teams-valid-tests
+                                      (expected-valid-test-count assign-number))))
 
   (define total-test-count (test-set-count-tests validated-tests-by-team))
-  (define failed-count (test-set-count-tests failed-peer-tests))
+  (fest-summary assign-number
+                this-teams-valid-tests
+                enough-valid-tests?
+                failed-tests
+                total-test-count))
+
+(define (render-fest-summary! summary)
+  (match-define (fest-summary assign-number
+                              this-teams-valid-tests
+                              enough-valid-tests?
+                              failed-tests
+                              total-test-count)
+    summary)
+  (define failed-count (test-set-count-tests failed-tests))
   (define failed? (not (zero? failed-count)))
   (displayln
    @~a{
@@ -137,19 +123,84 @@
        Submitted @this-teams-valid-tests / @(expected-valid-test-count assign-number) valid tests
        Failed @failed-count / @total-test-count peer tests
        =======================================================
-       })
-  (exit
-   (cond [failed?
-          (displayln
-           @~a{
 
-               Failed tests:
-               @(pretty-format
-                 (for/hash ([(group tests) (in-hash failed-peer-tests)])
-                   (values group
-                           (map (λ (t) (basename (test-input-file t)))
-                                tests))))
-               })
-          1]
-         [(not enough-valid-tests?) 1]
-         [else 0])))
+       })
+  (when failed?
+    (displayln
+     @~a{
+
+         Failed tests:
+         @(pretty-format
+           (for/hash ([(group tests) (in-hash failed-tests)])
+             (values group
+                     (map (λ (t) (basename (test-input-file t)))
+                          tests))))
+         })))
+
+(define (fest-summary->exit-code summary)
+  (if (or (> (test-set-count-tests (fest-summary-failed-tests summary)) 0)
+          (not (fest-summary-enough-valid-tests? summary)))
+      1
+      0))
+
+(module+ main
+  (match-define (cons (hash-table ['major major]
+                                  ['minor minor]
+                                  ['team team-name]
+                                  ['force-test-validation? force-test-validation?]
+                                  ['grading-mode? grading-mode?])
+                      args)
+    (command-line/declarative
+     #:once-each
+     [("-M" "--Major")
+      'major
+      "Assignment major number. E.g. for 5.2 this is 5."
+      #:collect {"number" take-latest #f}
+      #:mandatory]
+     [("-m" "--minor")
+      'minor
+      "Assignment minor number. E.g. for 5.2 this is 2."
+      #:collect {"number" take-latest #f}
+      #:mandatory]
+     [("-n" "--team-name")
+      'team
+      "Team name to report test validity results for."
+      #:collect {"path" take-latest #f}
+      #:mandatory]
+
+     [("-v" "--validate-tests")
+      'force-test-validation?
+      ("Force test validation regardless of the day and assignment."
+       @~a{This can also be done by setting the evironment variable @force-validation-env-var})
+      #:record]
+     [("-g" "--grading-mode")
+      'grading-mode?
+      ("Regrade all assignments up to and including the one specified with -M, -m."
+       "Also produce a parse-able summary of results instead of a human-readable one."
+       "This flag overrides -v (forces test validation *not* to happen).")
+      #:record]))
+
+  (define assign-number (cons major minor))
+  (unless (or (member assign-number assign-sequence)
+              (equal? team-name "f19-dummy-team"))
+    (raise-user-error 'software-construction-admin
+                      @~a{
+                          expected an assigned assignment number, @;
+                          i.e. one of @(map assign-number->string assign-sequence)
+                            got: @(assign-number->string assign-number)
+                          }))
+  (cond [grading-mode?
+         (define results
+           (for/hash ([assign-number (in-list (assign-numbers-up-to assign-number))])
+             (define summary (assignment-test-fest team-name assign-number #f))
+             (values assign-number
+                     (list (fest-summary-valid-submitted-test-count summary)
+                           (length (fest-summary-failed-tests summary))
+                           (fest-summary-test-count summary)))))
+         (display grading-log-delimiter)
+         (write results)
+         (displayln grading-log-delimiter)]
+        [else
+         (define summary (assignment-test-fest team-name assign-number force-test-validation?))
+         (render-fest-summary! summary)
+         (exit (fest-summary->exit-code summary))]))
