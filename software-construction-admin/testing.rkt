@@ -366,20 +366,36 @@
 
 (define/contract (valid-tests/passing-oracle test-directory
                                              oracle-path
-                                             #:check-json-validity?
-                                             [check-json-validity? #t])
-  (->* {path-to-existant-directory?
-        path-to-existant-file?}
-       {#:check-json-validity? boolean?}
-       (listof test/c))
+                                             oracle-type
+                                             #:check-json-validity? [check-json-validity? #t])
+  ({path-to-existant-directory?
+    path-to-existant-file?
+    oracle-type/c}
+   {#:check-json-validity? boolean?}
+   . ->* .
+   (listof test/c))
 
-  (valid-tests test-directory
-               #:check-json-validity? #t
-               (λ (in out) ;; Now we can assume the input and output both have valid json
-                 (define oracle-output (run-exe-on-input oracle-path in))
-                 (define oracle-output-json (call-with-input-bytes oracle-output read-json/safe))
-                 (define expected-output-json (call-with-input-file out read-json/safe))
-                 (jsexpr=? oracle-output-json expected-output-json))))
+  (valid-tests
+   test-directory
+   #:check-json-validity? check-json-validity?
+   (λ (in out) ;; Now we can assume the input and output both have valid json
+     (match oracle-type
+       ['normal
+        (define oracle-output (run-exe-on-input oracle-path in))
+        (define oracle-output-json (call-with-input-bytes oracle-output read-json/safe))
+        (define expected-output-json (call-with-input-file out read-json/safe))
+        (jsexpr=? oracle-output-json expected-output-json)]
+       ;; There are no expected outputs for assignments with these oracles.
+       ;; Just make sure that the oracle doesn't break on them.
+       ['checks-output
+        (exe-passes-test? oracle-path
+                          oracle-path
+                          (test in out)
+                          #:oracle-needs-student-output? #t)]
+       ['interacts
+        (exe-passes-test?/racket-oracle oracle-path
+                                        oracle-path
+                                        (test in out))]))))
 
 (define (test-failures-for exe-path oracle-path tests-by-group
                            #:racket-based-oracle? [racket-based-oracle? #f]
@@ -392,14 +408,10 @@
     (cond
       [racket-based-oracle? (exe-passes-test?/racket-oracle exe-path oracle-path t)]
       [else (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?)]))
-  (cond
-    [(and racket-based-oracle? (= 0 (hash-count tests-by-group)))
-     (passes-test? #f)]
-    [else
-     (for*/hash ([group (in-list (sort (hash-keys tests-by-group) string<?))]
-                 [tests (in-value (sort (hash-ref tests-by-group group)
-                                        string<?
-                                        #:key (compose1 ~a test-input-file)))]
-                 [failed-tests (in-value (filter-not passes-test? tests))]
-                 #:unless (empty? failed-tests))
-       (values group failed-tests))]))
+  (for*/hash ([group (in-list (sort (hash-keys tests-by-group) string<?))]
+              [tests (in-value (sort (hash-ref tests-by-group group)
+                                     string<?
+                                     #:key (compose1 ~a test-input-file)))]
+              [failed-tests (in-value (filter-not passes-test? tests))]
+              #:unless (empty? failed-tests))
+    (values group failed-tests)))

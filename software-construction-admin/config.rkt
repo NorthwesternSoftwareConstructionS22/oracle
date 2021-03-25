@@ -1,10 +1,8 @@
-#lang racket/base
+#lang racket
 
 (provide (all-defined-out))
 
-(require racket/runtime-path
-         racket/format
-         racket/match)
+(require racket/runtime-path)
 
 ;; See also common/teams.rkt to configure teams
 
@@ -25,7 +23,9 @@
     ("5" . "2")
     ("6" . "1")
     ("9" . "1")))
-(define assign->oracle-type
+(define oracle-type/c (or/c 'normal 'checks-output 'interacts))
+(define/contract assign->oracle-type
+  (any/c . -> . oracle-type/c)
   (match-lambda [(cons (or "5" "9") _)     'checks-output]
                 [(cons (or "6" "7" "8") _) 'interacts]
                 [else                      'normal]))
@@ -34,6 +34,8 @@
 ;; the oracle sometimes needs the student's output, this is a
 ;; constant number of seconds for now
 (define submission-timeout-seconds 5)
+
+(define all-valid-tests-must-be-json? #t)
 
 
 (define-runtime-path test-snapshots-repo-path "../../test-snapshots")

@@ -46,10 +46,14 @@
       #:mandatory]))
 
   (define assign-number (cons major-number minor-number))
+  (define oracle-type (assign->oracle-type assign-number))
+  (define oracle-path
+    (assign-number->oracle-path assign-number
+                                #:racket-based-oracle? (equal? oracle-type 'interacts)))
   (define all-valid-tests
     (valid-tests/passing-oracle (assign-number->submitted-tests-path assign-number)
-                                (assign-number->oracle-path assign-number)
-                                #:check-json-validity? #t))
+                                oracle-path
+                                oracle-type))
   (define instructor-tests (get-instructor-tests assign-number))
   (define valid-tests-different-than-instructor
     (filter-not (same-input-exists-in instructor-tests)
