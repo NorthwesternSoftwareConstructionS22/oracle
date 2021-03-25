@@ -76,14 +76,14 @@
                          ("TEAM" . ,team)
                          .
                          ,extra-env-vars))
-  (log-sc-debug @~a{Committing and pushing})
+  (log-sc-info @~a{Committing and pushing})
   (commit-and-push! grading-repo-path
                     @~a{@type @team @(assign-number->string assign-number)}
                     #:remote grading-repo-remote
                     #:branch grading-repo-branch
                     ;; Add everything since who knows what files the student code has
                     #:add (list grading-repo-path))
-  (log-sc-debug @~a{Launching CI run...})
+  (log-sc-info @~a{Launching CI run...})
   (launch-run! grading-repo-owner
                grading-repo-name
                (~a workflow-name ".yml")

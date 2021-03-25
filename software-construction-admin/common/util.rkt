@@ -148,7 +148,6 @@
   (for ([f (in-list (directory-list dir))]
         #:unless (matches-any? preserve (path->string f)))
     (define f-path (build-path dir f))
-    (displayln @~a{Deleting @f-path})
     (if (file-exists? f-path)
         (delete-file f-path)
         (delete-directory/files f-path))))

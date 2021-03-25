@@ -63,7 +63,7 @@
      (for ([f (in-list (directory-list repo-snapshot-path))]
            #:unless (matches-any? preserve-files (path->string f)))
        (define f-path (build-path repo-snapshot-path f))
-       (log-sc-info @~a{Moving @f-path to @(simple-form-path destination)})
+       (log-sc-debug @~a{Moving @f-path to @(simple-form-path destination)})
        (rename-file-or-directory f-path (build-path destination f)))
 
      snapshot-commit-sha)))
