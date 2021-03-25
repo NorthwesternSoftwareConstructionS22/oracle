@@ -43,7 +43,7 @@
                                         "backgammon-oracle/submitted-tests"))
 (define oracle-binary-dir (build-path oracle-repo-path
                                       "backgammon-oracle/oracle"))
-(define oracle-repo-owner "NorthwesternSoftwareConstructionFall19")
+(define oracle-repo-owner "NorthwesternSoftwareConstructionS21")
 (define oracle-repo-name "oracle")
 (define oracle-repo-remote (~a "git@github.com:"
                                oracle-repo-owner
