@@ -17,8 +17,8 @@
          "util.rkt"
          "teams.rkt")
 
-(define test-input-file-rx @pregexp{^input_([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
-(define test-output-file-rx @pregexp{^output_([a-zA-Z0-9-]+)_([a-zA-Z0-9_-]+).json$})
+(define test-input-file-rx #rx"^input_([a-zA-Z0-9-]+)_([a-zA-Z0-9-]+).json$")
+(define test-output-file-rx #rx"^output_([a-zA-Z0-9-]+)_([a-zA-Z0-9-]+).json$")
 
 (define (has-test-input-file-naming-convention? path)
   (regexp-match? test-input-file-rx (basename path)))
@@ -27,10 +27,14 @@
 
 (define (test-input-file->team-name path)
   (match (basename path)
-    [(regexp test-input-file-rx (list _ name test-id))
+    [(regexp test-input-file-rx (list _ test-id name))
      name]
     [else #f]))
 
+(module+ test
+  (require rackunit)
+  (check-equal? (test-input-file->team-name (bytes->path #"input_test49_robby.json"))
+                "robby"))
 
 (struct test (input-file output-file) #:transparent)
 (define test/c (struct/c test
