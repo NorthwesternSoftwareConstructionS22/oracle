@@ -19,6 +19,12 @@
                       test-count)
   #:transparent)
 
+(define (build-executable! assign-number)
+  (define assign-dir (assign-number->deliverables-path assign-number))
+  (log-fest-info @~a{Building executable in @assign-dir using `make`})
+  (parameterize ([current-directory assign-dir])
+    (system "make")))
+
 (define (get-pre-validated-tests-by-team assign-number)
   (define all-tests
     (directory->tests (assign-number->validated-tests-path assign-number)))
@@ -29,6 +35,7 @@
             test)))
 
 (define (assignment-test-fest team-name assign-number force-test-validation?)
+  (build-executable! assign-number)
   (define test-exe-path
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
 

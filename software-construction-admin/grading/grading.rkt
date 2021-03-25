@@ -55,13 +55,7 @@
   (install-workflow-config!
    grading-repo-path
    workflow-name
-   (list (cons "Build submission"
-               @~a{
-                   pushd @(assign-number->deliverables-path assign-number) && @;
-                   make && @;
-                   popd
-                   })
-         (cons (~a type " assignment")
+   (list (cons (~a type " assignment")
                @~a{
                    racket -O @|log-level|@"@"fest @;
                    -l software-construction-admin -- @;

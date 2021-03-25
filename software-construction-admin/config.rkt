@@ -8,8 +8,7 @@
 ;; See also common/teams.rkt to configure teams
 
 (define assign-sequence
-  '(("1" . "2")
-    ("2" . "1")
+  '(("2" . "1")
     ("2" . "2")
     ("3" . "1")
     ("4" . "1")
