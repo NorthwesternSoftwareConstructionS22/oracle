@@ -3,7 +3,34 @@
 (provide (all-defined-out))
 
 (require racket/runtime-path
-         racket/format)
+         racket/format
+         racket/match)
+
+;; See also common/teams.rkt to configure teams
+
+(define assign-sequence
+  '(("1" . "2")
+    ("2" . "1")
+    ("2" . "2")
+    ("3" . "1")
+    ("4" . "1")
+    ("5" . "1")
+    ("5" . "2")
+    ("6" . "1")
+    ("7" . "1")
+    ("8" . "1")
+    ("9" . "1")))
+(define assigns-conflicting-with-past-tests
+  '(("5" . "1")
+    ("5" . "2")
+    ("6" . "1")
+    ("9" . "1")))
+(define assign->oracle-type
+  (match-lambda [(cons (or "5" "9") _)     'checks-output]
+                [(cons (or "6" "7" "8") _) 'interacts]
+                [else                      'normal]))
+
+
 
 (define-runtime-path test-snapshots-repo-path "../../test-snapshots")
 (define-runtime-path submission-snapshots-repo-path "../../submission-snapshots")
@@ -35,24 +62,6 @@
                                 grading-repo-name
                                 ".git"))
 (define grading-repo-branch "master")
-
-(define assign-sequence
-  '(("1" . "2")
-    ("2" . "1")
-    ("2" . "2")
-    ("3" . "1")
-    ("4" . "1")
-    ("5" . "1")
-    ("5" . "2")
-    ("6" . "1")
-    ("7" . "1")
-    ("8" . "1")
-    ("9" . "1")))
-(define assigns-conflicting-with-past-tests
-  '(("5" . "1")
-    ("5" . "2")
-    ("6" . "1")
-    ("9" . "1")))
 
 ;; ;; sunday is 0, saturday is 6
 ;; (define pre-validated-test-days '(1 2 3 4)) ;; monday - thursday

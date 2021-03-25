@@ -2,6 +2,7 @@
 
 (require "testing.rkt"
          "tests.rkt"
+         "config.rkt"
          "common/cmdline.rkt"
          "common/assignments.rkt"
          "common/util.rkt"
@@ -41,26 +42,19 @@
       #:collect {"path" take-latest #f}
       #:mandatory]))
 
-  (define major-number (string->number major))
-  (define minor-number (string->number minor))
-  (unless (or ((integer-in 1 10) major-number)
+  (define assign-number (cons major minor))
+  (unless (or (member assign-number assign-sequence)
               (equal? team-name "f19-dummy-team"))
     (raise-user-error 'software-construction-admin
-                      "expected a natural number between 1 and 10 for the major number\n  got: ~a"
-                      major))
-  (unless ((integer-in 0 2) minor-number)
-    (raise-user-error 'software-construction-admin
-                      "expected a natural number between 0 and 2 for the minor number\n  got: ~a"
-                      minor))
-
-  (define assign-number (cons major minor))
+                      @~a{
+                          expected an assigned assignment number, @;
+                          i.e. one of @(map assign-number->string assign-sequence)
+                            got: @(assign-number->string assign-number)
+                          }))
   (define test-exe-path
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
 
-  ;; these configuration options might be better saved in some kind
-  ;; of a datastructure or perhaps fetched from the oracle itself somehow
-  (define oracle-needs-student-output? (and (member major-number '(5 9)) #t))
-  (define racket-based-oracle? (and (member major-number '(6 7 8)) #t))
+  (define oracle-type (assign->oracle-type assign-number))
 
   (unless (file-exists? test-exe-path)
     (raise-user-error 'software-construction-admin
@@ -77,10 +71,12 @@
   (define failed-peer-tests
     (test-failures-for test-exe-path
                        (assign-number->oracle-path assign-number
-                                                   #:racket-based-oracle? racket-based-oracle?)
+                                                   #:racket-based-oracle? (equal? oracle-type
+                                                                                  'interacts))
                        validated-tests-by-team
-                       #:racket-based-oracle? racket-based-oracle?
-                       #:oracle-needs-student-output? oracle-needs-student-output?))
+                       #:racket-based-oracle? (equal? oracle-type
+                                                      'interacts)
+                       #:oracle-needs-student-output? (equal? oracle-type 'checks-output)))
   (log-fest-info @~a{Done running tests.})
 
 
