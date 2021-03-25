@@ -70,7 +70,7 @@
      validation-workflow-name
      (list (cons "Validate tests"
                  @~a{
-                     racket -O debug@"@"sc @;
+                     racket -O debug@"@"sc -W none @;
                      -l software-construction-admin/test-validation/ci-validate-tests -- @;
                      -M $MAJOR @;
                      -m $MINOR

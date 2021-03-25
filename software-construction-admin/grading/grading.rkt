@@ -57,7 +57,7 @@
    workflow-name
    (list (cons (~a type " assignment")
                @~a{
-                   racket -O @|log-level|@"@"fest @;
+                   racket -O @|log-level|@"@"fest -W none @;
                    -l software-construction-admin -- @;
                    -M $MAJOR @;
                    -m $MINOR @;
