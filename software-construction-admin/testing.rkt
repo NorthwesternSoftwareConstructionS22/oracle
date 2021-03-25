@@ -9,7 +9,8 @@
          "tests.rkt"
          "common/util.rkt"
          "common/logger.rkt"
-         "common/process.rkt")
+         "common/process.rkt"
+         (for-syntax syntax/parse))
 
 ;; The CI kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
@@ -23,14 +24,14 @@
 (define log-test-failure-comparison? (make-parameter #t))
 
 (define/contract (run-exe-on-input exe-path
-                                   input-json-file
+                                   input-json
                                    [timeout-seconds absolute-max-timeout-seconds])
-  ({path-to-existant-file? path-to-existant-file?}
+  ({path-to-existant-file? (or/c path-to-existant-file? input-port?)}
    {natural?}
    . ->* .
    (or/c bytes? #f))
 
-  (define stdin (open-input-file input-json-file))
+  (define stdin (if (input-port? input-json) input-json (open-input-file input-json)))
   (define-values {proc stdout stderr}
     ;; ll: Can't use pipe here because that's not a `file-stream-port?`
     (launch-process! exe-path
@@ -40,7 +41,7 @@
                      #:limit-stdout? #t
                      #:limit-stderr? #t))
 
-  (close-input-port stdin) ;; Make sure process gets eof
+  (unless (input-port? input-json) (close-input-port stdin)) ;; Make sure process gets eof
 
   (define terminated? (sync/timeout timeout-seconds proc))
 
@@ -72,21 +73,174 @@
   (close-input-port stderr)
   stdout-bytes)
 
-(define/contract (exe-passes-test? exe-path oracle-path t)
+;; todo: we will crash before we get here when there aren't any test
+;; cases but this shouldn't be an error for some of the assignments,
+;; as they don't have any test case requirement (but they will have
+;; an oracle)
+(define/contract (exe-passes-test?/racket-oracle exe-path oracle-path the-test)
+  (-> path-to-existant-file?
+      path-to-existant-file?
+      test/c
+      boolean?)
+
+  (define input-file (test-input-file the-test))
+  (log-fest-debug @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
+
+  (define the-oracle (fetch-racket-based-oracle oracle-path))
+
+  (define copy-of-stderr (open-output-string))
+  (define cust (make-custodian))
+  (define passed?
+    (parameterize ([current-custodian cust])
+      (let/ec escape
+        (define (test-failed)
+          (custodian-shutdown-all cust)
+          (escape #f))
+        (with-handlers ([exn:fail? (λ (x)
+                                     (custodian-shutdown-all cust)
+                                     (define sp (open-output-string))
+                                     (parameterize ([current-error-port sp])
+                                       ((error-display-handler)
+                                        (exn-message x)
+                                        x))
+                                     (log-fest-error @~a{An error occurred while running the test @(basename input-file):
+                          ------------------------------
+                          @(get-output-string sp)
+                          ------------------------------
+                          })
+                                     (test-failed))])
+
+          (define-values (stdin-pipe-in stdin-pipe-out) (make-pipe))
+
+          (define-values {proc stdout stderr}
+            (launch-process! exe-path
+                             #:stdin stdin-pipe-in
+                             #:stdout #f
+                             #:stderr #f
+                             #:limit-stdout? #t
+                             #:limit-stderr? #t))
+          (thread (λ () (copy-port stderr copy-of-stderr) (close-output-port copy-of-stderr)))
+
+          (define passed? (the-oracle stdout stdin-pipe-out
+                                      (and input-file (file->bytes input-file))
+                                      (make-send-json exe-path input-file test-failed)
+                                      (make-recv-json exe-path input-file test-failed)))
+          (custodian-shutdown-all cust)
+          passed?))))
+  (define stderr (get-output-string copy-of-stderr))
+  (cond
+    [(string=? "" stderr)
+     passed?]
+    [else
+     (log-fest-error @~a{test failed because stderr of the submission was not empty
+      ------------------------------
+      @stderr
+      ------------------------------
+      })
+     #f]))
+
+
+(define (make-send-json exe-path input-file test-failed)
+  (define (send-json out json where)
+    (with-handlers ([exn:fail? (λ (x)
+                                 (log-fest-error @~a{
+                      @(pretty-path exe-path) fails test @(if input-file (~a (basename input-file) " ") "")because the following JSON message could not be sent
+                      ------------------------------
+                      @(jsexpr->bytes json)
+                      ------------------------------
+                      })
+                                 (raise x))])
+      (log-fest-debug @~a{Sending to @where
+ ------------------------------
+ @(jsexpr->bytes json)
+ ------------------------------
+ })
+      (with-timeout (write-json json out))
+      (newline out)
+      (flush-output out)))
+
+  send-json)
+
+(define (make-recv-json exe-path input-file test-failed)
+  (define (recv-json in ctc where)
+    (define val (with-timeout (read-json/safe in)))
+    (log-fest-debug @~a{Received from @where
+ ------------------------------
+ @(jsexpr->bytes val)
+ ------------------------------
+ })
+    (unless ((flat-contract-predicate ctc) val)
+      (log-fest-error @~a{
+ @(pretty-path exe-path) fails test @(if input-file (~a (basename input-file) " ") "")because its JSON result did not have the right shape:
+ ------------------------------
+ @(jsexpr->bytes val)
+ ------------------------------
+
+ })
+      (test-failed))
+    val)
+  recv-json)
+
+(define-syntax (with-timeout stx)
+  (syntax-parse stx
+    [(_ e:expr)
+     #'(with-timeout/proc (λ () e) 'e)]))
+(define (with-timeout/proc thunk quoted-code)
+  (define chan (make-channel))
+  (thread (λ () (channel-put chan (vector (thunk)))))
+  (define result (sync/timeout timeout-seconds chan))
+  (unless result
+    (error 'with-timeout "timed out after ~a seconds waiting for ~s"
+           timeout-seconds
+           quoted-code))
+  (vector-ref result 0))
+
+(define timeout-seconds 2)
+
+(define (fetch-racket-based-oracle oracle-path)
+  (contract
+   (->i ([stdout input-port?]  ;; stdout of user program
+         [stdin output-port?]  ;; stdin of user program
+         [test-case bytes?]    ;; one test case
+
+         ;; if something goes wrong with either of the
+         ;; communication functions, they just don't return.
+         ;; sending can go wrong for various technical
+         ;; reasons (if the network communication was shut
+         ;; down for example) and receiving can go wrong for
+         ;; those but also because the result wasn't json
+         ;; or wasn't valid according to the contract
+
+         ;; a function to just send some json out, the string
+         ;; goes into the students debug log, along with the JSON
+         [send-json (-> output-port? jsexpr? string? void?)]
+
+         ;; a function to receive some json in, the string
+         ;; goes into the students debug log, along with the JSON
+         [recv-json (-> input-port? flat-contract? string? jsexpr?)])
+
+        ;; indicates if something went wrong; if it did, there were
+        ;; expected to be log messages that explain what happened
+        [result boolean?])
+   (dynamic-require oracle-path 'oracle)
+   (~a oracle-path)
+   "...-admin/testing.rkt"))
+
+(define/contract (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?)
   (path-to-existant-file?
    path-to-existant-file?
    test/c
+   #:oracle-needs-student-output? boolean?
    . -> .
    boolean?)
 
   (define input-file (test-input-file t))
 
-  (log-fest-debug @~a{Running the oracle on test @(basename input-file) ...})
-  (match-define-values {(list oracle-output-bytes) _ oracle-time-ms _}
-    (time-apply run-exe-on-input (list oracle-path input-file oracle-timeout-seconds)))
-
   (log-fest-debug @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
-  (define exe-timeout-seconds (ceiling (oracle->student-timeout (/ oracle-time-ms 1000))))
+  ;; this used to depend on the amount time the oracle took but since
+  ;; the oracle sometimes needs the student's output, this is a
+  ;; constant number of seconds for now
+  (define exe-timeout-seconds 5)
   (define exe-output-bytes (run-exe-on-input exe-path input-file exe-timeout-seconds))
   (log-fest-debug @~a{
                       The output of @(pretty-path exe-path) was:
@@ -94,15 +248,30 @@
                       @(try-decode-bytes->string exe-output-bytes)
                       ------------------------------
                       })
+  (define exe-output-json
+    (if (not exe-output-bytes)
+        bad-json
+        (call-with-input-bytes exe-output-bytes read-json/safe)))
+
+  (log-fest-debug @~a{Running the oracle on test @(basename input-file) ...})
+  (define oracle-input (if oracle-needs-student-output?
+                           (input-port-append #t
+                                              ;; this file gets closed because
+                                              ;; the call to copy-port in launch-process!
+                                              ;; will copy all of the data out of this
+                                              ;; port (which'll trigger the close
+                                              ;; via input-port-append)
+                                              (open-input-file input-file)
+                                              (open-input-bytes #"\n")
+                                              (open-input-bytes (jsexpr->bytes exe-output-json)))
+                           input-file))
+  (match-define-values {(list oracle-output-bytes) _ oracle-time-ms _}
+    (time-apply run-exe-on-input (list oracle-path oracle-input oracle-timeout-seconds)))
 
   (define oracle-output-json
     (if (not oracle-output-bytes)
         bad-json
         (call-with-input-bytes oracle-output-bytes read-json/safe)))
-  (define exe-output-json
-    (if (not exe-output-bytes)
-        bad-json
-        (call-with-input-bytes exe-output-bytes read-json/safe)))
 
   (cond [(equal? oracle-output-json bad-json)
          (log-fest-error "The oracle seems to be confused. Giving up on this test.")
@@ -129,7 +298,19 @@
                              ------------------------------
                              })
          #f]
-        [(not (jsexpr=? exe-output-json oracle-output-json))
+        [(and oracle-needs-student-output?
+              (not oracle-output-json))
+         (log-fest-error @~a{
+          @(pretty-path exe-path) fails test @(basename input-file) @;
+          because it produced an invalid result
+          It produced this:
+          ------------------------------
+          @(with-output-to-string (thunk (write-json exe-output-json)))
+          ------------------------------
+          })
+         #f]
+        [(and (not oracle-needs-student-output?)
+              (not (jsexpr=? exe-output-json oracle-output-json)))
          (log-fest-error @~a{
                              @(pretty-path exe-path) fails test @(basename input-file) @;
                              because it produced the wrong result.
@@ -203,15 +384,25 @@
                  (define expected-output-json (call-with-input-file out read-json/safe))
                  (jsexpr=? oracle-output-json expected-output-json))))
 
-(define/contract (test-failures-for exe-path oracle-path tests-by-group)
-  (path-to-existant-file? path-to-existant-file? test-set/c . -> . test-set/c)
+(define (test-failures-for exe-path oracle-path tests-by-group
+                           #:racket-based-oracle? [racket-based-oracle? #f]
+                           #:oracle-needs-student-output? [oracle-needs-student-output? #f])
+  (->* (path-to-existant-file? path-to-existant-file? test-set/c)
+       (#:oracle-needs-student-output? boolean?)
+       test-set/c)
 
   (define (passes-test? t)
-    (exe-passes-test? exe-path oracle-path t))
-  (for*/hash ([group (in-list (sort (hash-keys tests-by-group) string<?))]
-              [tests (in-value (sort (hash-ref tests-by-group group)
-                                     string<?
-                                     #:key (compose1 ~a test-input-file)))]
-              [failed-tests (in-value (filter-not passes-test? tests))]
-              #:unless (empty? failed-tests))
-    (values group failed-tests)))
+    (cond
+      [racket-based-oracle? (exe-passes-test?/racket-oracle exe-path oracle-path t)]
+      [else (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?)]))
+  (cond
+    [(and racket-based-oracle? (= 0 (hash-count tests-by-group)))
+     (passes-test? #f)]
+    [else
+     (for*/hash ([group (in-list (sort (hash-keys tests-by-group) string<?))]
+                 [tests (in-value (sort (hash-ref tests-by-group group)
+                                        string<?
+                                        #:key (compose1 ~a test-input-file)))]
+                 [failed-tests (in-value (filter-not passes-test? tests))]
+                 #:unless (empty? failed-tests))
+       (values group failed-tests))]))
