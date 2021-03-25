@@ -7,6 +7,7 @@
 
 (require json
          "tests.rkt"
+         "config.rkt"
          "common/util.rkt"
          "common/logger.rkt"
          "common/process.rkt"
@@ -237,11 +238,7 @@
   (define input-file (test-input-file t))
 
   (log-fest-debug @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
-  ;; this used to depend on the amount time the oracle took but since
-  ;; the oracle sometimes needs the student's output, this is a
-  ;; constant number of seconds for now
-  (define exe-timeout-seconds 5)
-  (define exe-output-bytes (run-exe-on-input exe-path input-file exe-timeout-seconds))
+  (define exe-output-bytes (run-exe-on-input exe-path input-file submission-timeout-seconds))
   (log-fest-debug @~a{
                       The output of @(pretty-path exe-path) was:
                       ------------------------------

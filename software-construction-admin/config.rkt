@@ -30,6 +30,10 @@
                 [(cons (or "6" "7" "8") _) 'interacts]
                 [else                      'normal]))
 
+;; this used to depend on the amount time the oracle took but since
+;; the oracle sometimes needs the student's output, this is a
+;; constant number of seconds for now
+(define submission-timeout-seconds 5)
 
 
 (define-runtime-path test-snapshots-repo-path "../../test-snapshots")
