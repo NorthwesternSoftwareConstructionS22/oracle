@@ -6,7 +6,8 @@
 
 (define teams-1
   '("testTeam"
-    "robby"))
+    "robby"
+    "chrdimo"))
 
 (define teams-2
   '())
