@@ -53,7 +53,11 @@
   (define all-valid-tests
     (valid-tests/passing-oracle (assign-number->submitted-tests-path assign-number)
                                 oracle-path
-                                oracle-type))
+                                oracle-type
+                                #:check-json-validity? all-valid-tests-must-be-json?
+                                #:require-output-file? (and (member assign-number
+                                                                    assigns-requiring-test-outputs)
+                                                            #t)))
   (define instructor-tests (get-instructor-tests assign-number))
   (define valid-tests-different-than-instructor
     (filter-not (same-input-exists-in instructor-tests)

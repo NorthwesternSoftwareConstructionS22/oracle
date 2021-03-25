@@ -330,11 +330,13 @@
 (define/contract (valid-tests test-directory
                               check-validity
                               #:check-json-validity? [check-json-validity? #t]
+                              #:require-output-file? [require-output-file? #t]
                               #:test-timeout [test-timeout absolute-max-timeout-seconds]
                               #:max-count [max-count +inf.0])
   (->* {path-to-existant-directory?
         (path-to-existant-file? path-to-existant-file? . -> . boolean?)}
        {#:check-json-validity? boolean?
+        #:require-output-file? boolean?
         #:test-timeout natural?
         #:max-count natural?}
        (listof test/c))
@@ -342,23 +344,25 @@
   (define all-tests (directory->tests test-directory))
   (define valid
     (filter (match-lambda [(test input-file output-file)
-                           (cond [(not (file-exists? output-file))
-                                  (log-fest-info
-                                   @~a{Skip @input-file, missing output file.})
+                           (cond [(and require-output-file?
+                                       (not (file-exists? output-file)))
+                                  (log-fest-error
+                                   @~a{Invalid: @(pretty-path input-file), missing output file.})
                                   #f]
                                  [(and check-json-validity?
                                        (not (valid-json-file? input-file)))
-                                  (log-fest-info
-                                   @~a{Skip @input-file, invalid json input.})
+                                  (log-fest-error
+                                   @~a{Invalid: @(pretty-path input-file), input is not json.})
                                   #f]
                                  [(and check-json-validity?
+                                       output-file
                                        (not (valid-json-file? output-file)))
                                   (log-fest-info
-                                   @~a{Skip @input-file, invalid json output.})
+                                   @~a{Invalid: @(pretty-path input-file), output is not json.})
                                   #f]
                                  [(not (check-validity input-file output-file))
                                   (log-fest-info
-                                   @~a{Skip @input-file, fails validity test.})
+                                   @~a{Invalid: @(pretty-path input-file), fails validity test.})
                                   #f]
                                  [else #t])])
             all-tests))
@@ -367,17 +371,20 @@
 (define/contract (valid-tests/passing-oracle test-directory
                                              oracle-path
                                              oracle-type
-                                             #:check-json-validity? [check-json-validity? #t])
+                                             #:check-json-validity? [check-json-validity? #t]
+                                             #:require-output-file? [require-output-file? #t])
   ({path-to-existant-directory?
     path-to-existant-file?
     oracle-type/c}
-   {#:check-json-validity? boolean?}
+   {#:check-json-validity? boolean?
+    #:require-output-file? boolean?}
    . ->* .
    (listof test/c))
 
   (valid-tests
    test-directory
    #:check-json-validity? check-json-validity?
+   #:require-output-file? require-output-file?
    (λ (in out) ;; Now we can assume the input and output both have valid json
      (match oracle-type
        ['normal

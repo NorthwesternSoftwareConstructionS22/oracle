@@ -17,11 +17,13 @@
 (define/contract (kick-off-submission-debug-job! team
                                                  assign-number
                                                  ref
-                                                 grading-repo-path)
+                                                 grading-repo-path
+                                                 force-test-validation?)
   (team-name?
    assign-number?
    string?
    path-to-existant-directory?
+   boolean?
    . -> .
    (option/c ci-run?))
 
@@ -42,13 +44,17 @@
                                                      grading-repo-path
                                                      grading-repo-preserve-files))))
    #:workflow debug-workflow-name
-   #:log-level "debug"))
+   #:log-level "debug"
+   #:extra-env-vars (if force-test-validation?
+                        (list (cons force-validation-env-var "true"))
+                        empty)))
 
 (module+ main
   (match-define (cons (hash-table ['team team]
                                   ['major major-number]
                                   ['minor minor-number]
-                                  ['ref ref])
+                                  ['ref ref]
+                                  ['force-test-validation? force-test-validation?])
                       args)
     (command-line/declarative
      #:once-each
@@ -73,7 +79,11 @@
       ("Debug the specified commit, branch, or tag."
        "Default: master")
       #:collect {"ref" take-latest #f}
-      #:mandatory]))
+      #:mandatory]
+     [("-v" "--validate-tests")
+      'force-test-validation?
+      "Force test validation regardless of the day and assignment."
+      #:record]))
 
   (log-sc-info @~a{Using snapshot repo: @(pretty-path (current-snapshots-repo-path))})
   (define assign-number (cons major-number minor-number))
@@ -81,7 +91,8 @@
    [job-id (kick-off-submission-debug-job! team
                                            assign-number
                                            ref
-                                           grading-repo-path)]
+                                           grading-repo-path
+                                           force-test-validation?)]
    [url (ci-run-html-url job-id)]
    (when (user-prompt! @~a{
                            Job is running at @url

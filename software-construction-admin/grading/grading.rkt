@@ -28,7 +28,8 @@
                                            #:type type
                                            #:get-team-submission get-team-submission!
                                            #:workflow workflow-name
-                                           #:log-level log-level)
+                                           #:log-level log-level
+                                           #:extra-env-vars extra-env-vars)
   (team-name?
    assign-number?
    path-to-existant-directory?
@@ -36,6 +37,7 @@
    #:get-team-submission (team-name? assign-number? path-to-existant-directory? . -> . any)
    #:workflow string?
    #:log-level string?
+   #:extra-env-vars (listof (cons/c string? string?))
    . -> .
    (option/c ci-run?))
 
@@ -69,7 +71,9 @@
   (write-workflow-env! grading-repo-path
                        `(("MAJOR" . ,(assign-major-number assign-number))
                          ("MINOR" . ,(assign-minor-number assign-number))
-                         ("TEAM" . ,team)))
+                         ("TEAM" . ,team)
+                         .
+                         ,extra-env-vars))
   (log-sc-debug @~a{Committing and pushing})
   (commit-and-push! grading-repo-path
                     @~a{@type @team @(assign-number->string assign-number)}
@@ -99,7 +103,8 @@
                             #:type "grade"
                             #:get-team-submission unzip-team-snapshot!
                             #:workflow grading-workflow-name
-                            #:log-level "error"))
+                            #:log-level "error"
+                            #:extra-env-vars empty))
 
 (define/contract (unzip-team-snapshot! team assign-number to)
   (team-name?

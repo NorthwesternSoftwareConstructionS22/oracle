@@ -1,14 +1,13 @@
 #lang at-exp racket
 
-(require "testing.rkt"
+(require gregor
+         "testing.rkt"
          "tests.rkt"
          "config.rkt"
          "common/cmdline.rkt"
          "common/assignments.rkt"
          "common/util.rkt"
          "common/logger.rkt")
-
-(define expected-valid-test-count 5)
 
 (define (get-pre-validated-tests-by-team assign-number)
   (define all-tests
@@ -22,7 +21,8 @@
 (module+ main
   (match-define (cons (hash-table ['major major]
                                   ['minor minor]
-                                  ['team team-name])
+                                  ['team team-name]
+                                  ['force-test-validation? force-test-validation?])
                       args)
     (command-line/declarative
      #:once-each
@@ -40,7 +40,13 @@
       'team
       "Team name to report test validity results for."
       #:collect {"path" take-latest #f}
-      #:mandatory]))
+      #:mandatory]
+
+     [("-v" "--validate-tests")
+      'force-test-validation?
+      ("Force test validation regardless of the day and assignment."
+       @~a{This can also be done by setting the evironment variable @force-validation-env-var})
+      #:record]))
 
   (define assign-number (cons major minor))
   (unless (or (member assign-number assign-sequence)
@@ -55,11 +61,41 @@
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
 
   (define oracle-type (assign->oracle-type assign-number))
+  (define oracle-path
+    (assign-number->oracle-path assign-number
+                                #:racket-based-oracle? (equal? oracle-type
+                                                               'interacts)))
 
   (unless (file-exists? test-exe-path)
     (raise-user-error 'software-construction-admin
                       "could not find the `run` executable\n  expected location: ~a"
                       (pretty-path test-exe-path)))
+
+  (define assign-has-student-tests? (member assign-number assigns-with-student-tests))
+  (define doing-student-test-validation? (or force-test-validation?
+                                             (getenv force-validation-env-var)
+                                             (and assign-has-student-tests?
+                                                  (is-student-test-validation-time?))))
+  (define current-valid-test-count
+    (when doing-student-test-validation?
+      (log-fest-info
+       @~a{
+           It is currently before the test deadline, so validating tests in @;
+           @(assign-number->deliverables-path assign-number) @;
+           before running test fest.
+           Additionally, the test fest below will only run on the instructors' tests.
+           })
+      (define valid-tests
+        (valid-tests/passing-oracle
+         (assign-number->deliverables-path assign-number)
+         oracle-path
+         oracle-type
+         #:check-json-validity? all-valid-tests-must-be-json?
+         #:require-output-file? (and (member assign-number
+                                             assigns-requiring-test-outputs)
+                                     #t)))
+      (log-fest-info @~a{Test validation done.})
+      (length valid-tests)))
 
   (define validated-tests-by-team (get-pre-validated-tests-by-team assign-number))
 
@@ -70,9 +106,7 @@
        })
   (define failed-peer-tests
     (test-failures-for test-exe-path
-                       (assign-number->oracle-path assign-number
-                                                   #:racket-based-oracle? (equal? oracle-type
-                                                                                  'interacts))
+                       oracle-path
                        validated-tests-by-team
                        #:racket-based-oracle? (equal? oracle-type
                                                       'interacts)
@@ -80,11 +114,14 @@
   (log-fest-info @~a{Done running tests.})
 
 
-  (define valid-tests-by-team
-    (length (hash-ref validated-tests-by-team
-                      team-name
-                      empty)))
-  (define enough-valid-tests? (>= valid-tests-by-team expected-valid-test-count))
+  (define this-teams-valid-tests
+    (if doing-student-test-validation?
+        current-valid-test-count
+        (length (hash-ref validated-tests-by-team
+                          team-name
+                          empty))))
+  (define enough-valid-tests? (or (not assign-has-student-tests?)
+                                  (>= this-teams-valid-tests expected-valid-test-count)))
 
   (define total-test-count (test-set-count-tests validated-tests-by-team))
   (define failed-count (test-set-count-tests failed-peer-tests))
@@ -97,7 +134,7 @@
        Test fest summary for assignment @(assign-number->string assign-number): @(if failed?
                                                                                      "FAIL"
                                                                                      "OK")
-       Submitted @valid-tests-by-team / @(max-number-tests assign-number) valid tests
+       Submitted @this-teams-valid-tests / @(expected-valid-test-count assign-number) valid tests
        Failed @failed-count / @total-test-count peer tests
        =======================================================
        })

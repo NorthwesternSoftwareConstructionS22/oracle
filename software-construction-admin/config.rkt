@@ -2,7 +2,8 @@
 
 (provide (all-defined-out))
 
-(require racket/runtime-path)
+(require racket/runtime-path
+         gregor)
 
 ;; See also common/teams.rkt to configure teams
 
@@ -23,6 +24,21 @@
     ("5" . "2")
     ("6" . "1")
     ("9" . "1")))
+(define assigns-with-student-tests
+  '(("2" . "1")
+    ("2" . "2")
+    ("3" . "1")
+    ("4" . "1")
+    ("5" . "1")
+    ("6" . "1")
+    ("9" . "1")))
+(define/contract assigns-requiring-test-outputs
+  (flat-named-contract 'subset-of-assigns-with-student-tests?
+                       (λ (l) (subset? l assigns-with-student-tests)))
+  '(("2" . "1")
+    ("2" . "2")
+    ("3" . "1")
+    ("4" . "1")))
 (define oracle-type/c (or/c 'normal 'checks-output 'interacts))
 (define/contract assign->oracle-type
   (any/c . -> . oracle-type/c)
@@ -35,6 +51,10 @@
 ;; constant number of seconds for now
 (define submission-timeout-seconds 5)
 
+(define (expected-valid-test-count assign-number)
+  (if (member assign-number assigns-with-student-tests)
+      5
+      0))
 (define all-valid-tests-must-be-json? #t)
 
 
@@ -69,11 +89,13 @@
                                 ".git"))
 (define grading-repo-branch "master")
 
-;; ;; sunday is 0, saturday is 6
-;; (define pre-validated-test-days '(1 2 3 4)) ;; monday - thursday
-;; (define (use-pre-validated-tests?)
-;;   (define week-day (->wday (today #:tz "America/Chicago")))
-;;   (log-fest-debug
-;;             @~a{Today: @week-day, pre-valid-days: @pre-validated-test-days})
-;;   (member week-day pre-validated-test-days))
+(define (before-5pm? time) (< (->hours time) 17))
+(define (is-student-test-validation-time?)
+  ((disjoin saturday?
+            sunday?
+            monday?
+            tuesday?
+            (conjoin wednesday? before-5pm?))
+   (now #:tz "America/Chicago")))
+(define force-validation-env-var "SC_FORCE_VALIDATION")
 

@@ -13,8 +13,7 @@
 
          directory->tests
 
-         test-set-count-tests
-         max-number-tests)
+         test-set-count-tests)
 
 (require "common/assignments.rkt"
          "common/util.rkt"
@@ -89,8 +88,3 @@
     (test (build-path path maybe-input)
           output-file)))
 
-;; lltodo: this should be configurable easily somehow
-(define (max-number-tests assign)
-  (match (assign-major-number assign)
-    [(app string->number (? (=/c 7))) 10]
-    [else 5]))
