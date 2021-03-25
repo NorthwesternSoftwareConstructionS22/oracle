@@ -67,7 +67,8 @@
                    -l software-construction-admin -- @;
                    -M $MAJOR @;
                    -m $MINOR @;
-                   -n $TEAM
+                   -n $TEAM @;
+                   -g
                    })))
   (write-workflow-env! grading-repo-path
                        `(("MAJOR" . ,(assign-major-number assign-number))
