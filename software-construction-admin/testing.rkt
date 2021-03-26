@@ -201,7 +201,7 @@
            quoted-code))
   (vector-ref result 0))
 
-(define timeout-seconds 2)
+(define timeout-seconds 5)
 
 (define (fetch-racket-based-oracle oracle-path)
   (contract
