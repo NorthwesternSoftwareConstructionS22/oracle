@@ -164,7 +164,7 @@
 
 (define (make-recv-json exe-path input-file test-failed)
   (define (recv-json in ctc where)
-    (define val (with-timeout (read-json/safe in)))
+    (define val (with-timeout (read-json in)))
     (log-fest-debug @~a{Received from @where
  ------------------------------
  @(jsexpr->bytes val)
