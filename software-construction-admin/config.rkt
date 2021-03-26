@@ -49,6 +49,7 @@
 ;; the oracle sometimes needs the student's output, this is a
 ;; constant number of seconds for now
 (define submission-timeout-seconds 5)
+(define oracle-timeout-seconds (* 1 60))
 
 (define (expected-valid-test-count assign-number)
   (if (member assign-number assigns-with-student-tests)

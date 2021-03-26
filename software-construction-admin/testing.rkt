@@ -16,10 +16,6 @@
 ;; The CI kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
 
-(define oracle-timeout-seconds (* 1 60))
-(define (oracle->student-timeout secs) (* 100 secs))
-
-
 ;; Values being compared may be large, so they can be suppressed to prevent
 ;; filling up the log when other `info`-level information is desired
 (define log-test-failure-comparison? (make-parameter #t))
@@ -85,7 +81,7 @@
       boolean?)
 
   (define input-file (test-input-file the-test))
-  (log-fest-debug @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
+  (log-fest-info @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
 
   (define the-oracle (fetch-racket-based-oracle oracle-path))
 
@@ -242,10 +238,10 @@
 
   (define input-file (test-input-file t))
 
-  (log-fest-debug @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
+  (log-fest-info @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
   (define exe-output-bytes (run-exe-on-input exe-path input-file submission-timeout-seconds))
   (log-fest-debug @~a{
-                      The output of @(pretty-path exe-path) was:
+                      The raw output of @(pretty-path exe-path) was:
                       ------------------------------
                       @(try-decode-bytes->string exe-output-bytes)
                       ------------------------------
@@ -288,7 +284,7 @@
          (log-fest-error @~a{
                              @(pretty-path exe-path) fails test @(basename input-file) @;
                              because it produced invalid json.
-                             The output is below. @;
+                             The raw output is below. @;
                              @(if (= (bytes-length exe-output-bytes) process-stdout-bytes-limit)
                                   @~a{
                                       It hit the @process-stdout-bytes-limit @;
@@ -305,7 +301,7 @@
          (log-fest-error @~a{
           @(pretty-path exe-path) fails test @(basename input-file) @;
           because it produced an invalid result
-          It produced this:
+          It produced this json:
           ------------------------------
           @(with-output-to-string (thunk (write-json exe-output-json)))
           ------------------------------
@@ -316,7 +312,7 @@
          (log-fest-error @~a{
                              @(pretty-path exe-path) fails test @(basename input-file) @;
                              because it produced the wrong result.
-                             It produced this:
+                             It produced this json:
                              ------------------------------
                              @(with-output-to-string (thunk (write-json exe-output-json)))
                              ------------------------------
@@ -362,11 +358,11 @@
                                  [(and check-json-validity?
                                        output-file
                                        (not (valid-json-file? output-file)))
-                                  (log-fest-info
+                                  (log-fest-error
                                    @~a{Invalid: @(pretty-path input-file), output is not json.})
                                   #f]
                                  [(not (check-validity input-file output-file))
-                                  (log-fest-info
+                                  (log-fest-error
                                    @~a{Invalid: @(pretty-path input-file), fails validity test.})
                                   #f]
                                  [else #t])])

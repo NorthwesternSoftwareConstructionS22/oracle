@@ -10,7 +10,7 @@
     "chrdimo"))
 
 (define teams-1
-  '("f19-dummy-team"))
+  '("teamTest"))
 
 (define teams-2
   '())
