@@ -145,7 +145,7 @@
   (define (send-json out json where)
     (with-handlers ([exn:fail? (λ (x)
                                  (log-fest-error @~a{
-                      @(pretty-path exe-path) fails test @(if input-file (~a (basename input-file) " ") "")because the following JSON message could not be sent
+                      @(pretty-path exe-path) fails test @(~a (basename input-file)) because the following JSON message could not be sent
                       ------------------------------
                       @(jsexpr->bytes json)
                       ------------------------------
@@ -165,6 +165,11 @@
 (define (make-recv-json exe-path input-file test-failed)
   (define (recv-json in ctc where)
     (define val (with-timeout (read-json in)))
+    (when (eof-object? val)
+      (log-fest-error @~a{
+ @(pretty-path exe-path) fails test @(~a (basename input-file)) because it didn't send a JSON object, got eof
+ })
+      (test-failed))
     (log-fest-debug @~a{Received from @where
  ------------------------------
  @(jsexpr->bytes val)
@@ -172,7 +177,7 @@
  })
     (unless ((flat-contract-predicate ctc) val)
       (log-fest-error @~a{
- @(pretty-path exe-path) fails test @(if input-file (~a (basename input-file) " ") "")because its JSON result did not have the right shape:
+ @(pretty-path exe-path) fails test @(~a (basename input-file)) because its JSON result did not have the right shape:
  ------------------------------
  @(jsexpr->bytes val)
  ------------------------------
