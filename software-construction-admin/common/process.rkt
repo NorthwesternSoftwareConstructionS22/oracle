@@ -38,7 +38,8 @@
                        input-port?)]))
 
   (define-values {proc returned-stdout returned-stdin returned-stderr}
-    (parameterize ([current-directory run-in])
+    (parameterize ([current-directory run-in]
+                   [current-subprocess-custodian-mode 'kill])
       (apply subprocess
              stdout (and (file-stream-port? stdin) stdin) stderr
              'new
