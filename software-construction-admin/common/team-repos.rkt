@@ -1,7 +1,6 @@
 #lang at-exp racket
 
-(provide team->test-repo-name
-         team->dev-repo-name
+(provide team->dev-repo-name
          repo-name->url
          repo-name?)
 
@@ -10,16 +9,9 @@
 (define ((add-suffix suffix) str)
   (string-append str suffix))
 
-(define team->test-repo-name (add-suffix "-tests"))
-(define team->dev-repo-name (add-suffix "-dev"))
+(define team->dev-repo-name identity)
 
-(define (repo->team-name repo-name)
-  (match repo-name
-    [(regexp #rx"^(.*)-dev" (list _ name))
-     name]
-    [(regexp #rx"^(.*)-tests" (list _ name))
-     name]
-    [else #f]))
+(define repo->team-name identity)
 
 (define (repo-name? name)
   (or (string=? name "oracle")
