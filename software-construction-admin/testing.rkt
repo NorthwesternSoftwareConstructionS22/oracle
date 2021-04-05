@@ -390,9 +390,11 @@
      (match oracle-type
        ['normal
         (define oracle-output (run-exe-on-input oracle-path in))
-        (define oracle-output-json (call-with-input-bytes oracle-output read-json/safe))
-        (define expected-output-json (call-with-input-file out read-json/safe))
-        (jsexpr=? oracle-output-json expected-output-json)]
+        (cond [(bytes? oracle-output)
+               (define oracle-output-json (call-with-input-bytes oracle-output read-json/safe))
+               (define expected-output-json (call-with-input-file out read-json/safe))
+               (jsexpr=? oracle-output-json expected-output-json)]
+              [else #f])]
        ;; There are no expected outputs for assignments with these oracles.
        ;; Just make sure that the oracle doesn't break on them.
        ['checks-output
