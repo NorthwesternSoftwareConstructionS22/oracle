@@ -394,7 +394,18 @@
         (cond [(bytes? oracle-output)
                (define oracle-output-json (call-with-input-bytes oracle-output read-json/safe))
                (define expected-output-json (call-with-input-file out read-json/safe))
-               (jsexpr=? oracle-output-json expected-output-json)]
+               (define passes? (jsexpr=? oracle-output-json expected-output-json))
+               (when (and (not passes?)
+                          (log-test-failure-comparison?))
+                 (log-fest-error
+                  @~a{
+                      The oracle answer for this test is:
+                      ------------------------------
+                      @(with-output-to-string (thunk (write-json oracle-output-json)))
+                      ------------------------------
+                      })
+                 (log-test-failure-comparison? #f))
+               passes?]
               [else #f])]
        ;; There are no expected outputs for assignments with these oracles.
        ;; Just make sure that the oracle doesn't break on them.
