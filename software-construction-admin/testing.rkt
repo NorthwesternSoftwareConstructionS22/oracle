@@ -346,7 +346,8 @@
   (define valid
     (filter (match-lambda [(test input-file output-file)
                            (cond [(and require-output-file?
-                                       (not (file-exists? output-file)))
+                                       (or (not output-file)
+                                           (not (file-exists? output-file))))
                                   (log-fest-error
                                    @~a{Invalid: @(pretty-path input-file), missing output file.})
                                   #f]
