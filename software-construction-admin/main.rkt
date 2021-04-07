@@ -35,20 +35,11 @@
             test)))
 
 (define (assignment-test-fest team-name assign-number force-test-validation?)
-  (build-executable! assign-number)
-  (define test-exe-path
-    (path->complete-path (assign-number->deliverable-exe-path assign-number)))
-
   (define oracle-type (assign->oracle-type assign-number))
   (define oracle-path
     (assign-number->oracle-path assign-number
                                 #:racket-based-oracle? (equal? oracle-type
                                                                'interacts)))
-
-  (unless (file-exists? test-exe-path)
-    (raise-user-error 'software-construction-admin
-                      "could not find the `run` executable\n  expected location: ~a"
-                      (pretty-path test-exe-path)))
 
   (define assign-has-student-tests? (member assign-number assigns-with-student-tests))
   (define doing-student-test-validation? (or force-test-validation?
@@ -73,10 +64,21 @@
          #:require-output-file? (and (member assign-number
                                              assigns-requiring-test-outputs)
                                      #t)))
-      (log-fest-info @~a{Test validation done.})
+      (log-fest-info @~a{
+                         Test validation done: @(length valid-tests) valid tests
+                         Moving on to testing.
+                         })
       (length valid-tests)))
 
   (define validated-tests-by-team (get-pre-validated-tests-by-team assign-number))
+
+  (build-executable! assign-number)
+  (define test-exe-path
+    (path->complete-path (assign-number->deliverable-exe-path assign-number)))
+  (unless (file-exists? test-exe-path)
+    (raise-user-error 'software-construction-admin
+                      "could not find the `run` executable\n  expected location: ~a"
+                      (pretty-path test-exe-path)))
 
   (log-fest-info
    @~a{
