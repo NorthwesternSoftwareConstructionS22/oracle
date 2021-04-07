@@ -58,6 +58,8 @@
 (define all-valid-tests-must-be-json? #t)
 
 
+(define course-github-organization "NorthwesternSoftwareConstructionS21")
+
 (define-runtime-path test-snapshots-repo-path "../../test-snapshots")
 (define-runtime-path submission-snapshots-repo-path "../../submission-snapshots")
 (define default-snapshots-repo-path test-snapshots-repo-path)
@@ -69,7 +71,7 @@
                                         "backgammon-oracle/submitted-tests"))
 (define oracle-binary-dir (build-path oracle-repo-path
                                       "backgammon-oracle/oracle"))
-(define oracle-repo-owner "NorthwesternSoftwareConstructionS21")
+(define oracle-repo-owner course-github-organization)
 (define oracle-repo-name "oracle")
 (define oracle-repo-remote (~a "git@github.com:"
                                oracle-repo-owner

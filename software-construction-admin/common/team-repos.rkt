@@ -4,7 +4,8 @@
          repo-name->url
          repo-name?)
 
-(require "teams.rkt")
+(require "teams.rkt"
+         "../config.rkt")
 
 (define ((add-suffix suffix) str)
   (string-append str suffix))
@@ -23,7 +24,7 @@
    . ->* .
    string?)
 
-  (define path @~a{NorthwesternSoftwareConstructionFall19/@|name|.git})
+  (define path @~a{@|course-github-organization|/@|name|.git})
   (match mode
     ['https @~a{https://github.com/@|path|}]
     ['ssh @~a{git@"@"github.com:@|path|}]))
