@@ -23,7 +23,8 @@
 (define/contract (run-exe-on-input exe-path
                                    input-json
                                    [timeout-seconds absolute-max-timeout-seconds])
-  ({path-to-existant-file? (or/c path-to-existant-file? input-port?)}
+  ({path-to-existant-file?
+    (or/c path-to-existant-file? input-port?)}
    {natural?}
    . ->* .
    (or/c bytes? #f))
@@ -390,10 +391,12 @@
    (λ (in out) ;; Now we can assume the input and output both have valid json
      (match oracle-type
        ['normal
-        (define oracle-output (run-exe-on-input oracle-path in))
+        (define oracle-output (run-exe-on-input oracle-path
+                                                (call-with-input-file in test-transformer)))
         (cond [(bytes? oracle-output)
                (define oracle-output-json (call-with-input-bytes oracle-output read-json/safe))
-               (define expected-output-json (call-with-input-file out read-json/safe))
+               (define expected-output-json (call-with-input-file out
+                                              (compose1 read-json/safe test-transformer)))
                (define passes? (jsexpr=? oracle-output-json expected-output-json))
                (when (and (not passes?)
                           (log-test-failure-comparison?))

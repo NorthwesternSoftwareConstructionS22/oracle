@@ -1,4 +1,4 @@
-#lang racket
+#lang at-exp racket
 
 (provide (all-defined-out))
 
@@ -99,3 +99,44 @@
    (now #:tz "America/Chicago")))
 (define force-validation-env-var "SC_FORCE_VALIDATION")
 
+
+(require "common/logger.rkt")
+(define (strip-.0s original-in)
+  (define original-bytes (port->bytes original-in))
+  (define stripped-bytes (regexp-replace* #rx#"([0-9])[.]0+"
+                                          original-bytes
+                                          #"\\1"))
+  (unless (bytes=? original-bytes stripped-bytes)
+    (log-fest-info
+     @~a{
+         Normalizing contents of @(object-name original-in) to remove `.0`s and using that instead.
+         Original contents:
+         ------------------------------
+         @original-bytes
+         ------------------------------
+
+         Normalized contents:
+         ------------------------------
+         @stripped-bytes
+         ------------------------------
+         }))
+  (open-input-bytes stripped-bytes))
+
+(module+ test
+  (require rackunit)
+  (check-equal? (port->bytes (strip-.0s (open-input-bytes #"1")))
+                #"1")
+  (check-equal? (port->bytes (strip-.0s (open-input-bytes #"1.")))
+                #"1.")
+  (check-equal? (port->bytes (strip-.0s (open-input-bytes #"1.0")))
+                #"1")
+  (check-equal? (port->bytes (strip-.0s (open-input-bytes #"1.00000")))
+                #"1")
+  (check-equal? (port->bytes (strip-.0s (open-input-bytes #"1.02")))
+                #"12")
+  (check-equal? (port->bytes (strip-.0s (open-input-bytes #"1.02.0")))
+                #"12"))
+
+(define/contract test-transformer
+  (input-port? . -> . input-port?)
+  strip-.0s)

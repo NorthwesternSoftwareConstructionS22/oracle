@@ -36,11 +36,13 @@
                                        (assign-number->deliverables-path assign-number))))
        (for-each (install-submitted-test! team submitted-tests-path) tests))))
   (log-sc-info @~a{Committing submitted tests in @(pretty-path oracle-repo-path) and pushing})
-  (commit-and-push! oracle-repo-path
-                    @~a{Add @(assign-number->string assign-number) submitted tests}
-                    #:remote oracle-repo-remote
-                    #:branch oracle-repo-branch
-                    #:add (list submitted-tests-path)))
+  (if (user-prompt! @~a{Confirm commit and push to @(pretty-path oracle-repo-path)?})
+      (commit-and-push! oracle-repo-path
+                        @~a{Add @(assign-number->string assign-number) submitted tests}
+                        #:remote oracle-repo-remote
+                        #:branch oracle-repo-branch
+                        #:add (list submitted-tests-path))
+      (displayln "Canceled.")))
 
 (define ((install-submitted-test! team destination) a-test)
   (define to-move (match a-test
@@ -83,12 +85,14 @@
                    @(pretty-path grading-repo-path) set up for test validation.
                    Committing and pushing.
                    })
-  (commit-and-push! grading-repo-path
-                    @~a{@(assign-number->string assign-number) test validation}
-                    #:remote grading-repo-remote
-                    #:branch grading-repo-branch
-                    #:add (list config-path
-                                env-path)))
+  (if (user-prompt! @~a{Confirm commit and push to @(pretty-path grading-repo-path)?})
+      (commit-and-push! grading-repo-path
+                        @~a{@(assign-number->string assign-number) test validation}
+                        #:remote grading-repo-remote
+                        #:branch grading-repo-branch
+                        #:add (list config-path
+                                    env-path))
+      (displayln "Canceled.")))
 
 
 (define/contract (extract-valid-test-names job-id)
@@ -138,14 +142,20 @@
     (define dst (build-path validated-tests-path valid-test-input))
     (unless (and (file-exists? dst)
                  (not (user-prompt! @~a{@dst already exists. Overwrite it? (No means skip it.)})))
-      (copy-file src dst #t)))
+      (call-with-output-file dst
+        #:exists 'replace
+        (λ (out)
+          (copy-port (call-with-input-file src test-transformer)
+                     out)))))
 
   (log-sc-info @~a{Committing validated tests in @(pretty-path oracle-repo-path) and pushing})
-  (commit-and-push! oracle-repo-path
-                    @~a{Add @(assign-number->string assign-number) validated tests}
-                    #:remote oracle-repo-remote
-                    #:branch oracle-repo-branch
-                    #:add (list validated-tests-path)))
+  (if (user-prompt! @~a{Confirm commit and push to @(pretty-path oracle-repo-path)?})
+      (commit-and-push! oracle-repo-path
+                        @~a{Add @(assign-number->string assign-number) validated tests}
+                        #:remote oracle-repo-remote
+                        #:branch oracle-repo-branch
+                        #:add (list validated-tests-path))
+      (displayln "Canceled.")))
 
 (module+ main
   (match-define (cons (hash-table ['major major-number]
