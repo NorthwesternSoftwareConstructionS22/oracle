@@ -31,9 +31,13 @@
      #:name-seed "validate-tests"
      (λ (temp-dir)
        (unpack-snapshot-into! snapshot temp-dir empty)
+       (define tests-directory
+         (build-path temp-dir
+                     (assign-number->deliverables-path assign-number)))
        (define tests
-         (directory->tests (build-path temp-dir
-                                       (assign-number->deliverables-path assign-number))))
+         (if (directory-exists? tests-directory)
+             (directory->tests tests-directory)
+             empty))
        (for-each (install-submitted-test! team submitted-tests-path) tests))))
   (log-sc-info @~a{Committing submitted tests in @(pretty-path oracle-repo-path) and pushing})
   (if (user-prompt! @~a{Confirm commit and push to @(pretty-path oracle-repo-path)?})
