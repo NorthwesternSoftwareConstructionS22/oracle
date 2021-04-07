@@ -16,7 +16,8 @@
                       valid-submitted-test-count
                       enough-valid-tests?
                       failed-tests
-                      test-count)
+                      test-count
+                      doing-student-test-validation?)
   #:transparent)
 
 (define (build-executable! assign-number)
@@ -110,14 +111,16 @@
                 this-teams-valid-tests
                 enough-valid-tests?
                 failed-tests
-                total-test-count))
+                total-test-count
+                doing-student-test-validation?))
 
 (define (render-fest-summary! summary)
   (match-define (fest-summary assign-number
                               this-teams-valid-tests
                               enough-valid-tests?
                               failed-tests
-                              total-test-count)
+                              total-test-count
+                              doing-student-test-validation?)
     summary)
   (define failed-count (test-set-count-tests failed-tests))
   (define failed? (not (zero? failed-count)))
@@ -129,7 +132,9 @@
        Test fest summary for assignment @(assign-number->string assign-number): @(if failed?
                                                                                      "FAIL"
                                                                                      "OK")
-       Submitted @this-teams-valid-tests / @(expected-valid-test-count assign-number) valid tests
+       @(if doing-student-test-validation?
+            @~a{Submitted @this-teams-valid-tests / @(expected-valid-test-count assign-number) valid tests}
+            "")
        Failed @failed-count / @total-test-count peer tests
        =======================================================
 
