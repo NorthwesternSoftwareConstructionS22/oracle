@@ -58,15 +58,18 @@
            before running test fest.
            Additionally, the test fest below will only run on the instructors' tests.
            })
+      (define deliverables-path (assign-number->deliverables-path assign-number))
       (define valid-tests
-        (valid-tests/passing-oracle
-         (assign-number->deliverables-path assign-number)
-         oracle-path
-         oracle-type
-         #:check-json-validity? all-valid-tests-must-be-json?
-         #:require-output-file? (and (member assign-number
-                                             assigns-requiring-test-outputs)
-                                     #t)))
+        (if (directory-exists? deliverables-path)
+            (valid-tests/passing-oracle
+             deliverables-path
+             oracle-path
+             oracle-type
+             #:check-json-validity? all-valid-tests-must-be-json?
+             #:require-output-file? (and (member assign-number
+                                                 assigns-requiring-test-outputs)
+                                         #t))
+            empty))
       (define novel-tests (filter-already-submitted-tests valid-tests assign-number))
       (log-fest-info @~a{
                          Test validation done: @;
