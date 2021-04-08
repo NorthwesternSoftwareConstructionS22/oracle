@@ -99,13 +99,18 @@
    . -> .
    (option/c ci-run?))
 
+  (define (ci-run-newer? run1 run2)
+    (moment>? (ci-run-creation-time run1)
+              (ci-run-creation-time run2)))
+  (define (newest-job-in jobs)
+    (first (sort jobs ci-run-newer?)))
   (define (wait/poll-for-new-job! original-jobs)
-    (define original-count (length original-jobs))
+    (define original-latest-job (newest-job-in original-jobs))
     (let loop ([retry-count 0])
       (match (get-all-runs! repo-owner repo-name)
-        [(present current-jobs)
-         #:when (> (length current-jobs) original-count)
-         (present (set-first (set-subtract current-jobs original-jobs)))]
+        [(present (app newest-job-in latest-job))
+         #:when (ci-run-newer? latest-job original-latest-job)
+         (present latest-job)]
         [else
          #:when (< (* retry-count run-retrieval-polling-period-seconds)
                    run-retrieval-polling-timeout-seconds)
