@@ -23,6 +23,11 @@
     ("5" . "2")
     ("6" . "1")
     ("9" . "1")))
+(define assign-conflict-exceptions
+  ;; These assignments won't be checked when checking test novelty against past tests
+  ;; (for those assignments in `assigns-conflicting-with-past-tests`)
+  '(("2" . "1")
+    ("2" . "2")))
 (define assigns-with-student-tests
   '(("2" . "1")
     ("2" . "2")

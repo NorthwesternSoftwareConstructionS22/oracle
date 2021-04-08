@@ -21,8 +21,9 @@
   (cond [(member assign-number assigns-conflicting-with-past-tests)
          (log-fest-info "Checking tests for novelty against previous assignments.")
          (define all-past-assignments
-           (take assign-sequence
-                 (index-of assign-sequence assign-number)))
+           (set-subtract (take assign-sequence
+                               (index-of assign-sequence assign-number))
+                         assign-conflict-exceptions))
          (define all-past-tests
            (append-map (compose1 directory->tests
                                  assign-number->validated-tests-path)
