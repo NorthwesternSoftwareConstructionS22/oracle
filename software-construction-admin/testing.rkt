@@ -229,6 +229,9 @@
    (~a oracle-path)
    "...-admin/testing.rkt"))
 
+(define (bytes->json/safe b)
+  (call-with-input-bytes b read-json/safe))
+
 (define/contract (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?)
   (path-to-existant-file?
    path-to-existant-file?
@@ -247,87 +250,88 @@
                       @(try-decode-bytes->string exe-output-bytes)
                       ------------------------------
                       })
-  (define exe-output-json
-    (if (not exe-output-bytes)
-        bad-json
-        (call-with-input-bytes exe-output-bytes read-json/safe)))
+  (match exe-output-bytes
+    [(? bytes? (app bytes->json/safe (and exe-output-json
+                                          (not (== bad-json)))))
+     (log-fest-debug @~a{Running the oracle on test @(basename input-file) ...})
+     (define oracle-input
+       (if oracle-needs-student-output?
+           (input-port-append #t
+                              ;; this file gets closed because
+                              ;; the call to copy-port in launch-process!
+                              ;; will copy all of the data out of this
+                              ;; port (which'll trigger the close
+                              ;; via input-port-append)
+                              (open-input-file input-file)
+                              (open-input-bytes #"\n")
+                              (open-input-bytes (jsexpr->bytes exe-output-json)))
+           input-file))
+     (match-define-values {(list oracle-output-bytes) _ oracle-time-ms _}
+                          (time-apply run-exe-on-input
+                                      (list oracle-path
+                                            oracle-input
+                                            oracle-timeout-seconds)))
 
-  (log-fest-debug @~a{Running the oracle on test @(basename input-file) ...})
-  (define oracle-input (if oracle-needs-student-output?
-                           (input-port-append #t
-                                              ;; this file gets closed because
-                                              ;; the call to copy-port in launch-process!
-                                              ;; will copy all of the data out of this
-                                              ;; port (which'll trigger the close
-                                              ;; via input-port-append)
-                                              (open-input-file input-file)
-                                              (open-input-bytes #"\n")
-                                              (open-input-bytes (jsexpr->bytes exe-output-json)))
-                           input-file))
-  (match-define-values {(list oracle-output-bytes) _ oracle-time-ms _}
-    (time-apply run-exe-on-input (list oracle-path oracle-input oracle-timeout-seconds)))
-
-  (define oracle-output-json
-    (if (not oracle-output-bytes)
-        bad-json
-        (call-with-input-bytes oracle-output-bytes read-json/safe)))
-
-  (cond [(equal? oracle-output-json bad-json)
-         (log-fest-error "The oracle seems to be confused. Giving up on this test.")
-         #f]
-        [(not exe-output-bytes)
-         (log-fest-error @~a{
-                             @(pretty-path exe-path) fails test @(basename input-file) @;
-                             because something went wrong while running it.
-                             })
-         #f]
-        [(equal? exe-output-json bad-json)
-         (log-fest-error @~a{
-                             @(pretty-path exe-path) fails test @(basename input-file) @;
-                             because it produced invalid json.
-                             The raw output is below. @;
-                             @(if (= (bytes-length exe-output-bytes) process-stdout-bytes-limit)
-                                  @~a{
-                                      It hit the @process-stdout-bytes-limit @;
-                                      bytes size limit, which might be why it was invalid.
-                                      }
-                                  "")
-                             ------------------------------
-                             @(try-decode-bytes->string exe-output-bytes)
-                             ------------------------------
-                             })
-         #f]
-        [(and oracle-needs-student-output?
-              (not oracle-output-json))
-         (log-fest-error @~a{
-          @(pretty-path exe-path) fails test @(basename input-file) @;
-          because it produced an invalid result
-          It produced this json:
-          ------------------------------
-          @(with-output-to-string (thunk (write-json exe-output-json)))
-          ------------------------------
-          })
-         #f]
-        [(and (not oracle-needs-student-output?)
-              (not (jsexpr=? exe-output-json oracle-output-json)))
-         (log-fest-error @~a{
-                             @(pretty-path exe-path) fails test @(basename input-file) @;
-                             because it produced the wrong result.
-                             It produced this json:
-                             ------------------------------
-                             @(with-output-to-string (thunk (write-json exe-output-json)))
-                             ------------------------------
-                             })
-         (when (log-test-failure-comparison?)
-           (log-fest-error @~a{
-                               The expected json for this test is:
-                               ------------------------------
-                               @(with-output-to-string (thunk (write-json oracle-output-json)))
-                               ------------------------------
-                               })
-           (log-test-failure-comparison? #f))
-         #f]
-        [else #t]))
+     (define oracle-output-json
+       (if (not oracle-output-bytes)
+           bad-json
+           (bytes->json/safe oracle-output-bytes)))
+     (cond [(equal? oracle-output-json bad-json)
+            (log-fest-error "The oracle seems to be confused. Giving up on this test.")
+            #f]
+           [(and oracle-needs-student-output?
+                 (not oracle-output-json))
+            (log-fest-error @~a{
+                                @(pretty-path exe-path) fails test @(basename input-file) @;
+                                because it produced an invalid result
+                                It produced this json:
+                                ------------------------------
+                                @(with-output-to-string (thunk (write-json exe-output-json)))
+                                ------------------------------
+                                })
+            #f]
+           [(and (not oracle-needs-student-output?)
+                 (not (jsexpr=? exe-output-json oracle-output-json)))
+            (log-fest-error @~a{
+                                @(pretty-path exe-path) fails test @(basename input-file) @;
+                                because it produced the wrong result.
+                                It produced this json:
+                                ------------------------------
+                                @(with-output-to-string (thunk (write-json exe-output-json)))
+                                ------------------------------
+                                })
+            (when (log-test-failure-comparison?)
+              (log-fest-error @~a{
+                                  The expected json for this test is:
+                                  ------------------------------
+                                  @(with-output-to-string (thunk (write-json oracle-output-json)))
+                                  ------------------------------
+                                  })
+              (log-test-failure-comparison? #f))
+            #f]
+           [else #t])]
+    [(? bytes? non-json-bytes)
+     (log-fest-error @~a{
+                         @(pretty-path exe-path) fails test @(basename input-file) @;
+                         because it produced invalid json.
+                         The raw output is below. @;
+                         @(if (= (bytes-length non-json-bytes) process-stdout-bytes-limit)
+                              @~a{
+                                  It hit the @process-stdout-bytes-limit @;
+                                  bytes size limit, which might be why it was invalid.
+                                  }
+                              "")
+                         ------------------------------
+                         @(try-decode-bytes->string non-json-bytes)
+                         ------------------------------
+                         })
+     #f]
+    [#f
+     (log-fest-error @~a{
+                         @(pretty-path exe-path) fails test @(basename input-file) @;
+                         because something went wrong while running it.
+                         })
+     #f]))
 
 (define/contract (valid-tests test-directory
                               check-validity
@@ -394,7 +398,7 @@
         (define oracle-output (run-exe-on-input oracle-path
                                                 (call-with-input-file in test-transformer)))
         (cond [(bytes? oracle-output)
-               (define oracle-output-json (call-with-input-bytes oracle-output read-json/safe))
+               (define oracle-output-json (bytes->json/safe oracle-output))
                (define expected-output-json (call-with-input-file out
                                               (compose1 read-json/safe test-transformer)))
                (define passes? (jsexpr=? oracle-output-json expected-output-json))
