@@ -152,10 +152,18 @@
          })))
 
 (define (fest-summary->exit-code summary)
-  (if (or (> (test-set-count-tests (fest-summary-failed-tests summary)) 0)
-          (not (fest-summary-enough-valid-tests? summary)))
-      1
-      0))
+  (match-define (fest-summary assign-number
+                              this-teams-valid-tests
+                              enough-valid-tests?
+                              failed-tests
+                              total-test-count
+                              doing-student-test-validation?)
+    summary)
+  (cond
+    [(> (test-set-count-tests failed-tests) 0) 1]
+    [(not doing-student-test-validation?) 0]
+    [(not enough-valid-tests?) 1]
+    [else 0]))
 
 (module+ main
   (match-define (cons (hash-table ['major major]
