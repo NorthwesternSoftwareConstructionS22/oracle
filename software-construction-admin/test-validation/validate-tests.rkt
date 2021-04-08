@@ -24,6 +24,30 @@
   (check/confirm-dirty-state! oracle-repo-path)
   (make-directory* submitted-tests-path)
   (log-sc-info @~a{Installing submitted tests into @(pretty-path oracle-repo-path) ...})
+
+  (define all-response-box (box #f))
+  (define ((install-submitted-test! team) a-test)
+    (define to-move (match a-test
+                      [(test in #f)
+                       (log-sc-info @~a{Skipping test snapshot with no output file: @a-test})
+                       empty]
+                      [(test in out) (list in out)]))
+    (for ([f (in-list to-move)])
+      (define new-name (test-file-name->validated (basename f) team))
+      (define new-path (build-path submitted-tests-path new-name))
+      (log-sc-debug @~a{Moving @(simple-form-path f) to @(simple-form-path new-path)})
+      (unless (and (file-exists? new-path)
+                   (not (match (or (unbox all-response-box)
+                                   (user-prompt!* @~a{
+                                                      @new-path already exists. Overwrite it? @;
+                                                      (No means skip it.)
+                                                      }
+                                                  '(y n all skip-all)))
+                          ['y #t]
+                          ['n #f]
+                          ['all (set-box! all-response-box 'y) #t]
+                          ['skip-all (set-box! all-response-box 'n) #f])))
+        (rename-file-or-directory f new-path #t))))
   (for ([team (in-list (assign-number->active-team-names assign-number))])
     (define snapshot (team/assign-number->snapshot-path team assign-number))
     (log-sc-info @~a{Extracting tests from @team's snapshot at @(pretty-path snapshot)})
@@ -38,7 +62,7 @@
          (if (directory-exists? tests-directory)
              (directory->tests tests-directory)
              empty))
-       (for-each (install-submitted-test! team submitted-tests-path) tests))))
+       (for-each (install-submitted-test! team) tests))))
   (log-sc-info @~a{Committing submitted tests in @(pretty-path oracle-repo-path) and pushing})
   (if (user-prompt! @~a{Confirm commit and push to @(pretty-path oracle-repo-path)?})
       (commit-and-push! oracle-repo-path
@@ -47,21 +71,6 @@
                         #:branch oracle-repo-branch
                         #:add (list submitted-tests-path))
       (displayln "Canceled.")))
-
-(define ((install-submitted-test! team destination) a-test)
-  (define to-move (match a-test
-                    [(test in #f)
-                     (log-sc-info @~a{Skipping test snapshot with no output file: @a-test})
-                     empty]
-                    [(test in out) (list in out)]))
-  (for ([f (in-list to-move)])
-    (define new-name (test-file-name->validated (basename f) team))
-    (define new-path (build-path destination new-name))
-    (log-sc-debug @~a{Moving @(simple-form-path f) to @(simple-form-path new-path)})
-    (unless (and (file-exists? new-path)
-                 (not (user-prompt!
-                       @~a{@new-path already exists. Overwrite it? (No means skip it.)})))
-      (rename-file-or-directory f new-path #t))))
 
 (define (setup-and-push-grading-repo-for-test-validation! assign-number)
   (log-sc-info @~a{Setting up the grading repo for validation job.})
@@ -76,7 +85,7 @@
      validation-workflow-name
      (list (cons "Validate tests"
                  @~a{
-                     racket -O debug@"@"sc -W none @;
+                     racket -O 'debug@"@"sc debug@"@"fest' -W none @;
                      -l software-construction-admin/test-validation/ci-validate-tests -- @;
                      -M $MAJOR @;
                      -m $MINOR
@@ -141,11 +150,18 @@
                    })
   (check/confirm-dirty-state! oracle-repo-path)
 
+  (define all-response-box (box #f))
   (for ([valid-test-input (in-list valid-test-input-names)])
     (define src (build-path submitted-tests-path valid-test-input))
     (define dst (build-path validated-tests-path valid-test-input))
     (unless (and (file-exists? dst)
-                 (not (user-prompt! @~a{@dst already exists. Overwrite it? (No means skip it.)})))
+                 (not (match (or (unbox all-response-box)
+                                 (user-prompt!* @~a{@dst already exists. Overwrite it?}
+                                                '(y n all skip-all)))
+                        ['y #t]
+                        ['n #f]
+                        ['all (set-box! all-response-box 'y) #t]
+                        ['skip-all (set-box! all-response-box 'n) #f])))
       (call-with-output-file dst
         #:exists 'replace
         (λ (out)

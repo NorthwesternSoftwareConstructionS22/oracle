@@ -19,12 +19,20 @@
       [(? eof-object?) bad-json]
       [json json])))
 
+(define (read-json*/safe port)
+  (with-handlers ([exn:fail:read? (λ (e)
+                                    (log-fest-error (exn-message e))
+                                    bad-json)])
+    (let next-json ([result empty])
+      (match (read-json port)
+        [(? eof-object?) result]
+        [json (next-json (cons json result))]))))
+
 (define (valid-json? port)
-  (not (eq? (read-json/safe port) bad-json)))
+  (not (equal? (read-json*/safe port) bad-json)))
 
 (define (valid-json-file? path)
-  (log-fest-debug
-            @~a{Checking json validity for file @(pretty-path path)})
+  (log-fest-debug @~a{Checking json validity for file @(pretty-path path)})
   (call-with-input-file path
     valid-json?
     #:mode 'text))
@@ -111,7 +119,10 @@
   (for/or ([s (in-list los)])
     (string-contains? s some-str)))
 
-(define (user-prompt!* msg raw-options [none-result 'none])
+(define (user-prompt!* msg
+                       raw-options
+                       [none-result 'none]
+                       #:retry-on-none? [retry-on-none? #t])
   (define options (map (compose1 string-downcase ~a) raw-options))
   (display @~a{@msg [@(string-upcase (first options))/@(string-join (rest options) "/")]: })
   (flush-output)
@@ -121,7 +132,12 @@
                   [option-str (in-list options)]
                   #:when (string-prefix? answer option-str))
         raw-option)
-      none-result))
+      (if retry-on-none?
+          (user-prompt!* msg
+                         raw-options
+                         none-result
+                         #:retry-on-none? #t)
+          none-result)))
 
 (define (user-prompt! msg)
   (match (user-prompt!* msg '(y n))

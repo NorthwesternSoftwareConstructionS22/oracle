@@ -2,31 +2,17 @@
 
 (provide validated-test-log-delimeter)
 
-(require "../tests.rkt"
+(require "test-novelty.rkt"
+         "../tests.rkt"
          "../testing.rkt"
          "../config.rkt"
          "../common/cmdline.rkt"
          "../common/util.rkt"
          "../common/assignments.rkt"
-         "../common/teams.rkt")
+         "../common/teams.rkt"
+         "../common/logger.rkt")
 
 (define validated-test-log-delimeter "-----validated-----")
-
-(define (same-input-exists-in tests)
-  (define (test->input-json a-test)
-    (call-with-input-file (test-input-file a-test)
-      read-json/safe))
-  (define test-inputs (list->set (map test->input-json tests)))
-  (λ (a-test)
-    (set-member? test-inputs (test->input-json a-test))))
-
-(define (instructor-test? a-test)
-  (member (validated-test-input-file->team-name (test-input-file a-test))
-                 instructor-team-names))
-(define/contract (get-instructor-tests assign-number)
-  (assign-number? . -> . (listof (and/c test/c instructor-test?)))
-  (filter instructor-test?
-          (directory->tests (assign-number->validated-tests-path assign-number))))
 
 (module+ main
   (match-define (cons (hash-table ['major major-number]
@@ -58,26 +44,12 @@
                                 #:require-output-file? (and (member assign-number
                                                                     assigns-requiring-test-outputs)
                                                             #t)))
-  (define instructor-tests (get-instructor-tests assign-number))
-  (define valid-tests-different-than-instructor
-    (filter-not (same-input-exists-in instructor-tests)
-                all-valid-tests))
-
-  (define valid-tests-different-than-past-assignments
-    (cond [(member assign-number assigns-conflicting-with-past-tests)
-           (define all-past-assignments
-             (take assign-sequence
-                   (index-of assign-sequence assign-number)))
-           (define all-past-tests
-             (append-map (compose1 directory->tests
-                                   assign-number->validated-tests-path)
-                         all-past-assignments))
-           (filter-not (same-input-exists-in all-past-tests)
-                       valid-tests-different-than-instructor)]
-          [else valid-tests-different-than-instructor]))
+  (define novel-valid-tests
+    (filter-already-submitted-tests all-valid-tests
+                                    assign-number))
 
   (display validated-test-log-delimeter)
   (write
-   (for/list ([test (in-list valid-tests-different-than-past-assignments)])
+   (for/list ([test (in-list novel-valid-tests)])
      (basename (test-input-file test))))
   (displayln validated-test-log-delimeter))

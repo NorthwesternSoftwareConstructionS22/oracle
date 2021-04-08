@@ -8,7 +8,8 @@
          "common/cmdline.rkt"
          "common/assignments.rkt"
          "common/util.rkt"
-         "common/logger.rkt")
+         "common/logger.rkt"
+         "test-validation/test-novelty.rkt")
 
 (define grading-log-delimiter "-----score-----")
 
@@ -65,8 +66,11 @@
          #:require-output-file? (and (member assign-number
                                              assigns-requiring-test-outputs)
                                      #t)))
+      (define novel-tests (filter-already-submitted-tests valid-tests assign-number))
       (log-fest-info @~a{
-                         Test validation done: @(length valid-tests) valid tests
+                         Test validation done: @;
+                         @(length valid-tests) tests pass basic validity checking, @;
+                         and @(length novel-tests) of them are novel.
                          Moving on to testing.
                          })
       (length valid-tests)))
