@@ -55,7 +55,7 @@
   (if (member assign-number assigns-with-student-tests)
       5
       0))
-(define all-valid-tests-must-be-json? #f) ;; Disabled because trailing garbage in inputs deemed OK
+(define all-valid-tests-must-be-json? #t)
 
 
 (define course-github-organization "NorthwesternSoftwareConstructionS21")
