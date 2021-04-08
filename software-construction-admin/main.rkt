@@ -44,10 +44,11 @@
                                                                'interacts)))
 
   (define assign-has-student-tests? (member assign-number assigns-with-student-tests))
-  (define doing-student-test-validation? (or force-test-validation?
-                                             (getenv force-validation-env-var)
-                                             (and assign-has-student-tests?
-                                                  (is-student-test-validation-time?))))
+  (define doing-student-test-validation?
+    (or force-test-validation?
+        (getenv force-validation-env-var)
+        (and assign-has-student-tests?
+             (is-student-test-validation-time? assign-number))))
   (define current-valid-test-count
     (when doing-student-test-validation?
       (log-fest-info
@@ -70,7 +71,7 @@
       (log-fest-info @~a{
                          Test validation done: @;
                          @(length valid-tests) tests pass basic validity checking, @;
-                         and @(length novel-tests) of them are novel.
+                         and @(length novel-tests) of those are novel.
                          Moving on to testing.
                          })
       (length valid-tests)))

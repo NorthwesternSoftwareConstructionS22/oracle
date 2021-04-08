@@ -31,9 +31,10 @@
     ("5" . "1")
     ("6" . "1")
     ("9" . "1")))
+(define (assign-with-student-test? a)
+  (member a assigns-with-student-tests))
 (define/contract assigns-requiring-test-outputs
-  (flat-named-contract 'subset-of-assigns-with-student-tests?
-                       (λ (l) (subset? l assigns-with-student-tests)))
+  (listof assign-with-student-test?)
   '(("2" . "1")
     ("2" . "2")
     ("3" . "1")
@@ -92,13 +93,27 @@
 (define grading-repo-branch "master")
 
 (define (before-5pm? time) (< (->hours time) 17))
-(define (is-student-test-validation-time?)
-  ((disjoin saturday?
-            sunday?
-            monday?
-            tuesday?
-            (conjoin wednesday? before-5pm?))
-   (now #:tz "America/Chicago")))
+(define/contract assign-test-deadlines
+  (hash/c assign-with-student-test?
+          moment?)
+  (hash '("2" . "1") (moment 2021 4 7 17
+                             #:tz "America/Chicago")
+        '("2" . "2") (moment 2021 4 7 17
+                             #:tz "America/Chicago")
+        '("3" . "1") (moment 2021 4 14 17
+                             #:tz "America/Chicago")
+        '("4" . "1") (moment 2021 4 21 17
+                             #:tz "America/Chicago")
+        '("5" . "1") (moment 2021 4 28 17
+                             #:tz "America/Chicago")
+        '("6" . "1") (moment 2021 5 5 17
+                             #:tz "America/Chicago")
+        '("9" . "1") (moment 2021 5 26 17
+                             #:tz "America/Chicago")))
+(define (is-student-test-validation-time? assign)
+  (define current-time (now/moment #:tz "America/Chicago"))
+  (moment<? current-time
+            (hash-ref assign-test-deadlines assign current-time)))
 (define force-validation-env-var "SC_FORCE_VALIDATION")
 
 
