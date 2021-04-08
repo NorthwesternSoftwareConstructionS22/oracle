@@ -167,3 +167,12 @@
     (if (file-exists? f-path)
         (delete-file f-path)
         (delete-directory/files f-path))))
+
+(define (parse-human-date->ISO str)
+  (match (with-output-to-string
+           (thunk (system* (find-executable-path "date")
+                           "+%Y-%m-%d %H:%M:%S"
+                           "-d"
+                           str)))
+    ["" (raise-user-error 'software-construction-admin "bad date")]
+    [other other]))

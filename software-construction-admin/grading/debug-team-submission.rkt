@@ -16,12 +16,12 @@
 
 (define/contract (kick-off-submission-debug-job! team
                                                  assign-number
-                                                 ref
+                                                 configure-repo!
                                                  grading-repo-path
                                                  force-test-validation?)
   (team-name?
    assign-number?
-   string?
+   (path-to-existant-directory? . -> . any)
    path-to-existant-directory?
    boolean?
    . -> .
@@ -39,7 +39,7 @@
                               (define snapshot
                                 (take-snapshot! team
                                                 temp-dir
-                                                (λ (repo) (checkout! repo ref))))
+                                                configure-repo!))
                               (unpack-snapshot-into! snapshot
                                                      grading-repo-path
                                                      grading-repo-preserve-files))))
@@ -49,11 +49,17 @@
                         (list (cons force-validation-env-var "true"))
                         empty)))
 
+(define ((checkout-ref! ref) repo-dir)
+  (checkout! repo-dir ref))
+
 (module+ main
   (match-define (cons (hash-table ['team team]
                                   ['major major-number]
                                   ['minor minor-number]
+
                                   ['ref ref]
+                                  ['last-commit-before-deadline commit-deadline-date]
+
                                   ['force-test-validation? force-test-validation?])
                       args)
     (command-line/declarative
@@ -77,9 +83,15 @@
      [("-r" "--ref")
       'ref
       ("Debug the specified commit, branch, or tag."
-       "Default: master")
-      #:collect {"ref" take-latest #f}
-      #:mandatory]
+       "Default: the default branch of the repo")
+      #:collect {"ref" take-latest ""}]
+     [("-d" "--last-commit-before-deadline")
+      'last-commit-before-deadline
+      ("Debug the last commit before a deadline, given in human-readable format. E.g. 'last friday'"
+       "This only makes sense if -r specifies a branch (which it does by default).")
+      #:collect {"date" take-latest #f}]
+
+
      [("-v" "--validate-tests")
       'force-test-validation?
       "Force test validation regardless of the day and assignment."
@@ -90,7 +102,14 @@
   (option-let*
    [job-id (kick-off-submission-debug-job! team
                                            assign-number
-                                           ref
+                                           (match* {commit-deadline-date ref}
+                                             [{#f ref}
+                                              (checkout-ref! ref)]
+                                             [{date-str branch-name}
+                                              (define deadline (parse-human-date->ISO date-str))
+                                              (λ (repo)
+                                                (checkout! repo branch-name)
+                                                ((checkout-last-commit-before deadline) repo))])
                                            grading-repo-path
                                            force-test-validation?)]
    [url (ci-run-html-url job-id)]

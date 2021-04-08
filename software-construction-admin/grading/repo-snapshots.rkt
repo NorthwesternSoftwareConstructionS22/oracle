@@ -109,15 +109,6 @@
 
   (first (take-snapshots! (list team) destination-dir configure-repo!)))
 
-(define (parse-human-date->ISO str)
-  (match (with-output-to-string
-           (thunk (system* (find-executable-path "date")
-                           "+%Y-%m-%d %H:%M:%S"
-                           "-d"
-                           str)))
-    ["" (raise-user-error 'repo-snapshots "bad date")]
-    [other other]))
-
 (module+ main
   (match-define (cons (hash-table ['major major-number]
                                   ['minor minor-number]
@@ -184,6 +175,10 @@
   (log-sc-info @~a{Taking dev repo snapshots in @snapshot-dir ...})
   (void (take-snapshots! teams
                          snapshot-dir
+                         ;; Note: This just uses the default branch of the repo.
+                         ;; Meaning that all grading will be done based on
+                         ;; commits to the default branch of the repo as
+                         ;; configured on github.
                          (checkout-last-commit-before deadline)))
   (log-sc-info @~a{Done.})
   (cond [(user-prompt! @~a{Commit snapshots in @(pretty-path (current-snapshots-repo-path))?})
