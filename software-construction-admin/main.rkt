@@ -74,7 +74,8 @@
       (log-fest-info @~a{
                          Test validation done: @;
                          @(length valid-tests) tests pass basic validity checking, @;
-                         and @(length novel-tests) of those are novel.
+                         and @(length novel-tests) of those @;
+                         @(if (= (length novel-tests) 1) "is" "are") novel.
                          Moving on to testing.
                          })
       (length valid-tests)))
