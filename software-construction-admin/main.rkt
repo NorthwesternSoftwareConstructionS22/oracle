@@ -85,23 +85,26 @@
   (build-executable! assign-number)
   (define test-exe-path
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
-  (unless (file-exists? test-exe-path)
-    (raise-user-error 'software-construction-admin
-                      "could not find the `run` executable\n  expected location: ~a"
-                      (pretty-path test-exe-path)))
-
-  (log-fest-info
-   @~a{
-       Running tests for assignment @(assign-number->string assign-number) on team @team-name's @;
-       submission executable @(pretty-path test-exe-path)
-       })
   (define failed-tests
-    (test-failures-for test-exe-path
-                       oracle-path
-                       validated-tests-by-team
-                       #:racket-based-oracle? (equal? oracle-type
-                                                      'interacts)
-                       #:oracle-needs-student-output? (equal? oracle-type 'checks-output)))
+    (cond [(file-exists? test-exe-path)
+           (log-fest-info
+            @~a{
+                Running tests for assignment @(assign-number->string assign-number) on team @team-name's @;
+                submission executable @(pretty-path test-exe-path)
+                })
+           (test-failures-for test-exe-path
+                              oracle-path
+                              validated-tests-by-team
+                              #:racket-based-oracle? (equal? oracle-type
+                                                             'interacts)
+                              #:oracle-needs-student-output? (equal? oracle-type 'checks-output))]
+          [else
+           (log-fest-error
+            @~a{
+                could not find the `run` executable
+                @"  "expected location: @(pretty-path test-exe-path)
+                })
+           validated-tests-by-team]))
   (log-fest-info @~a{Done running tests.})
 
 
