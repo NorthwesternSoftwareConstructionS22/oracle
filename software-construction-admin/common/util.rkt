@@ -130,7 +130,7 @@
   (or (and (string=? answer "") (first raw-options))
       (for/first ([raw-option (in-list raw-options)]
                   [option-str (in-list options)]
-                  #:when (string-prefix? answer option-str))
+                  #:when (string=? answer option-str))
         raw-option)
       (if retry-on-none?
           (user-prompt!* msg

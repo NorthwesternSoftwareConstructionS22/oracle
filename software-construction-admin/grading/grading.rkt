@@ -123,10 +123,10 @@
    [_ (fail-if (not (equal? (ci-run-status job-id) "completed"))
                @~a{Job @job-id is not done yet.})]
    [log-text (get-run-log! job-id)]
-   [grades (extract-scores team assign-number log-text)]
+   [grades (extract-scores team assign-number log-text (ci-run-html-url job-id))]
    grades))
 
-(define (extract-scores team assign-number log-text)
+(define (extract-scores team assign-number log-text log-url)
   (define matches
     (regexp-match*
      (~a grading-log-delimiter "(.+?)" grading-log-delimiter)
@@ -135,14 +135,13 @@
   ;; Only take the last one, in case some student code "happens" to print a
   ;; message with this exact format
   (match matches
-    [(list _ ... scores)
+    [(list _ ... (list scores))
      (define scores-by-assign (with-input-from-string scores read))
      (for/hash ([{assign assign-score} (in-hash scores-by-assign)])
        (match-define (list valid-test-count failed-test-count total-test-count) assign-score)
        (values assign
                (list valid-test-count
-                     (- 1 (/ (string->number failed-test-count)
-                             (string->number total-test-count))))))]
+                     (- 1 (/ failed-test-count total-test-count)))))]
     [else
      (for/hash ([assign-number (in-list (assign-numbers-up-to assign-number))])
        (values assign-number
@@ -150,6 +149,7 @@
                      (failure @~a{
                                   No grading results found in log text, @;
                                   something went wrong before grading.
+                                  Check the log at @log-url
                                   }))))]))
 
 (define (count-valid-tests team-name assign-number)
@@ -159,6 +159,14 @@
                    team-name))
          (directory-list valid-tests-path)))
 
+(define strip-presents
+  (match-lambda [(present v) (strip-presents v)]
+                [(cons v1 v2) (cons (strip-presents v1)
+                                    (strip-presents v2))]
+                [(? hash? h) (for/hash ([{k v} (in-hash h)])
+                               (values (strip-presents k)
+                                       (strip-presents v)))]
+                [other other]))
 
 (module+ main
   (match-define (cons (hash-table ['team specific-teams]
@@ -167,7 +175,9 @@
                                   ['kick-off? kick-off?]
                                   ['extract? extract?]
                                   ['extract-status-only? extract-status-only?]
-                                  ['snapshot-repo (app current-snapshots-repo-path _)])
+                                  ['snapshot-repo (app (compose1 current-snapshots-repo-path
+                                                                 simple-form-path)
+                                                       _)])
                       args)
     (command-line/declarative
      #:multi
@@ -259,4 +269,4 @@
                                 (ci-run-status job-id)
                                 (get-scores-from-log team assign-number job-id))]
                     result)))))
-      (pretty-write grades)])))
+      (pretty-write (strip-presents grades))])))

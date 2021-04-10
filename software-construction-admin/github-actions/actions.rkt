@@ -29,6 +29,7 @@
                 cancel-url)
   #:prefab)
 
+;; lltodo: this doesn't deal with pagination
 (define/contract (get-all-runs! repo-owner repo-name)
   (string? string? . -> . (option/c (listof ci-run?)))
 
@@ -42,13 +43,25 @@
 (define/contract (get-runs-by-url! repo-owner repo-name urls)
   (string? string? (listof string?) . -> . (option/c (hash/c string? (option/c ci-run?))))
 
-  (option-let*
+  ;; Alternative version that (probably) more efficiently uses api calls, but
+  ;; needs to deal with pagination
+  #;(option-let*
    [all-runs (get-all-runs! repo-owner repo-name)]
    [runs-by-url (for/hash ([run (in-list all-runs)])
                   (values (ci-run-url run) run))]
    (for/hash ([url (in-list urls)])
      (values url
-             (hash-ref/option runs-by-url url @~a{No run found with url @url})))))
+             (hash-ref/option runs-by-url url @~a{No run found with url @url}))))
+  (for/hash ([url (in-list urls)])
+    (values url (get-run-by-url! url))))
+
+(define/contract (get-run-by-url! url)
+  (string? . -> . (option/c ci-run?))
+
+  (option-let*
+   #:extra-failure-message (~a url " : ")
+   [run-json (github-request! url)]
+   (json->ci-run run-json)))
 
 (define (failed-to action code headers in)
   (failure

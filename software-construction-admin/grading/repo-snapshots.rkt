@@ -75,28 +75,34 @@
    . -> .
    (listof path-to-existant-file?))
 
+  (define full-destination-dir-path (simple-form-path destination-dir))
   (call-with-temp-directory
    #:name-seed "take-snapshot"
    (λ (temp-dir)
      (parameterize ([current-directory temp-dir])
+       (define all-response-box (box #f))
        (for/list ([team (in-list teams)])
          (define repo (clone-repo! (team->dev-repo-name team)))
          (configure-repo! repo)
          (define repo-zip (zip! repo))
          (define snapshot-name (team->snapshot-name team))
-         (define destination (build-path destination-dir snapshot-name))
+         (define destination (build-path full-destination-dir-path snapshot-name))
          (if (file-exists? destination)
-             (match (user-prompt!* @~a{
-                                       @(pretty-path destination) already exists. @;
-                                       Delete it, skip, or abort?
-                                       }
-                                   '(d s a))
-               ['d
+             (match (or (unbox all-response-box)
+                        (user-prompt!* @~a{
+                                           @(pretty-path destination) already exists. @;
+                                           Delete it, skip, or abort?
+                                           }
+                                       '(d s a delete-all skip-all)))
+               [(and (or 'd 'delete-all) response)
+                (when (equal? response 'delete-all) (set-box! all-response-box 'd))
                 (delete-file destination)
                 (rename-file-or-directory repo-zip destination)]
-               ['s (void)]
-               [else (raise-user-error 'take-snapshots!
-                                       "Aborting due to already existant snapshot.")])
+               [(and (or 's 'skip-all) response)
+                (when (equal? response 'skip-all) (set-box! all-response-box 's))
+                (void)]
+               ['a (raise-user-error 'take-snapshots!
+                                     "Aborting due to already existant snapshot.")])
              (rename-file-or-directory repo-zip destination))
          destination)))))
 
@@ -170,7 +176,7 @@
                    (log-sc-info @~a{Snapshotting only teams @~v[other]})
                    other]))
 
-  (define snapshot-dir (assign-number->snapshots-dir assign-number))
+  (define snapshot-dir (simple-form-path (assign-number->snapshots-dir assign-number)))
   (make-directory* snapshot-dir)
   (log-sc-info @~a{Taking dev repo snapshots in @snapshot-dir ...})
   (void (take-snapshots! teams

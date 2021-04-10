@@ -18,12 +18,13 @@
 
 (define-syntax (option-let* stx)
   (syntax-parse stx
-    [(_ [pat:expr maybe-value:expr] more-clauses ... result)
+    [(_ {~optional {~seq #:extra-failure-message extra-msg} #:defaults ([extra-msg #'""])}
+        [pat:expr maybe-value:expr] more-clauses ... result)
      #'(match maybe-value
-         [(? failure? f) f]
+         [(failure msg) (failure (~a extra-msg msg))]
          [(or (present pat) pat)
           (option-let* more-clauses ... result)])]
-    [(_ result) #'(present result)]))
+    [(_ {~optional {~seq #:extra-failure-message _}} result) #'(present result)]))
 
 (define/contract (hash-ref/option h k [fail-msg @~a{Key '@k' not found}])
   ({hash? any/c} {string?} . ->* . (option/c any/c))
