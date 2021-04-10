@@ -417,10 +417,31 @@
        ;; There are no expected outputs for assignments with these oracles.
        ;; Just make sure that the oracle doesn't break on them.
        ['checks-output
-        (exe-passes-test? oracle-path
-                          oracle-path
-                          (test in out)
-                          #:oracle-needs-student-output? #t)]
+        (define oracle-input
+          (input-port-append #t
+                             ;; these files get closed because
+                             ;; the call to copy-port in launch-process!
+                             ;; will copy all of the data out of this
+                             ;; port (which'll trigger the close
+                             ;; via input-port-append)
+                             (open-input-file in)
+                             (open-input-bytes #"\n")
+                             (open-input-file out)))
+        (match-define oracle-output-bytes
+          (run-exe-on-input oracle-path
+                            oracle-input
+                            oracle-timeout-seconds))
+        (cond
+          [(not oracle-output-bytes)
+           #f]
+          [else
+           (define oracle-output-json (bytes->json/safe oracle-output-bytes))
+           (cond
+             [(or (equal? oracle-output-json bad-json)
+                  (not (boolean? oracle-output-json)))
+              (log-fest-error "The oracle seems to be confused. Giving up validating this test.\n  --> ~s" oracle-output-json)
+              #f]
+             [else oracle-output-json])])]
        ['interacts
         (exe-passes-test?/racket-oracle oracle-path
                                         oracle-path
