@@ -406,6 +406,7 @@
                           (log-test-failure-comparison?))
                  (log-fest-error
                   @~a{
+                      The output json file does not match the oracle's output.
                       The oracle answer for this test is:
                       ------------------------------
                       @(with-output-to-string (thunk (write-json oracle-output-json)))
