@@ -15,6 +15,7 @@
 
 ;; The CI kills any job running longer than 115 min
 (define absolute-max-timeout-seconds (* 115 60))
+(define test-log-messages-delimiter "\n")
 
 ;; Values being compared may be large, so they can be suppressed to prevent
 ;; filling up the log when other `info`-level information is desired
@@ -128,25 +129,33 @@
   (define stderr (get-output-string copy-of-stderr))
   (cond
     [(string=? "" stderr)
+     (log-fest-info @~a{
+                        Test @(if passed? "passed" "failed").
+                        @test-log-messages-delimiter
+                        })
      passed?]
     [else
-     (log-fest-error @~a{test failed because stderr of the submission was not empty
-      ------------------------------
-      @stderr
-      ------------------------------
-      })
+     (log-fest-error @~a{
+                         Test failed because stderr of the submission was not empty:
+                         ------------------------------
+                         @stderr
+                         ------------------------------
+                         @test-log-messages-delimiter
+                         })
      #f]))
 
 
 (define (make-send-json exe-path input-file test-failed)
   (define (send-json out json where)
     (with-handlers ([exn:fail? (λ (x)
-                                 (log-fest-error @~a{
-                      @(pretty-path exe-path) fails test @(~a (basename input-file)) because the following JSON message could not be sent
-                      ------------------------------
-                      @(jsexpr->bytes json)
-                      ------------------------------
-                      })
+                                 (log-fest-error
+                                  @~a{
+                                      @(pretty-path exe-path) fails test @(basename input-file) @;
+                                      because the following JSON message could not be sent
+                                      ------------------------------
+                                      @(jsexpr->bytes json)
+                                      ------------------------------
+                                      })
                                  (raise x))])
       (log-fest-debug @~a{Sending to @where
  ------------------------------
@@ -163,23 +172,27 @@
   (define (recv-json in ctc where)
     (define val (with-timeout (read-json in)))
     (when (eof-object? val)
-      (log-fest-error @~a{
- @(pretty-path exe-path) fails test @(~a (basename input-file)) because it didn't send a JSON object, got eof
- })
+      (log-fest-error
+       @~a{
+           @(pretty-path exe-path) fails test @(basename input-file) @;
+           because it didn't send a JSON object, got eof
+           })
       (test-failed))
-    (log-fest-debug @~a{Received from @where
- ------------------------------
- @(jsexpr->bytes val)
- ------------------------------
- })
+    (log-fest-debug @~a{
+                        Received from @where
+                        ------------------------------
+                        @(jsexpr->bytes val)
+                        ------------------------------
+                        })
     (unless ((flat-contract-predicate ctc) val)
-      (log-fest-error @~a{
- @(pretty-path exe-path) fails test @(~a (basename input-file)) because its JSON result did not have the right shape:
- ------------------------------
- @(jsexpr->bytes val)
- ------------------------------
-
- })
+      (log-fest-error
+       @~a{
+           @(pretty-path exe-path) fails test @(basename input-file) @;
+           because its JSON result did not have the right shape:
+           ------------------------------
+           @(jsexpr->bytes val)
+           ------------------------------
+           })
       (test-failed))
     val)
   recv-json)
@@ -277,7 +290,10 @@
            bad-json
            (bytes->json/safe oracle-output-bytes)))
      (cond [(equal? oracle-output-json bad-json)
-            (log-fest-error "The oracle seems to be confused. Giving up on this test.")
+            (log-fest-error @~a{
+                                The oracle seems to be confused. Giving up on this test.
+                                @test-log-messages-delimiter
+                                })
             #f]
            [(and oracle-needs-student-output?
                  (not oracle-output-json))
@@ -288,6 +304,7 @@
                                 ------------------------------
                                 @(with-output-to-string (thunk (write-json exe-output-json)))
                                 ------------------------------
+                                @test-log-messages-delimiter
                                 })
             #f]
            [(and (not oracle-needs-student-output?)
@@ -299,17 +316,24 @@
                                 ------------------------------
                                 @(with-output-to-string (thunk (write-json exe-output-json)))
                                 ------------------------------
+                                @test-log-messages-delimiter
                                 })
             (when (log-test-failure-comparison?)
               (log-fest-error @~a{
-                                  The expected json for this test is:
+                                  The expected output json for @(basename input-file) is:
                                   ------------------------------
                                   @(with-output-to-string (thunk (write-json oracle-output-json)))
                                   ------------------------------
+                                  @test-log-messages-delimiter
                                   })
               (log-test-failure-comparison? #f))
             #f]
-           [else #t])]
+           [else
+            (log-fest-info @~a{
+                               Test passed.
+                               @test-log-messages-delimiter
+                               })
+            #t])]
     [(? bytes? non-json-bytes)
      (log-fest-error @~a{
                          @(pretty-path exe-path) fails test @(basename input-file) @;
@@ -324,12 +348,14 @@
                          ------------------------------
                          @(try-decode-bytes->string non-json-bytes)
                          ------------------------------
+                         @test-log-messages-delimiter
                          })
      #f]
     [#f
      (log-fest-error @~a{
                          @(pretty-path exe-path) fails test @(basename input-file) @;
                          because something went wrong while running it.
+                         @test-log-messages-delimiter
                          })
      #f]))
 
@@ -340,7 +366,7 @@
                               #:test-timeout [test-timeout absolute-max-timeout-seconds]
                               #:max-count [max-count +inf.0])
   (->* {path-to-existant-directory?
-        (path-to-existant-file? path-to-existant-file? . -> . boolean?)}
+        (path-to-existant-file? (or/c path-to-existant-file? #f) . -> . boolean?)}
        {#:check-json-validity? boolean?
         #:require-output-file? boolean?
         #:test-timeout natural?
@@ -354,24 +380,42 @@
                                        (or (not output-file)
                                            (not (file-exists? output-file))))
                                   (log-fest-error
-                                   @~a{Invalid: @(pretty-path input-file), missing output file.})
+                                   @~a{
+                                       Invalid: @(pretty-path input-file), missing output file.
+                                       @test-log-messages-delimiter
+                                       })
                                   #f]
                                  [(and check-json-validity?
                                        (not (valid-json-file? input-file)))
                                   (log-fest-error
-                                   @~a{Invalid: @(pretty-path input-file), input is not json.})
+                                   @~a{
+                                       Invalid: @(pretty-path input-file), input is not json.
+                                       @test-log-messages-delimiter
+                                       })
                                   #f]
                                  [(and check-json-validity?
                                        output-file
                                        (not (valid-json-file? output-file)))
                                   (log-fest-error
-                                   @~a{Invalid: @(pretty-path input-file), output is not json.})
+                                   @~a{
+                                       Invalid: @(pretty-path input-file), output is not json.
+                                       @test-log-messages-delimiter
+                                       })
                                   #f]
                                  [(not (check-validity input-file output-file))
                                   (log-fest-error
-                                   @~a{Invalid: @(pretty-path input-file), fails validity test.})
+                                   @~a{
+                                       Invalid: @(pretty-path input-file), fails validity test.
+                                       @test-log-messages-delimiter
+                                       })
                                   #f]
-                                 [else #t])])
+                                 [else
+                                  (log-fest-info
+                                   @~a{
+                                       Test is valid.
+                                       @test-log-messages-delimiter
+                                       })
+                                  #t])])
             all-tests))
   (take valid (inexact->exact (truncate (min max-count (length valid))))))
 
@@ -406,7 +450,7 @@
                           (log-test-failure-comparison?))
                  (log-fest-error
                   @~a{
-                      The output json file does not match the oracle's output.
+                      The output file @(pretty-path out) does not match the oracle's output.
                       The oracle answer for this test is:
                       ------------------------------
                       @(with-output-to-string (thunk (write-json oracle-output-json)))
@@ -440,7 +484,14 @@
            (cond
              [(or (equal? oracle-output-json bad-json)
                   (not (boolean? oracle-output-json)))
-              (log-fest-error "The oracle seems to be confused. Giving up validating this test.\n  --> ~s" oracle-output-json)
+              (log-fest-error
+               @~a{
+                   The oracle seems to be confused. Giving up validating this test.
+                   The oracle produced:
+                   ------------------------------
+                   @~s[oracle-output-json]
+                   ------------------------------
+                   })
               #f]
              [else oracle-output-json])])]
        ['interacts
