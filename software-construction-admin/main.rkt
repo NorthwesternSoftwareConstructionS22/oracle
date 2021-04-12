@@ -178,6 +178,8 @@
     [else 0]))
 
 (module+ main
+  (require racket/date)
+  
   (match-define (cons (hash-table ['major major]
                                   ['minor minor]
                                   ['team team-name]
@@ -213,6 +215,8 @@
        "Also produce a parse-able summary of results instead of a human-readable one."
        "This flag overrides -v (forces test validation *not* to happen).")
       #:record]))
+
+  (printf "starting oracle on ~a\n" (date->string (seconds->date (current-seconds)) #t))
 
   (define assign-number (cons major minor))
   (unless (or (member assign-number assign-sequence)
