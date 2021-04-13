@@ -50,6 +50,11 @@
   (match-lambda [(cons (or "5" "9") _)     'checks-output]
                 [(cons (or "6" "7" "8") _) 'interacts]
                 [else                      'normal]))
+;; This allows using one assignment's oracle to validate multiple assignment's tests
+(define/contract oracle-number-for-validating
+  (assign-with-student-test? . -> . assign-with-student-test?)
+  (match-lambda [(cons "6" "1") (cons "5" "1")]
+                [other          other]))
 
 ;; this used to depend on the amount time the oracle took but since
 ;; the oracle sometimes needs the student's output, this is a

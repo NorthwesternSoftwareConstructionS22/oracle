@@ -32,9 +32,10 @@
       #:mandatory]))
 
   (define assign-number (cons major-number minor-number))
-  (define oracle-type (assign->oracle-type assign-number))
+  (define oracle-number-for-validation (oracle-number-for-validating assign-number))
+  (define oracle-type (assign->oracle-type oracle-number-for-validation))
   (define oracle-path
-    (assign-number->oracle-path assign-number
+    (assign-number->oracle-path oracle-number-for-validation
                                 #:racket-based-oracle? (equal? oracle-type 'interacts)))
   (define all-valid-tests
     (valid-tests/passing-oracle (assign-number->submitted-tests-path assign-number)

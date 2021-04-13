@@ -36,12 +36,15 @@
     (values (validated-test-input-file->team-name (test-input-file test))
             test)))
 
-(define (assignment-test-fest team-name assign-number force-test-validation?)
+(define (get-oracle+type assign-number)
   (define oracle-type (assign->oracle-type assign-number))
-  (define oracle-path
-    (assign-number->oracle-path assign-number
-                                #:racket-based-oracle? (equal? oracle-type
-                                                               'interacts)))
+  (values (assign-number->oracle-path assign-number
+                                      #:racket-based-oracle? (equal? oracle-type
+                                                                     'interacts))
+          oracle-type))
+
+(define (assignment-test-fest team-name assign-number force-test-validation?)
+  (define-values {oracle-path oracle-type} (get-oracle+type assign-number))
 
   (define assign-has-student-tests? (member assign-number assigns-with-student-tests))
   (define doing-student-test-validation?
@@ -59,12 +62,14 @@
            Additionally, the test fest below will only run on the instructors' tests.
            })
       (define deliverables-path (assign-number->deliverables-path assign-number))
+      (define-values {validation-oracle-path validation-oracle-type}
+        (get-oracle+type (oracle-number-for-validating assign-number)))
       (define valid-tests
         (if (directory-exists? deliverables-path)
             (valid-tests/passing-oracle
              deliverables-path
-             oracle-path
-             oracle-type
+             validation-oracle-path
+             validation-oracle-type
              #:check-json-validity? all-valid-tests-must-be-json?
              #:require-output-file? (and (member assign-number
                                                  assigns-requiring-test-outputs)
