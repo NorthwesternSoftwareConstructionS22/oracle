@@ -1,0 +1,4 @@
+{"ends-with-board":
+  [{"black":[1,4,4,4,4,4,12,15,15,15,21,23,"home","home","home"],
+    "white":[2,2,11,12,12,12,12,18,18,21,23,23,24,24,24]},
+    ["black",4,"home"],["black",4,"home"],["black",4,1],["black",4,1],["black",4,"home"],["black",15,4]]}

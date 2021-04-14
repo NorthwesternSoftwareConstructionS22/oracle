@@ -1,0 +1,51 @@
+{"ends-with-query":
+ [
+     {
+         "black": ["bar", "bar", "bar", 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4],
+         "white": ["bar", 8, 10, 12, 12, 12, 12, 17, 17, 22, 23, 24, 24, "home", "home"]
+     },
+
+     ["black", 1, 11],
+     ["black", 1, 11],
+     ["black", 3, 11],
+     ["white", 12, 13],
+     ["black", 4, 11],
+     ["black", 11, 11],
+     ["black", "bar", 11],
+     ["white", 24, 11],
+     ["white", 23, "bar"],
+     ["black", 2, 11],
+     ["black", 11, 2],
+     ["black", 11, 17],
+     ["white", 22, "bar"],
+     ["black", 11, 7],
+     ["black", 2, "bar"],
+     ["black", 11, 1],
+     ["black", 4, 11],
+     ["black", 4, 11],
+     ["white", 17, 11],
+     ["black", "bar", 11],
+     ["black", "bar", 11],
+     ["black", "bar", 11],
+     ["black", 11, "bar"],
+     ["black", 1, 11],
+     ["black", 2, 11],
+     ["black", 3, 11],
+     ["white", "bar", 11],
+     ["white", 8, 9],
+     ["white", 17, 5],
+     ["white", 12, "home"],
+     ["black", "bar", "home"],
+     ["black", 11, "home"],
+     ["black", 11, 17],
+     ["black", 2, 11],
+     ["black", 11, 10],
+     ["white", 10, 11],
+     ["black", 17, 11],
+     ["black", 11, 22],
+     ["black", 22, 11],
+
+     [
+         "black", 11
+     ]
+ ]}
