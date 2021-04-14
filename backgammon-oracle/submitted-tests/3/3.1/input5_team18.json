@@ -1,0 +1,15 @@
+{"ends-with-board":
+  [{"black":[1,1,2,2,3,3,4,4,5,5,6,6,"home","home","home"],
+    "white":["bar","bar",12,15,15,15,16,18,18,20,20,20,22,24,24]},
+    ["white",15,"bar"],
+    ["white",15,"bar"],
+    ["white",18,"bar"],
+    ["white",18,"bar"],
+    ["white",20,"bar"],
+    ["black",4,"home"],
+    ["black",3,"home"],
+    ["black",2,"home"],
+    ["black",1,"home"],
+    ["black","home",12],
+    ["black","home",13],
+    ["black","home",14]]}

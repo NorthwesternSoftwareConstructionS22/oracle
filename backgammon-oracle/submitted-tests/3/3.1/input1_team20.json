@@ -1,0 +1,10 @@
+{ "ends-with-board" :
+        [
+          {
+            "black" : [4, "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home"],
+            "white" : [20, "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home"]
+          },
+          [ "white", 20, 23 ],
+          [ "black", 4, "home" ]
+        ]
+}

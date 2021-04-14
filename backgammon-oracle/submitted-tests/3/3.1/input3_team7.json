@@ -1,0 +1,13 @@
+{
+    "ends-with-query": [
+        {
+            "black": ["bar", 1,2,3,4,5,6,7,8,9,10,10,10,12,14],
+            "white": ["bar", 1,2,14,15,16,20,21,21,22,22,23,24,24,"home"]
+        },
+        ["black", "bar", "home"],
+        ["black", "home", "bar"],
+        ["white", "home", "bar"],
+        ["white", "bar", "home"],
+        ["black", "bar"]
+    ]
+}

@@ -1,0 +1,19 @@
+{"ends-with-board":
+  [
+      {
+      "black":    ["home","home","home","home","home","home","home","home","home","home","home","home","home","home","home"],
+
+      "white":    ["home","home","home","home","home","home","home","home","home","home","home","home","home","home","home"]
+      },
+
+      ["black","home","bar"],
+      
+      ["white","home","bar"],
+      
+      ["white",
+          "bar","home"],
+      
+      ["black",
+          "bar","home"]
+  ]
+}
