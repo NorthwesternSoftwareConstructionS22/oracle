@@ -1,0 +1,9 @@
+{"ends-with-query":
+    [{  "black":[1,1,2,3,3,4,5,5,6,8,8,12,"home","home","home"],
+        "white":["bar",7,11,11,15,15,16,18,18,20,20,20,22,24,"home"]},
+    ["black",2,4],
+    ["white",24,"home"],
+    ["black",6,8],
+    ["black",8,7],
+    ["black",5,8],
+    ["black",8]]}
