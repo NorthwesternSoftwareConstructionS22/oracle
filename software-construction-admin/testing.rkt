@@ -412,7 +412,7 @@
                                  [else
                                   (log-fest-info
                                    @~a{
-                                       Test is valid.
+                                       @(pretty-path input-file) is valid.
                                        @test-log-messages-delimiter
                                        })
                                   #t])])
