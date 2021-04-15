@@ -463,15 +463,18 @@
        ;; Just make sure that the oracle doesn't break on them.
        ['checks-output
         (define oracle-input
-          (input-port-append #t
-                             ;; these files get closed because
-                             ;; the call to copy-port in launch-process!
-                             ;; will copy all of the data out of this
-                             ;; port (which'll trigger the close
-                             ;; via input-port-append)
-                             (open-input-file in)
-                             (open-input-bytes #"\n")
-                             (open-input-file out)))
+          (apply input-port-append
+                 #t
+                 ;; these files get closed because
+                 ;; the call to copy-port in launch-process!
+                 ;; will copy all of the data out of this
+                 ;; port (which'll trigger the close
+                 ;; via input-port-append)
+                 (open-input-file in)
+                 (open-input-bytes #"\n")
+                 (if (and out (file-exists? out))
+                     (list (open-input-file out))
+                     empty)))
         (match-define oracle-output-bytes
           (run-exe-on-input oracle-path
                             oracle-input
