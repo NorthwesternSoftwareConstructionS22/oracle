@@ -53,7 +53,8 @@
 ;; This allows using one assignment's oracle to validate multiple assignment's tests
 (define/contract oracle-number-for-validating
   (assign-with-student-test? . -> . assign-with-student-test?)
-  (match-lambda [(cons "6" "1") (cons "5" "1")]
+  (match-lambda [(cons "9" "1") (cons "5" "1")]
+                [(cons "6" "1") (cons "5" "1")]
                 [other          other]))
 
 ;; this used to depend on the amount time the oracle took but since
