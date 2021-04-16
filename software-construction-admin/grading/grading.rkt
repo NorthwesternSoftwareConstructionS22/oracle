@@ -30,16 +30,18 @@
                                            #:get-team-submission get-team-submission!
                                            #:workflow workflow-name
                                            #:log-level log-level
-                                           #:extra-env-vars extra-env-vars)
-  (team-name?
-   assign-number?
-   path-to-existant-directory?
-   #:type string?
-   #:get-team-submission (team-name? assign-number? path-to-existant-directory? . -> . any)
-   #:workflow string?
-   #:log-level string?
-   #:extra-env-vars (listof (cons/c string? string?))
-   . -> .
+                                           #:extra-env-vars extra-env-vars
+                                           #:grading-mode? [grading-mode? #t])
+  ({team-name?
+    assign-number?
+    path-to-existant-directory?
+    #:type string?
+    #:get-team-submission (team-name? assign-number? path-to-existant-directory? . -> . any)
+    #:workflow string?
+    #:log-level string?
+    #:extra-env-vars (listof (cons/c string? string?))}
+   {#:grading-mode? boolean?}
+   . ->* .
    (option/c ci-run?))
 
   (log-sc-info
@@ -62,7 +64,7 @@
                    -M $MAJOR @;
                    -m $MINOR @;
                    -n $TEAM @;
-                   -g
+                   @(if grading-mode? "-g" "")
                    })))
   (write-workflow-env! grading-repo-path
                        `(("MAJOR" . ,(assign-major-number assign-number))

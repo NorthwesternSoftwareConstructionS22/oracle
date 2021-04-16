@@ -47,7 +47,8 @@
    #:log-level "debug"
    #:extra-env-vars (if force-test-validation?
                         (list (cons force-validation-env-var "true"))
-                        empty)))
+                        empty)
+   #:grading-mode? #f))
 
 (define ((checkout-ref! ref) repo-dir)
   (checkout! repo-dir ref))
