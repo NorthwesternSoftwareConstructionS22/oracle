@@ -257,12 +257,13 @@
 
   (log-fest-info @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
   (define exe-output-bytes (run-exe-on-input exe-path input-file submission-timeout-seconds))
-  (log-fest-debug @~a{
-                      The raw output of @(pretty-path exe-path) was:
-                      ------------------------------
-                      @(try-decode-bytes->string exe-output-bytes)
-                      ------------------------------
-                      })
+  (when (bytes? exe-output-bytes)
+    (log-fest-debug @~a{
+                        The raw output of @(pretty-path exe-path) was:
+                        ------------------------------
+                        @(try-decode-bytes->string exe-output-bytes)
+                        ------------------------------
+                        }))
   (match exe-output-bytes
     [(? bytes? (app bytes->json/safe (and exe-output-json
                                           (not (== bad-json)))))
