@@ -4,7 +4,8 @@
 
 (require json
          syntax/parse/define
-         "logger.rkt")
+         "logger.rkt"
+         "check-json-whitespace.rkt")
 
 (define bad-json
   (let ()
@@ -29,7 +30,9 @@
         [json (next-json (cons json result))]))))
 
 (define (valid-json? port)
-  (not (equal? (read-json*/safe port) bad-json)))
+  (define bytes (port->bytes port))
+  (and (call-with-input-bytes bytes port-only-contains-json-conforming-whitespace?)
+       (not (equal? (call-with-input-bytes bytes read-json*/safe) bad-json))))
 
 (define (valid-json-file? path)
   (log-fest-debug @~a{Checking json validity for file @(pretty-path path)})
