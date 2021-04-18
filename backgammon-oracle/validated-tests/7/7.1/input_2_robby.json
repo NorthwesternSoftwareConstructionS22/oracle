@@ -1,1 +1,1 @@
-{ "id" : "wrong json objects", "port" : 8892, "valid winners" : [ "Malnati", "Lou" ]}
+{"id":"illegal move","port":8802,"valid winners":["Malnati","Lou"]}
