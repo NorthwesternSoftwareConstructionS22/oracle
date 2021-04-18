@@ -169,8 +169,12 @@
   send-json)
 
 (define (make-recv-json exe-path input-file test-failed)
-  (define (recv-json in ctc where)
-    (define val (with-timeout (read-json in)))
+  (define (recv-json in ctc where #:allow-newlines? [allow-newlines? #f])
+    (define val
+      (with-timeout
+          (if allow-newlines?
+              (read-json in)
+              (read-json (open-input-string (read-line in))))))
     (when (eof-object? val)
       (log-fest-error
        @~a{
@@ -233,7 +237,7 @@
 
          ;; a function to receive some json in, the string
          ;; goes into the students debug log, along with the JSON
-         [recv-json (-> input-port? flat-contract? string? jsexpr?)])
+         [recv-json (->* (input-port? flat-contract? string?) (#:allow-newlines? boolean?) jsexpr?)])
 
         ;; indicates if something went wrong; if it did, there were
         ;; expected to be log messages that explain what happened
