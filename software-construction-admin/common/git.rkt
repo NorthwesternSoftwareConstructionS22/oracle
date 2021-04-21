@@ -105,8 +105,10 @@
   (define branch-to-checkout (or branch
                                  (get-current-branch repo-dir)))
   (define pre-deadline-commit
-    (git @~a{rev-list --date=iso --reverse -n 1 --before='@iso-date-deadline' @branch-to-checkout}
-         #:in repo-dir))
+    (string-trim
+     (git @~a{rev-list --date=iso --reverse -n 1 --before='@iso-date-deadline' @branch-to-checkout}
+          #:in repo-dir)))
+  (log-sc-info @~a{Checking out commit @pre-deadline-commit})
   (checkout! repo-dir pre-deadline-commit))
 
 (define/contract (get-status repo-dir)
