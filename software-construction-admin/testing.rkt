@@ -162,7 +162,7 @@
  @(jsexpr->bytes json)
  ------------------------------
  })
-      (with-timeout (write-json json out))
+      (with-timeout (write-json json out) "json to be sent")
       (newline out)
       (flush-output out)))
 
@@ -172,9 +172,14 @@
   (define (recv-json in ctc where #:allow-newlines? [allow-newlines? #f])
     (define val
       (with-timeout
-          (if allow-newlines?
-              (read-json in)
-              (read-json (open-input-string (read-line in))))))
+          (cond
+            [allow-newlines? (read-json in)]
+            [else
+             (define str (read-line in))
+             (cond
+               [(eof-object? str) str]
+               [else (read-json (open-input-string  str))])])
+        (format "json from ~a" exe-path)))
     (when (eof-object? val)
       (log-fest-error
        @~a{
@@ -203,16 +208,16 @@
 
 (define-syntax (with-timeout stx)
   (syntax-parse stx
-    [(_ e:expr)
-     #'(with-timeout/proc (λ () e) 'e)]))
-(define (with-timeout/proc thunk quoted-code)
+    [(_ e:expr what:expr)
+     #'(with-timeout/proc (λ () e) (λ () what))]))
+(define (with-timeout/proc thunk what-thunk)
   (define chan (make-channel))
   (thread (λ () (channel-put chan (vector (thunk)))))
   (define result (sync/timeout timeout-seconds chan))
   (unless result
-    (error 'with-timeout "timed out after ~a seconds waiting for ~s"
-           timeout-seconds
-           quoted-code))
+    (raise-user-error 'with-timeout "timed out after ~a seconds waiting for ~a"
+                      timeout-seconds
+                      (what-thunk)))
   (vector-ref result 0))
 
 (define timeout-seconds 5)
