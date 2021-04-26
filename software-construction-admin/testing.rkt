@@ -162,14 +162,16 @@
  @(jsexpr->bytes json)
  ------------------------------
  })
-      (with-timeout (write-json json out) "json to be sent")
+      (with-timeout (write-json json out) (format "json to be sent ~a" where))
       (newline out)
       (flush-output out)))
 
   send-json)
 
 (define (make-recv-json exe-path input-file test-failed)
-  (define (recv-json in ctc where #:allow-newlines? [allow-newlines? #f])
+  (define (recv-json in ctc where
+                     #:allow-newlines? [allow-newlines? #f]
+                     #:allow-eof? [allow-eof? #f])
     (define val
       (with-timeout
           (cond
@@ -179,21 +181,26 @@
              (cond
                [(eof-object? str) str]
                [else (read-json (open-input-string  str))])])
-        (format "json from ~a" exe-path)))
-    (when (eof-object? val)
+        (format (if allow-eof? "json or eof from ~a" "json from ~a") where)))
+    (when (and (eof-object? val) (not allow-eof?))
       (log-fest-error
        @~a{
            @(pretty-path exe-path) fails test @(basename input-file) @;
            because it didn't send a JSON object, got eof
            })
       (test-failed))
-    (log-fest-debug @~a{
-                        Received from @where
-                        ------------------------------
-                        @(jsexpr->bytes val)
-                        ------------------------------
-                        })
-    (unless ((flat-contract-predicate ctc) val)
+    (if (eof-object? val)
+        (log-fest-debug @~a{
+ Received eof from @where
+ })
+        (log-fest-debug @~a{
+ Received from @where
+ ------------------------------
+ @(jsexpr->bytes val)
+ ------------------------------
+ }))
+    (unless (or (eof-object? val)
+                ((flat-contract-predicate ctc) val))
       (log-fest-error
        @~a{
            @(pretty-path exe-path) fails test @(basename input-file) @;
@@ -242,7 +249,10 @@
 
          ;; a function to receive some json in, the string
          ;; goes into the students debug log, along with the JSON
-         [recv-json (->* (input-port? flat-contract? string?) (#:allow-newlines? boolean?) jsexpr?)])
+         [recv-json (->* (input-port? flat-contract? string?)
+                         (#:allow-newlines? boolean?
+                          #:allow-eof? boolean?)
+                         (or/c jsexpr? eof-object?))])
 
         ;; indicates if something went wrong; if it did, there were
         ;; expected to be log messages that explain what happened
