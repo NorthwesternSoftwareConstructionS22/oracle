@@ -163,6 +163,7 @@
   (define (url->log-contents log-download-url)
     (match-define (list stdout stdin _ stderr ctl)
       (process* wget
+                "-4"
                 "-O"
                 "-"
                 log-download-url))
