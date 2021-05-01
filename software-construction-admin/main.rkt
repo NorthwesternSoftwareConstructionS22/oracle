@@ -152,7 +152,7 @@
        @(if doing-student-test-validation?
             @~a{Submitted @this-teams-valid-tests / @(expected-valid-test-count assign-number) valid tests}
             "")
-       Failed @failed-count / @total-test-count peer tests
+       Failed @failed-count / @total-test-count tests
        =======================================================
 
        })
