@@ -4,6 +4,7 @@
          valid-tests/passing-oracle
          test-failures-for
          log-test-failure-comparison?)
+(module+ test (require rackunit))
 
 (require json
          "tests.rkt"
@@ -172,37 +173,32 @@
   (define (recv-json in ctc where
                      #:allow-newlines? [allow-newlines? #f]
                      #:allow-eof? [allow-eof? #f])
-    (define-values (input-pipe output-pipe) (make-pipe))
-    (define bp (open-output-bytes))
-    (unless allow-newlines?
-      (thread (λ () (copy-port in output-pipe bp) (close-output-port output-pipe))))
     (define val
-      (with-timeout
-          (cond
-            [allow-newlines? (read-json in)]
-            [else
-             (define str (read-line input-pipe))
-             (cond
-               [(eof-object? str) str]
-               [else (read-json (open-input-string  str))])])
-
-        ;; this is evaluated only if we time out
-        (let ()
-          (define got (get-output-bytes bp))
-          (format "json ~afrom ~a~a"
-                  (if allow-eof? " or eof" "")
-                  where
-                  (if (equal? got #"")
-                      ""
-                      (format
-                       (string-append
-                        "\n"
-                        "  got: ~s\n"
-                        "      (the previous line shows the bytes received in a quoted form;\n"
-                        "       the leading # and \" are racket's notation for bytes and the\n"
-                        "       data inside is shown, with quotes escaped and non-ASCII shown\n"
-                        "       in octal)")
-                       got))))))
+      (cond
+        [allow-newlines?
+         (with-timeout
+             (read-json in)
+           (format "json ~afrom ~a~a"
+                   (if allow-eof? " or eof" "")
+                   where))]
+        [else
+         (define-values (the-bytes timed-out?) (read-line/timeout in))
+         (when timed-out?
+           (raise-user-error
+            'with-timeout
+            (string-append
+             "timed out after ~a seconds waiting for ~a\n"
+             "  got: ~s\n"
+             "      (the previous line shows the bytes received in a quoted form;\n"
+             "       the leading # and \" are racket's notation for bytes and the\n"
+             "       data inside is shown, with quotes escaped and non-ASCII shown\n"
+             "       in octal)")
+            timeout-seconds
+            (format "json ~afrom ~a"
+                    (if allow-eof? " or eof" "")
+                    where)
+            the-bytes))
+         (read-json (open-input-bytes the-bytes))]))
     (when (and (eof-object? val) (not allow-eof?))
       (log-fest-error
        @~a{
@@ -234,6 +230,8 @@
     val)
   recv-json)
 
+(define timeout-seconds 5)
+
 (define-syntax (with-timeout stx)
   (syntax-parse stx
     [(_ e:expr what:expr)
@@ -248,8 +246,78 @@
                       (what-thunk)))
   (vector-ref result 0))
 
-(define timeout-seconds 5)
 
+;; returns the data it got and a boolean saying if it timed out (or not)
+(define (read-line/timeout in [timeout-seconds timeout-seconds])
+  (define too-long (+ (current-inexact-milliseconds) (* timeout-seconds 1000)))
+  (define b (make-bytes 1))
+  (define read-bytes (make-bytes 1))
+  (define total-read 0)
+  (define (add-a-byte b)
+    (unless (< total-read (bytes-length read-bytes))
+      (define nb (make-bytes (* 2 (bytes-length read-bytes))))
+      (bytes-copy! nb 0 read-bytes 0)
+      (set! read-bytes nb))
+    (bytes-set! read-bytes total-read b)
+    (set! total-read (+ total-read 1)))
+  (define (fetch-result) (subbytes read-bytes 0 total-read))
+  (let loop ()
+    (match (sync
+            (handle-evt (alarm-evt too-long) (λ (_) #f))
+            (read-bytes!-evt b in))
+      [#f (values (fetch-result)
+                  #t)]
+      [1
+       (cond
+         [(equal? b #"\n")
+          (values (fetch-result)
+                  #f)]
+         [else
+          (add-a-byte (bytes-ref b 0))
+          (loop)])]
+      [(? eof-object?)
+       (values (fetch-result)
+               #f)])))
+(module+ test
+  (define (wrap-read-line/timeout the-bytes)
+    (define-values (result-bytes timed-out?)
+      (read-line/timeout (open-input-bytes the-bytes)))
+    (list result-bytes timed-out?))
+  (check-equal?
+   (wrap-read-line/timeout #"")
+   (list #"" #f))
+  (check-equal?
+   (wrap-read-line/timeout #"\n")
+   (list #"" #f))
+  (check-equal?
+   (wrap-read-line/timeout #"\na")
+   (list #"" #f))
+  (check-equal?
+   (wrap-read-line/timeout #"a\n")
+   (list #"a" #f))
+  (check-equal?
+   (wrap-read-line/timeout #"ab\n")
+   (list #"ab" #f))
+  (check-equal?
+   (wrap-read-line/timeout #"abc\n")
+   (list #"abc" #f))
+  (check-equal?
+   (wrap-read-line/timeout #"abcd\n")
+   (list #"abcd" #f))
+  (check-equal?
+   (wrap-read-line/timeout #"abcde\n")
+   (list #"abcde" #f))
+  (check-equal?
+   (wrap-read-line/timeout #"a b c\n")
+   (list #"a b c" #f))
+
+  (let ()
+    (define-values (in out) (make-pipe))
+    (write-bytes #"ab" out)
+    (define-values (the-bytes timed-out?) (read-line/timeout in 0.5))
+    (check-equal? #"ab" the-bytes)
+    (check-true timed-out?)))
+  
 (define (fetch-racket-based-oracle oracle-path)
   (contract
    (->i ([stdout input-port?]  ;; stdout of user program
