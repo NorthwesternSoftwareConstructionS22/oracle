@@ -200,7 +200,7 @@
                         "  got: ~s\n"
                         "      (the previous line shows the bytes received in a quoted form;\n"
                         "       the leading # and \" are racket's notation for bytes and the\n"
-                        "       data inside is shown, with quotes escape and non-ASCII shown\n"
+                        "       data inside is shown, with quotes escaped and non-ASCII shown\n"
                         "       in octal)")
                        got))))))
     (when (and (eof-object? val) (not allow-eof?))
