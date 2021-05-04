@@ -172,16 +172,37 @@
   (define (recv-json in ctc where
                      #:allow-newlines? [allow-newlines? #f]
                      #:allow-eof? [allow-eof? #f])
+    (define-values (input-pipe output-pipe) (make-pipe))
+    (define bp (open-output-bytes))
+    (unless allow-newlines?
+      (thread (λ () (copy-port in output-pipe bp) (close-output-port output-pipe))))
     (define val
       (with-timeout
           (cond
             [allow-newlines? (read-json in)]
             [else
-             (define str (read-line in))
+             (define str (read-line input-pipe))
              (cond
                [(eof-object? str) str]
                [else (read-json (open-input-string  str))])])
-        (format (if allow-eof? "json or eof from ~a" "json from ~a") where)))
+
+        ;; this is evaluated only if we time out
+        (let ()
+          (define got (get-output-bytes bp))
+          (format "json ~afrom ~a~a"
+                  (if allow-eof? " or eof" "")
+                  where
+                  (if (equal? got #"")
+                      ""
+                      (format
+                       (string-append
+                        "\n"
+                        "  got: ~s\n"
+                        "      (the previous line shows the bytes received in a quoted form;\n"
+                        "       the leading # and \" are racket's notation for bytes and the\n"
+                        "       data inside is shown, with quotes escape and non-ASCII shown\n"
+                        "       in octal)")
+                       got))))))
     (when (and (eof-object? val) (not allow-eof?))
       (log-fest-error
        @~a{
