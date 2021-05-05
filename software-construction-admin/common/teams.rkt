@@ -50,17 +50,15 @@
     "team37"
     "team38"))
 
+;; No team switch this quarter
 (define teams-2
   '())
 
 (define all-teams
-  (append teams-1
-          teams-2))
+  teams-1)
 
 (define (team-name? name)
   (member name (append all-teams instructor-team-names)))
 
 (define (assign-number->active-team-names assign)
-  (match assign
-    [(cons (app string->number (? (</c 6))) _) teams-1]
-    [else teams-2]))
+  teams-1)
