@@ -163,7 +163,7 @@
   (define (url->log-contents log-download-url)
     (match-define (list stdout stdin _ stderr ctl)
       (process* wget
-                "-4"
+                "-4" ;; wget sometimes hangs on IPv6 addresses, so force IPv4
                 "-O"
                 "-"
                 log-download-url))
