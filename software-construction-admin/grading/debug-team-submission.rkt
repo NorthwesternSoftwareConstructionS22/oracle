@@ -16,33 +16,52 @@
 
 (define/contract (kick-off-submission-debug-job! team
                                                  assign-number
+                                                 maybe-snapshot-repo-path
                                                  configure-repo!
                                                  grading-repo-path
                                                  force-test-validation?)
   (team-name?
    assign-number?
+   (or/c #f path-to-existant-directory?)
    (path-to-existant-directory? . -> . any)
    path-to-existant-directory?
    boolean?
    . -> .
    (option/c ci-run?))
 
+  (define (get-team-submission! . _)
+    (call-with-temp-directory
+     #:name-seed "debug"
+     (λ (temp-dir)
+       (cond
+         [maybe-snapshot-repo-path
+          (define snapshot
+            (parameterize ([current-snapshots-repo-path maybe-snapshot-repo-path])
+              (team/assign-number->snapshot-path team assign-number)))
+          (define unpacked-path (build-path temp-dir "snapshot"))
+          (make-directory unpacked-path)
+          (unpack-snapshot-into! snapshot
+                                 unpacked-path
+                                 empty)
+          (configure-repo! unpacked-path)
+          (move-files! unpacked-path
+                       grading-repo-path
+                       grading-repo-preserve-files)]
+         [else
+          (define snapshot
+            (take-snapshot! team
+                            temp-dir
+                            configure-repo!))
+          (unpack-snapshot-into! snapshot
+                                 grading-repo-path
+                                 grading-repo-preserve-files)]))))
+
   (kick-off-submission-job!
    team
    assign-number
    grading-repo-path
    #:type "debug"
-   #:get-team-submission (λ _
-                           (call-with-temp-directory
-                            #:name-seed "debug"
-                            (λ (temp-dir)
-                              (define snapshot
-                                (take-snapshot! team
-                                                temp-dir
-                                                configure-repo!))
-                              (unpack-snapshot-into! snapshot
-                                                     grading-repo-path
-                                                     grading-repo-preserve-files))))
+   #:get-team-submission get-team-submission!
    #:workflow debug-workflow-name
    #:log-level "debug"
    #:extra-env-vars (if force-test-validation?
@@ -58,6 +77,7 @@
                                   ['major major-number]
                                   ['minor minor-number]
 
+                                  ['snapshot maybe-snapshot-repo-path]
                                   ['ref ref]
                                   ['last-commit-before-deadline commit-deadline-date]
 
@@ -81,6 +101,11 @@
       #:collect {"N" take-latest #f}
       #:mandatory]
 
+     [("-s" "--snapshot")
+      'snapshot
+      ("Use snapshot in the given repo instead of pulling code directly from team repo."
+       "Default: pull latest code from team repo on github.")
+      #:collect {"path" take-latest #f}]
      [("-r" "--ref")
       'ref
       ("Debug the specified commit, branch, or tag."
@@ -103,6 +128,7 @@
   (option-let*
    [job-id (kick-off-submission-debug-job! team
                                            assign-number
+                                           maybe-snapshot-repo-path
                                            (match* {commit-deadline-date ref}
                                              [{#f ref}
                                               (checkout-ref! ref)]

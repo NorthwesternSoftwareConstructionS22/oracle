@@ -86,6 +86,13 @@
 (define/contract (get-current-branch repo-dir)
   (path-to-existant-directory? . -> . string?)
   (match (git "branch" #:in repo-dir)
+    [(and (regexp #rx"(?m:^\\* .*HEAD detached.*$)") branch-output)
+     (raise-user-error 'get-current-branch
+                       @~a{
+                           Couldn't get current branch of @repo-dir @;
+                           because HEAD is detached.
+                           Git says: @branch-output
+                           })]
     [(regexp #rx"(?m:^\\* (.+?)$)" (list _ branch)) branch]
     [other (raise-user-error 'get-current-branch
                              @~a{

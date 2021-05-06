@@ -177,4 +177,4 @@
                            "-d"
                            str)))
     ["" (raise-user-error 'software-construction-admin "bad date")]
-    [other other]))
+    [other (string-trim other)]))

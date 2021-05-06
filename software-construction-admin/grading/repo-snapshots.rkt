@@ -4,7 +4,9 @@
 (provide team/assign-number->snapshot-path
          unpack-snapshot-into!
          current-snapshots-repo-path
-         take-snapshot!)
+         take-snapshot!
+         repo-directory->snapshot!
+         move-files!)
 
 (require "../common/cmdline.rkt"
          "../common/util.rkt"
@@ -34,6 +36,18 @@
   (build-path (assign-number->snapshots-dir assign-number)
               (team->snapshot-name team)))
 
+(define/contract (move-files! source-dir dest-dir preserve-files)
+  (path-to-existant-directory?
+   path-to-existant-directory?
+   (listof string?)
+   . -> .
+   any)
+  (for ([f (in-list (directory-list source-dir))]
+        #:unless (matches-any? preserve-files (path->string f)))
+    (define f-path (build-path source-dir f))
+    (log-sc-debug @~a{Moving @f-path to @(simple-form-path dest-dir)})
+    (rename-file-or-directory f-path (build-path dest-dir f))))
+
 (define/contract (unpack-snapshot-into! snapshot-path
                                         destination
                                         preserve-files)
@@ -55,17 +69,9 @@
           })
      (define snapshot-copy-path (build-path snapshot-unpack-path snapshot-name))
      (copy-file snapshot-path snapshot-copy-path)
-
      (define repo-snapshot-path (unzip-in-place! snapshot-copy-path))
-
      (define snapshot-commit-sha (get-head-commit-sha repo-snapshot-path))
-
-     (for ([f (in-list (directory-list repo-snapshot-path))]
-           #:unless (matches-any? preserve-files (path->string f)))
-       (define f-path (build-path repo-snapshot-path f))
-       (log-sc-debug @~a{Moving @f-path to @(simple-form-path destination)})
-       (rename-file-or-directory f-path (build-path destination f)))
-
+     (move-files! repo-snapshot-path destination preserve-files)
      snapshot-commit-sha)))
 
 (define/contract (take-snapshots! teams destination-dir configure-repo!)
@@ -83,8 +89,7 @@
        (define all-response-box (box #f))
        (for/list ([team (in-list teams)])
          (define repo (clone-repo! (team->dev-repo-name team)))
-         (configure-repo! repo)
-         (define repo-zip (zip! repo))
+         (define repo-zip (repo-directory->snapshot! repo configure-repo!))
          (define snapshot-name (team->snapshot-name team))
          (define destination (build-path full-destination-dir-path snapshot-name))
          (if (file-exists? destination)
@@ -105,6 +110,14 @@
                                      "Aborting due to already existant snapshot.")])
              (rename-file-or-directory repo-zip destination))
          destination)))))
+
+(define/contract (repo-directory->snapshot! repo configure-repo!)
+  (->i ([repo path-to-existant-directory?]
+        [configure-repo! (path-to-existant-directory? . -> . any)])
+       [result path-to-existant-file?]
+       #:post {repo} (not (directory-exists? repo)))
+  (configure-repo! repo)
+  (zip! repo))
 
 (define/contract (take-snapshot! team destination-dir configure-repo!)
   (team-name?
