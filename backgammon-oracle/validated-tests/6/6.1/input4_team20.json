@@ -1,0 +1,10 @@
+[
+  {"black": [
+    "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home", "home"
+  ],
+    "white":  [
+      "bar", "bar", 7, 10, 12, 15, 15, 15, 16, 17, 18, 19, "home", "home", "home"
+    ]},
+  "white",
+  [ 3, 4 ]
+]
