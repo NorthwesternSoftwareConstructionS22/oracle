@@ -178,7 +178,7 @@
         [allow-newlines?
          (with-timeout
              (read-json in)
-           (format "json ~afrom ~a~a"
+           (format "json ~afrom ~a"
                    (if allow-eof? " or eof" "")
                    where))]
         [else
