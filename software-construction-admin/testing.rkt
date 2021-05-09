@@ -171,6 +171,7 @@
 
 (define (make-recv-json exe-path input-file test-failed)
   (define (recv-json in ctc where
+                     #:timeout-seconds [timeout-seconds timeout-seconds]
                      #:allow-newlines? [allow-newlines? #f]
                      #:allow-eof? [allow-eof? #f])
     (define val
@@ -235,8 +236,10 @@
 (define-syntax (with-timeout stx)
   (syntax-parse stx
     [(_ e:expr what:expr)
-     #'(with-timeout/proc (λ () e) (λ () what))]))
-(define (with-timeout/proc thunk what-thunk)
+     #'(with-timeout/proc (λ () e) (λ () what))]
+    [(_ e:expr what:expr #:timeout-seconds timeout-seconds)
+     #'(with-timeout/proc (λ () e) (λ () what) timeout-seconds)]))
+(define (with-timeout/proc thunk what-thunk [timeout-seconds timeout-seconds])
   (define chan (make-channel))
   (thread (λ () (channel-put chan (vector (thunk)))))
   (define result (sync/timeout timeout-seconds chan))
@@ -340,7 +343,8 @@
          ;; goes into the students debug log, along with the JSON
          [recv-json (->* (input-port? flat-contract? string?)
                          (#:allow-newlines? boolean?
-                          #:allow-eof? boolean?)
+                          #:allow-eof? boolean?
+                          #:timeout-seconds natural?)
                          (or/c jsexpr? eof-object?))])
 
         ;; indicates if something went wrong; if it did, there were
