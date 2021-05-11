@@ -83,7 +83,7 @@
                          @(if (= (length novel-tests) 1) "is" "are") novel.
                          Moving on to testing.
                          })
-      (length valid-tests)))
+      (length novel-tests)))
 
   (define validated-tests-by-team (get-pre-validated-tests-by-team assign-number))
 
