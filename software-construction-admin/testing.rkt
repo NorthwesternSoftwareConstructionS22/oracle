@@ -181,7 +181,8 @@
              (read-json in)
            (format "json ~afrom ~a"
                    (if allow-eof? " or eof" "")
-                   where))]
+                   where)
+           #:timeout-seconds timeout-seconds)]
         [else
          (define-values (the-bytes timed-out?) (read-line/timeout in))
          (when timed-out?
