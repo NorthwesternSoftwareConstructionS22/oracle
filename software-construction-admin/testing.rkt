@@ -180,7 +180,7 @@
          (with-timeout
              (read-json in)
            (format "json ~afrom ~a"
-                   (if allow-eof? " or eof" "")
+                   (if allow-eof? "or eof " "")
                    where)
            #:timeout-seconds timeout-seconds)]
         [else
@@ -197,7 +197,7 @@
              "       in octal)")
             timeout-seconds
             (format "json ~afrom ~a"
-                    (if allow-eof? " or eof" "")
+                    (if allow-eof? "or eof " "")
                     where)
             the-bytes))
          (read-json (open-input-bytes the-bytes))]))
