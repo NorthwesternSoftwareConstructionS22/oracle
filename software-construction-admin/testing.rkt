@@ -242,12 +242,16 @@
      #'(with-timeout/proc (λ () e) (λ () what) timeout-seconds)]))
 (define (with-timeout/proc thunk what-thunk [timeout-seconds timeout-seconds])
   (define chan (make-channel))
-  (thread (λ () (channel-put chan (vector (thunk)))))
+  (thread
+   (λ ()
+     (with-handlers ([exn:fail? (λ (exn) (channel-put chan exn))])
+       (channel-put chan (vector (thunk))))))
   (define result (sync/timeout timeout-seconds chan))
   (unless result
     (raise-user-error 'with-timeout "timed out after ~a seconds waiting for ~a"
                       timeout-seconds
                       (what-thunk)))
+  (when (exn:fail? result) (raise result))
   (vector-ref result 0))
 
 
