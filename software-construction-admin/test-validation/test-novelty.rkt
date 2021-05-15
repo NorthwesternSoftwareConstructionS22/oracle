@@ -55,6 +55,7 @@
   (call-with-input-file (test-input-file a-test)
     read-json*/safe))
 (define (same-input-exists-in tests)
+  ;; lltodo: report which test conflicts
   (define test-inputs (list->set (map test->input-json tests)))
   (λ (a-test)
     (define found? (set-member? test-inputs (test->input-json a-test)))

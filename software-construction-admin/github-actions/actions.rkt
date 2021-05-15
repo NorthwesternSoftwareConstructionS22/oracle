@@ -161,41 +161,42 @@
    (option/c string?))
 
   (define (url->log-contents log-download-url)
-    (match-define (list stdout stdin _ stderr ctl)
-      (process* wget
-                "-4" ;; wget sometimes hangs on IPv6 addresses, so force IPv4
-                "-O"
-                "-"
-                log-download-url))
-    (close-output-port stdin)
+    (with-handlers ([exn:fail? (λ (e) (failure @~a{Error raised while getting log: @(exn-message e)}))])
+      (match-define (list stdout stdin _ stderr ctl)
+        (process* wget
+                  "-4" ;; wget sometimes hangs on IPv6 addresses, so force IPv4
+                  "-O"
+                  "-"
+                  log-download-url))
+      (close-output-port stdin)
 
-    (define log-sections (box empty))
-    (unzip
-     stdout
-     (match-lambda**
-      [{(regexp #rx"^.*/([0-9]+)_(.+).txt$" (list _
-                                                  section-number-bytes
-                                                  section-name-bytes))
-        #f
-        contents-port}
-       #:when (or (not section-name)
-                  (string-ci=? (bytes->string/utf-8 section-name-bytes) section-name))
-       ;; Sections aren't necessarily unpacked in order, so hang on to the section number
-       ;; to order them later
-       (define section-number (string->number (bytes->string/utf-8 section-number-bytes)))
-       (set-box! log-sections
-                 (cons (list section-number (port->string contents-port))
-                       (unbox log-sections)))]
-      [{_ _ _} (void)]))
-    (ctl 'kill)
-    (close-input-port stdout)
-    (close-input-port stderr)
+      (define log-sections (box empty))
+      (unzip
+       stdout
+       (match-lambda**
+        [{(regexp #rx"^.*/([0-9]+)_(.+).txt$" (list _
+                                                    section-number-bytes
+                                                    section-name-bytes))
+          #f
+          contents-port}
+         #:when (or (not section-name)
+                    (string-ci=? (bytes->string/utf-8 section-name-bytes) section-name))
+         ;; Sections aren't necessarily unpacked in order, so hang on to the section number
+         ;; to order them later
+         (define section-number (string->number (bytes->string/utf-8 section-number-bytes)))
+         (set-box! log-sections
+                   (cons (list section-number (port->string contents-port))
+                         (unbox log-sections)))]
+        [{_ _ _} (void)]))
+      (ctl 'kill)
+      (close-input-port stdout)
+      (close-input-port stderr)
 
-    (match (unbox log-sections)
-      ['() (failure "Failed to get log using download url")]
-      [sections
-       (present (string-join (map second (sort sections < #:key first))
-                             "\n"))]))
+      (match (unbox log-sections)
+        ['() (failure "Failed to get log using download url")]
+        [sections
+         (present (string-join (map second (sort sections < #:key first))
+                               "\n"))])))
 
   (option-let*
    [log-download-url (github-request!
