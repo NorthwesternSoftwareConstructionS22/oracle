@@ -24,14 +24,19 @@
 
 (define/contract (run-exe-on-input exe-path
                                    input-json
-                                   [timeout-seconds absolute-max-timeout-seconds])
-  ({path-to-existant-file?
-    (or/c path-to-existant-file? input-port?)}
-   {natural?}
-   . ->* .
-   (or/c bytes? #f))
+                                   [timeout-seconds absolute-max-timeout-seconds]
+                                   #:munge-json-style [munge-json-style #f])
+  (->* (path-to-existant-file?
+        (or/c path-to-existant-file? input-port?))
+       (natural?
+        #:munge-json-style (or/c 'pad 'dribble #f))
+       (or/c bytes? #f))
 
-  (define stdin (if (input-port? input-json) input-json (open-input-file input-json)))
+  (when munge-json-style
+    (log-fest-debug @~a{@(pretty-path exe-path) using @munge-json-style munging style}))
+
+  (define input-json-port (if (input-port? input-json) input-json (open-input-file input-json)))
+  (define stdin (add-munging input-json-port munge-json-style))
   (define-values {proc stdout stderr}
     ;; ll: Can't use pipe here because that's not a `file-stream-port?`
     (launch-process! exe-path
@@ -41,7 +46,8 @@
                      #:limit-stdout? #t
                      #:limit-stderr? #t))
 
-  (unless (input-port? input-json) (close-input-port stdin)) ;; Make sure process gets eof
+  (unless munge-json-style
+    (unless (input-port? input-json) (close-input-port input-json-port))) ;; Make sure process gets eof
 
   (define terminated? (sync/timeout timeout-seconds proc))
 
@@ -72,6 +78,111 @@
   (close-input-port stdout)
   (close-input-port stderr)
   stdout-bytes)
+
+(define/contract (add-munging port munging-style)
+  (-> input-port?
+      (or/c 'pad 'dribble #f)
+      input-port?)
+  (cond
+    [(not munging-style) port]
+    [else
+     (define-values (in out) (make-pipe))
+     (thread
+      (λ ()
+        (case munging-style
+          [(pad)
+           (define json (read-json port))
+           (close-input-port port)
+           (send-padded-json json out)
+           (close-output-port out)]
+          [(dribble)
+           (let loop ([n 0])
+             (define b (read-byte port))
+             (cond
+               [(eof-object? b)
+                (close-input-port port)
+                (close-output-port out)]
+               [else
+                (write-byte b out)
+                (case (modulo n 4)
+                  [(0) (void)]
+                  [(1 2) (sleep 0.002)]
+                  [(1 2) (sleep 0.01)])
+                (loop (+ n 1))]))])))
+     in]))
+
+(define bolus-bytes (make-bytes 5001 (char->integer #\space)))
+(define (send-padded-json json port)
+  (define (bolus) (write-bytes bolus-bytes port))
+  
+  (bolus)
+  (cond
+    [(list? json)
+     (write-bytes #"[" port)
+     (bolus)
+     (for ([item (in-list json)]
+           [i (in-naturals)])
+       (unless (zero? i)
+         (write-bytes #"," port)
+         (bolus))
+       (write-json item port))
+     (write-bytes #"]" port)
+     (bolus)]
+    [(hash? json)
+     (write-bytes #"{" port)
+     (bolus)
+     (for ([key (in-list (sort (hash-keys json) symbol<?))]
+           [i (in-naturals)])
+       (unless (zero? i)
+         (write-bytes #"," port)
+         (bolus))
+       (write-json (symbol->string key) port)
+       (bolus)
+       (write-bytes #":" port)
+       (bolus)
+       (write-json (hash-ref json key) port)
+       (bolus))
+     (write-bytes #"}" port)
+     (bolus)]
+    [else
+     (write-json json port)
+     (bolus)]))
+
+(module+ test
+  (let ()
+    (define-values (in out) (make-pipe))
+    (write-json #t out)
+    (close-output-port out)
+    (define new-val (read-json (add-munging in 'pad)))
+    (check-equal? new-val #t))
+
+  (let ()
+    (define-values (in out) (make-pipe))
+    (write-json "okay" out)
+    (close-output-port out)
+    (define new-val (read-json (add-munging in 'pad)))
+    (check-equal? new-val "okay"))
+
+  (let ()
+    (define-values (in out) (make-pipe))
+    (write-json (list 1 2 3) out)
+    (close-output-port out)
+    (define new-val (read-json (add-munging in 'pad)))
+    (check-equal? new-val (list 1 2 3)))
+
+  (let ()
+    (define-values (in out) (make-pipe))
+    (write-json (hasheq 'x 3 'y 4) out)
+    (close-output-port out)
+    (define new-val (read-json (add-munging in 'pad)))
+    (check-equal? new-val (hasheq 'x 3 'y 4)))
+
+  (let ()
+    (define-values (in out) (make-pipe))
+    (write-json (hasheq 'x 3 'y 4) out)
+    (close-output-port out)
+    (define new-val (read-json (add-munging in 'dribble)))
+    (check-equal? new-val (hasheq 'x 3 'y 4))))
 
 ;; todo: we will crash before we get here when there aren't any test
 ;; cases but this shouldn't be an error for some of the assignments,
@@ -362,18 +473,20 @@
 (define (bytes->json/safe b)
   (call-with-input-bytes b read-json/safe))
 
-(define/contract (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?)
-  (path-to-existant-file?
-   path-to-existant-file?
-   test/c
-   #:oracle-needs-student-output? boolean?
-   . -> .
-   boolean?)
+(define/contract (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?
+                                   #:munge-json-style [munge-json-style #f])
+  (->* (path-to-existant-file?
+        path-to-existant-file?
+        test/c
+        #:oracle-needs-student-output? boolean?)
+       (#:munge-json-style (or/c 'pad 'dribble #f))
+       boolean?)
 
   (define input-file (test-input-file t))
 
   (log-fest-info @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
-  (define exe-output-bytes (run-exe-on-input exe-path input-file submission-timeout-seconds))
+  (define exe-output-bytes (run-exe-on-input exe-path input-file submission-timeout-seconds
+                                             #:munge-json-style munge-json-style))
   (when (bytes? exe-output-bytes)
     (log-fest-debug @~a{
                         The raw output of @(pretty-path exe-path) was:
@@ -621,16 +734,25 @@
                                         (test in out))]))))
 
 (define (test-failures-for exe-path oracle-path tests-by-group
+                           #:munge-json? [munge-json? #f]
                            #:racket-based-oracle? [racket-based-oracle? #f]
                            #:oracle-needs-student-output? [oracle-needs-student-output? #f])
   (->* (path-to-existant-file? path-to-existant-file? test-set/c)
-       (#:oracle-needs-student-output? boolean?)
+       (#:oracle-needs-student-output? boolean?
+        #:munge-json? boolean?)
        test-set/c)
 
+  (define munge-counter 0)
   (define (passes-test? t)
+    (set! munge-counter (+ munge-counter 1))
     (cond
       [racket-based-oracle? (exe-passes-test?/racket-oracle exe-path oracle-path t)]
-      [else (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?)]))
+      [else (exe-passes-test? exe-path oracle-path t #:oracle-needs-student-output? oracle-needs-student-output?
+                              #:munge-json-style (and munge-json?
+                                                      (case (modulo munge-counter 3)
+                                                        [(0) 'dribble]
+                                                        [(1) #f]
+                                                        [(2) 'pad])))]))
   (for*/hash ([group (in-list (sort (hash-keys tests-by-group) string<?))]
               [tests (in-value (sort (hash-ref tests-by-group group)
                                      string<?

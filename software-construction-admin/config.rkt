@@ -36,6 +36,8 @@
     ("5" . "1")
     ("6" . "1")
     ("9" . "1")))
+(define assigns-with-json-munging
+  '(("9" . "1")))
 (define (assign-with-student-test? a)
   (member a assigns-with-student-tests))
 (define/contract assigns-requiring-test-outputs

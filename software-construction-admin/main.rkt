@@ -47,6 +47,7 @@
   (define-values {oracle-path oracle-type} (get-oracle+type assign-number))
 
   (define assign-has-student-tests? (member assign-number assigns-with-student-tests))
+  (define assign-has-json-munging? (and (member assign-number assigns-with-json-munging) #t))
   (define doing-student-test-validation?
     (or force-test-validation?
         (getenv force-validation-env-var)
@@ -100,6 +101,7 @@
            (test-failures-for test-exe-path
                               oracle-path
                               validated-tests-by-team
+                              #:munge-json? assign-has-json-munging?
                               #:racket-based-oracle? (equal? oracle-type
                                                              'interacts)
                               #:oracle-needs-student-output? (equal? oracle-type 'checks-output))]
