@@ -288,14 +288,16 @@
     (define val
       (cond
         [allow-newlines?
-         (with-timeout
-             (read-json in)
-           (format "json ~afrom ~a"
-                   (if allow-eof? "or eof " "")
-                   where)
-           #:timeout-seconds timeout-seconds)]
+         (if timeout-seconds
+             (with-timeout
+                 (read-json in)
+               (format "json ~afrom ~a"
+                       (if allow-eof? "or eof " "")
+                       where)
+               #:timeout-seconds timeout-seconds)
+             (read-json in))]
         [else
-         (define-values (the-bytes timed-out?) (read-line/timeout in))
+         (define-values (the-bytes timed-out?) (read-line/timeout in timeout-seconds))
          (when timed-out?
            (raise-user-error
             'with-timeout
@@ -368,7 +370,8 @@
 
 ;; returns the data it got and a boolean saying if it timed out (or not)
 (define (read-line/timeout in [timeout-seconds timeout-seconds])
-  (define too-long (+ (current-inexact-milliseconds) (* timeout-seconds 1000)))
+  (define too-long (and timeout-seconds
+                        (+ (current-inexact-milliseconds) (* timeout-seconds 1000))))
   (define b (make-bytes 1))
   (define read-bytes (make-bytes 1))
   (define total-read 0)
@@ -382,7 +385,9 @@
   (define (fetch-result) (subbytes read-bytes 0 total-read))
   (let loop ()
     (match (sync
-            (handle-evt (alarm-evt too-long) (λ (_) #f))
+            (if too-long
+                (handle-evt (alarm-evt too-long) (λ (_) #f))
+                never-evt)
             (read-bytes!-evt b in))
       [#f (values (fetch-result)
                   #t)]
@@ -460,7 +465,7 @@
          [recv-json (->* (input-port? flat-contract? string?)
                          (#:allow-newlines? boolean?
                           #:allow-eof? boolean?
-                          #:timeout-seconds natural?)
+                          #:timeout-seconds (or/c #f natural?))
                          (or/c jsexpr? eof-object?))])
 
         ;; indicates if something went wrong; if it did, there were
