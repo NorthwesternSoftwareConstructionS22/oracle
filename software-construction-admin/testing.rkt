@@ -318,7 +318,7 @@
       (log-fest-error
        @~a{
            @(pretty-path exe-path) fails test @(basename input-file) @;
-           because it didn't send a JSON object, got eof
+           because it didn't send a JSON object, got eof @where
            })
       (test-failed))
     (if (eof-object? val)
