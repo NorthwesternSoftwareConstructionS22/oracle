@@ -94,6 +94,11 @@
                                ".git"))
 (define oracle-repo-branch "master")
 
+;; This file should contain a github API personal access token, encrypted with gpg.
+;; Only necessary for grading and validation scripts.
+(define-runtime-path github-token-file "../../../.gh-token.gpg")
+
+
 
 (define-runtime-path grading-repo-path "../../grading")
 (define grading-repo-owner "LLazarek")
@@ -167,6 +172,7 @@
   (check-equal? (port->bytes (strip-.0s (open-input-bytes #"1.02.0")))
                 #"12"))
 
+;; Transforms the content of all student submitted tests as part of validation
 (define/contract test-transformer
   (input-port? . -> . input-port?)
   strip-.0s)

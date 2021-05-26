@@ -9,8 +9,8 @@
 
 (require net/url
          json
-         racket/runtime-path
-         "../common/util.rkt")
+         "../common/util.rkt"
+         "../config.rkt")
 
 
 (define-values {GET POST} (values 'get 'post))
@@ -42,10 +42,9 @@
 (define/contract current-github-api-base-url
   (parameter/c api-url?)
   (make-parameter "https://api.github.com"))
-(define-runtime-path token-file "../../../../.gh-token.gpg")
 (define current-github-token
-  (make-parameter (and (file-exists? token-file)
-                       (system/string @~a{ gpg --batch -dq @token-file}))))
+  (make-parameter (and (file-exists? github-token-file)
+                       (system/string @~a{ gpg --batch -dq @github-token-file}))))
 
 (define (try-read-json code headers in)
   (define in-str (port->string in))
