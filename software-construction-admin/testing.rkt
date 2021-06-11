@@ -230,12 +230,16 @@
                              #:stderr #f
                              #:limit-stdout? #t
                              #:limit-stderr? #t))
-          (thread (λ () (copy-port stderr copy-of-stderr) (close-output-port copy-of-stderr)))
+          (define stderr-piping-thread
+            (thread (λ () (copy-port stderr copy-of-stderr) (close-output-port copy-of-stderr))))
 
+          (define (give-up-due-to-json-problem)
+            (sync stderr-piping-thread)
+            (test-failed))
           (define passed? (the-oracle stdout stdin-pipe-out
                                       (and input-file (file->bytes input-file))
-                                      (make-send-json exe-path input-file test-failed)
-                                      (make-recv-json exe-path input-file test-failed)))
+                                      (make-send-json exe-path input-file give-up-due-to-json-problem)
+                                      (make-recv-json exe-path input-file give-up-due-to-json-problem)))
           (custodian-shutdown-all cust)
           passed?))))
   (define stderr (get-output-string copy-of-stderr))
