@@ -1,0 +1,318 @@
+#+TITLE: Software construction CI grading infrastructure
+
+* Course assignment structure
+The course consists of building a game throughout the whole quarter.
+Each week there are assignments to build some specific part/feature of the game.
+The assignments (usually) are broken into two stages:
+1. (due sometime mid-week) students submit test cases for the feature due that week.
+2. (due sometime end-of-week) students submit implementations of the feature.
+
+The tests the students submit in stage 1 should be valid tests, and then all of the students' valid tests + some from the instructor are collected to test the stage 2 submissions.
+
+In parallel to the students, the course instructors implement an "oracle" solution that is the standard of correctness for tests.
+
+The students' feedback comes in two forms:
+1. Each week they receive a score corresponding to
+   1. the proportion of valid tests they submit, and
+   2. the proportion of all aggregated tests their implementation passes
+2. Students also do code walks both in class and privately for the final assignment
+
+We are using CI to provide students with continuous feedback of the first form.
+Specifically, we have implemented infrastructure to
+- Collect tests from all students
+- Check test validity against the oracle
+- Run student submissions on all tests to tell them their grade
+- Do automated grading
+
+Students work in small teams.
+
+* Class repository structure and conventions
+
+** Summary of repos
+#+begin_example
+Organization
+ |- admin/oracle         : course infrastructure
+ |- game implementation  : oracle implementation, might also live outside of org
+ |- teamX                : student development & submission
+ ...
+
+Possibly elsewhere (e.g. a personal github account)
+ |- grading              : used for automated grading
+#+end_example
+
+The grading repo might be outside the organization so as to not use up the Actions CI resources of the organization for grading.
+This probably isn't strictly necessary, since we observed that we used around 35k / 50k minutes per month.
+Then again, the 50k is common to all NWU organizations so whether that amount of usage is acceptable may change over time!
+
+** Organization
+We have an organization that houses a private repo for every student team, the infrastructure implementation, and optionally the oracle implementation.
+
+** Student submissions: the dev repos
+:PROPERTIES:
+:CUSTOM_ID: ll:e163dfa0-0601-442b-a552-48e4a0a79327
+:END:
+Student teams "submit" tests and implementations in their own (private) repo in the organization, using a specific file naming convention.
+That is, we take the latest commit before the deadline of an assignment as the team's submission, and find the file name(s) according to the convention.
+
+The convention is that they must have a folder named =Deliverables= in the top level of their repo, structured like this:
+#+begin_example
+Deliverables            # must have this folder at top level of repo
+  |- 0                  # assignment number
+  |    |- 0.0           # assignment parts (major.minor)
+  |    |- 0.1
+  |        |- makefile  # "make" creates an exe called "run" in same directory
+  |        |- input0.json
+  |        |- output0.json
+  |        |- input1.json
+  |        |- output1.json
+  |        ... # as many tests as necessary
+  |        |- ... can contain anything else
+  |
+  ... # one per major assignment
+#+end_example
+
+The =makefile= must build an executable representing their submission for assignment M.N.
+It must install any dependencies necessary.
+That said, it's important that the makefile doesn't fail if the dependencies are already installed.
+IOW it should be fine to run =make= for two assignments in a row (to enable [[#ll:02030c9a-97bd-42d0-93f7-efda7971b9ab][Grading for every assignment also re-grades all past assignments]]).
+
+The =inputX.json= and =outputX.json= are unit tests: given input =inputX.json= on stdin, the expected output of the submission is =outputX.json=.
+
+*** CI integration
+Students must also have the necessary config file for CI integration in their repo in order to get CI feedback.
+
+** Infrastructure implementation: the infrastructure repo
+:PROPERTIES:
+:CUSTOM_ID: ll:07293b56-48c3-4ac5-b93a-7f1cd453e911
+:END:
+This has the implementation of the course infrastructure (/not/ the instructor's game implementation).
+It should be a racket collection with two pkgs:
+#+begin_example
+infrastructure collection
+ |- <game>-oracle
+ |   |- oracle
+ |   |   |- foo.rkt ...                   # implementation (obfuscated, copy from instructor dev repo)
+ |   |   |- oracle1.0                     # shell scripts to run the oracle
+ |   |   |- oracle1.1
+ |   |   |- oracle7.1.rkt                 # racket programs for non-simple oracles
+ |   |   ...
+ |   |
+ |   |- submitted-tests
+ |   |   |- 1
+ |   |   |  |- 1.1
+ |   |   |     |- input5_team55.json      # copied from student dev repos after test deadline
+ |   |   |     |- output5_team55.json     # naming convention identifies the source
+ |   |   |     ...
+ |   |   ...
+ |   |
+ |   |- validated-tests                   # no outputs, will run oracle to get expected output
+ |       |- 1
+ |       |  |- 1.1
+ |       |     |- input5_instructor.json  # instructor tests are considered validated
+ |       |     ...
+ |       |     |- input5_team55.json      # only the valid inputs from `submitted-tests` copied here
+ |       |     ...
+ |       ...
+ |    
+ |- software-construction-admin
+     |- ... # infrastracture implementation
+#+end_example
+
+** Other repos
+
+*** test snapshots repo
+:PROPERTIES:
+:CUSTOM_ID: ll:0736ef15-3b33-40eb-88ad-cf879e193d12
+:END:
+Has snapshots of the student team dev repos for every tests deadline.
+I have this repo just locally.
+
+Structure: has top level directory
+: M/M.N
+for each assignment M.N, in which is one =teamX.tar.gz= per team.
+
+*** submission snapshots repo
+:PROPERTIES:
+:CUSTOM_ID: ll:b6c3fa8f-59b0-442d-8f9c-c3384434ef03
+:END:
+Has snapshots of the student team dev repos for every submission deadline.
+Structure: same as test snapshots repo.
+
+I have this repo just locally.
+
+*** grading repo
+Is used by grading programs for doing grading on the CI.
+Specifically, [[#ll:9142fdf0-ae8b-42e4-99b0-937ca6756808][validate-tests.rkt]], [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]], and [[#ll:f23dc27f-6ed2-423b-9d46-ce270ca71cff][debug-team-submission.rkt]] use this repo.
+Each of them have an expectation about the CI config files in the repo: see each one's description for what it needs.
+
+* Course workflows
+
+** For assignments
+For assignment M.N
+
+*** Instructor implements oracle and commits it
+Commit to in [[#ll:07293b56-48c3-4ac5-b93a-7f1cd453e911][the infrastructure repo]].
+
+*** Students create tests before =test-submission-deadline=, push them to their dev repos
+And they must follow the naming convention for test inputs and outputs, like described in [[#ll:e163dfa0-0601-442b-a552-48e4a0a79327][Student submissions: the dev repos]].
+During this period, [[#ll:715afcc8-9234-4b8e-aea8-b1211b821a5f][the CI]] will
+1. validate the students tests, and
+2. run a test fest of all instructor tests against any submission
+
+*** After =test-submission-deadline=, TA collects valid tests
+Specifically,
+1. Run [[#ll:98f3f8a7-93ba-427c-868f-16aacc90a5dd][snapshot-team-repos.rkt]] to take snapshots of team submissions as of the deadline and commit them to [[#ll:0736ef15-3b33-40eb-88ad-cf879e193d12][the test snapshots repo]] at
+1. Run [[#ll:9142fdf0-ae8b-42e4-99b0-937ca6756808][validate-tests.rkt]] to collect submitted tests from the snapshots, commit to [[#ll:07293b56-48c3-4ac5-b93a-7f1cd453e911][the infrastructure repo]], and then launch a CI job to validate the submitted tests
+2. Once that job is done, run [[#ll:9142fdf0-ae8b-42e4-99b0-937ca6756808][validate-tests.rkt]] again to retrieve the valid tests, copy them to the validated directory, and commit them.
+
+*** Students create submissions before =submission-deadline=, push them to their dev repos
+And they must use the structure/protocol for submissions described in [[#ll:e163dfa0-0601-442b-a552-48e4a0a79327][Student submissions: the dev repos]].
+
+*** After =submission-deadline=, TA grades submissions
+Specifically,
+1. Run [[#ll:98f3f8a7-93ba-427c-868f-16aacc90a5dd][snapshot-team-repos.rkt]] to take snapshots of team submissions in [[#ll:b6c3fa8f-59b0-442d-8f9c-c3384434ef03][the submission snapshots repo]].
+2. Run [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]] to launch CI jobs to grade every student submission
+   1. [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]] can be used to check the status of the jobs as they go
+3. Once grading is done, run [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]] again to collect the grading results
+4. Commit the scores somewhere
+
+*** Debugging student questions about a submission
+:PROPERTIES:
+:CUSTOM_ID: ll:3df53796-eb5e-42ab-ac3f-6f1faead4841
+:END:
+Run [[#ll:f23dc27f-6ed2-423b-9d46-ce270ca71cff][debug-team-submission.rkt]], which will pull down a fresh copy of the team's dev repo, check out a particular ref/hash (or alternatively use a snapshot), and using the grading repo + a CI job in it to try things out.
+
+*** Regrading a particular submission
+To regrade the snapshotted commit, run [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]], but supply the team name with =--team=.
+To regrade a different commit, doing the whole regrading of previous assignments thing, take a new snapshot and then run grading.rkt using it.
+
+
+* Infrastructure implementation
+** Programs
+The core configurable parts of all of these programs are set in =config.rkt=.
+There you can configure which repos the programs use, special assignments, testing timeouts, etc.
+
+*** main.rkt
+:PROPERTIES:
+:CUSTOM_ID: ll:715afcc8-9234-4b8e-aea8-b1211b821a5f
+:END:
+This program runs the actual test fest checking a submission executable against the oracle for all validated tests.
+It also does test validation to give students test feedback before the tests deadline.
+
+Meant to run on the CI, and report both # valid tests, and test fest failures.
+
+*** test-validation/ci-validate-tests.rkt
+:PROPERTIES:
+:CUSTOM_ID: ll:a93faf14-8f29-496f-b7aa-5f0848324d44
+:END:
+This program runs the oracle on all submitted tests to validate them and prints the list of test inputs that are valid.
+Meant to run on the CI.
+
+*** test-validation/validate-tests.rkt
+:PROPERTIES:
+:CUSTOM_ID: ll:9142fdf0-ae8b-42e4-99b0-937ca6756808
+:END:
+This program
+1. Collects tests from repo snapshots in the test snapshots repo,
+2. launches a CI job to validate tests for a given assignment (running [[#ll:a93faf14-8f29-496f-b7aa-5f0848324d44][ci-validate-tests.rkt]]),
+3. collects the reported valid tests, and
+4. installs them in the validated tests directory.
+
+Meant to run locally by the TA/instructor.
+
+This program expects that:
+1. =gpg= is installed and in the path
+2. there is a =.gh-token.gpg= gpg-encrypted file somewhere containing a github token for using the actions API
+   - The path is hard-coded to be a convenient place for me (with =define-runtime-path= of course) in [[file:~/github_sync/Notes/research/grad/ta/sc/spring21/oracle/software-construction-admin/github-actions/github-api.rkt::define-runtime-path token-file][github-actions/github-api.rkt]]
+   - To get one of these, go to your github account settings > Developer settings > Personal access tokens and generate one.
+
+*** grading/snapshot-team-repos.rkt
+:PROPERTIES:
+:CUSTOM_ID: ll:98f3f8a7-93ba-427c-868f-16aacc90a5dd
+:END:
+This program takes a snapshot of student submissions after a deadline and commits them to a snapshots repo (either the tests or the submission one).
+Meant to run locally by the TA/instructor.
+
+One caveat here is that the snapshot will be of the default branch of the repo (unless otherwise specified).
+So students must push to =main / master=.
+
+*** grading/grading.rkt
+:PROPERTIES:
+:CUSTOM_ID: ll:dde65b48-955b-4f45-b6ea-4b92af735bf2
+:END:
+This program
+1. For each team, unpacks the assignment's repo snapshot in the submission snapshots repo,
+2. commits and pushes the snapshot (with a "skip CI" tag)
+3. launches a CI job to grade the submission (running [[#ll:715afcc8-9234-4b8e-aea8-b1211b821a5f][ci-test-fest.rkt]]), and
+4. (later) pulls down the results.
+5. Ultimately (once all CI jobs are done) it reports a summary of every team's score.
+
+The program does this for every team all at once (or optionally just a few).
+Meant to run locally by the TA/instructor.
+
+An important thing to note here is that the grading program just uses the contents of the snapshot it is pointed to.
+It doesn't know about deadlines or anything.
+The part of the process that handles the deadlines is the [[#ll:98f3f8a7-93ba-427c-868f-16aacc90a5dd][snapshotting]].
+This has the nice property that if you want to have a special deadline for one or a few teams, you can just overwrite those teams' snapshots and then run this grading program as usual to get everyone's grades.
+
+*** grading/debug-team-submission.rkt
+:PROPERTIES:
+:CUSTOM_ID: ll:f23dc27f-6ed2-423b-9d46-ce270ca71cff
+:END:
+This program
+1. Pulls down a fresh copy of a team's dev repo,
+2. checks out a particular ref/hash *or* uses a snapshot,
+3. copies it into the grading repo,
+4. commits and pushes it, to run the normal ci-test-fest.rkt like students would
+
+Meant to run locally by the TA/instructor.
+
+* Gotchas and things to keep in mind
+
+** Look through and modify [[file:~/github_sync/Notes/research/grad/ta/sc/spring21/oracle/software-construction-admin/config.rkt][config.rkt]] to control many fine-grained aspects of the system
+- Which repos to use
+- Which github organization to use
+- Lots of stuff around assignments
+  + Which assignments have tests to validate etc
+  + What kind of oracle per assignment
+  + Which assignments tests conflict with past assignments
+  + Assignment deadlines
+  + ...and so on...
+
+** The infrastructure relies on test files containing only valid json to check test validity and novelty
+So if you want require tests submitted to be unique and novel, then you need to have a requirement that the test files only contain valid json.
+
+We didn't require this in Spring 2021 on the first assignment and ended up having to add [[file:~/github_sync/grad/ta/sc/spring21/oracle/software-construction-admin/config.rkt::(define assign-conflict-exceptions][an exception]] for test novelty checking because it's a mess to do when tests are not completely valid json.
+
+** Multiple kinds of oracles
+Not all assignments fit nicely into the format of running the student submission on a test input and comparing it to the oracle's answer on the same input.
+For example a given part of the system might be able to give a variety of different but correct answers.
+Or the part under test might involve a sequence of interactions.
+
+So we have three kinds of oracles to handle all of these cases:
+1. A basic oracle that we just run on the input and compare the output against the submission's output
+2. An oracle that gets the input and the submission's output and returns if it's OK or not
+3. An oracle that gets the input and an interface to interact with the submission and returns if it's OK for not
+
+The table mapping assignments to these kinds of oracles is in [[file:~/github_sync/grad/ta/sc/spring21/oracle/software-construction-admin/config.rkt::(define/contract assign->oracle-type][the config]].
+
+** Grading for every assignment also re-grades all past assignments
+:PROPERTIES:
+:CUSTOM_ID: ll:02030c9a-97bd-42d0-93f7-efda7971b9ab
+:END:
+I.e. if the assignment sequence is 1.1 1.2 2.1 3.1
+then grading assignment 2.1 entails grading all of
+1. 2.1
+2. 1.2
+3. 1.1
+
+** Tests are validated only once
+The grades for tests reported by the grading program come from the number of validated tests found in the =validated-tests= directory for the assignment.
+The consequence of that is that although student code is re-graded on every assignment, the tests are never re-validated.
+
+* Possible improvements and ideas
+
+** Package up racket and the oracle in a docker image
+This might cut down significantly on time CI jobs spend installing those things before starting actual tests.
+The image would have to be updated for every oracle change, so probably easiest to host on some publicly-accessible website we manage rather than docker hub or similar.
+
