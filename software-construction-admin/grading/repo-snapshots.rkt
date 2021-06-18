@@ -28,7 +28,7 @@
 
 (define/contract (team->snapshot-name team)
   (team-name? . -> . string?)
-  (~a team ".zip"))
+  (~a team ".tar.gz"))
 
 (define/contract (team/assign-number->snapshot-path team assign-number)
   (team-name? assign-number? . -> . path-string?)
