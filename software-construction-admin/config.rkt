@@ -101,8 +101,8 @@
 
 
 (define-runtime-path grading-repo-path "../../grading")
-(define grading-repo-owner "LLazarek")
-(define grading-repo-name "nu-sc-grading")
+(define grading-repo-owner course-github-organization)
+(define grading-repo-name "ci-grading")
 (define grading-repo-remote (~a "git@github.com:"
                                 grading-repo-owner
                                 "/"
