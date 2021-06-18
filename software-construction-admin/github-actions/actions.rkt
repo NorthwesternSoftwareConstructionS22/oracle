@@ -2,6 +2,7 @@
 
 (provide get-all-runs!
          get-runs-by-url!
+         get-run-by-url!
          cancel-run!
          launch-run!
          get-run-log!

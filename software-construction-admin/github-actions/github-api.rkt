@@ -34,7 +34,7 @@
                       (match method
                         [(== GET)  get-impure-port]
                         [(== POST) (λ (url headers)
-                                     (post-impure-port url post-data headers))]))
+                                     (post-impure-port url (or post-data #"") headers))]))
                     (req-f url headers))
                   read-output/parse-status))
 
