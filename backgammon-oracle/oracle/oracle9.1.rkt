@@ -1,2 +1,0 @@
-#lang simple-obfuscation
-0yhKLSzNLEpVUMovSkzOSTXVM9Qryi5R0uTSyM1PKc1J1VbITczMU9AAkZqaXAA=

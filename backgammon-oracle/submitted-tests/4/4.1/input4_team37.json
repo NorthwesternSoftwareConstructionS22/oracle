@@ -1,9 +1,0 @@
-[
-  {
-    "black": [5, 5, 5, 6, 7, 7, 12, 13, 13, 18, 24, "home", "home", "home", "home"],
-    "white": ["bar","home","home","home","home","home","home","home","home","home","home","home","home","home","home"]
-  },
-  "white",
-  [6, 6, 6, 6],
-  [["bar", 6], [6, 12], [12, 18], [18, 24]]
-]

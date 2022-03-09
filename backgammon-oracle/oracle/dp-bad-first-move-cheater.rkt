@@ -1,4 +1,0 @@
-#lang simple-obfuscation
-RcxBCsMgEEDRvacYAgVdTOk6Vyld2MxIhqZqR03S20copNvH51vlTxNlsFk5yI4SYYSBMj49
-YZBQZ3ynlXGa2VfWq77q4JzpeVqFGPLiv6wXZ4ylPoinGAA7Lb4UGP/SrbTMipE3uP/GqcVK
-aYtwe7h+PgA=
