@@ -10,14 +10,17 @@
 (define assign-sequence
   '(("2" . "1")
     ("2" . "2")
-    ("3" . "1")
-    ("4" . "1")
-    ("5" . "1")
-    ("5" . "2")
-    ("6" . "1")
-    ("7" . "1")
-    ("8" . "1")
-    ("9" . "1")))
+    ("2" . "3")
+    ("2" . "4")
+    ;("3" . "1")
+    ;("4" . "1")
+    ;("5" . "1")
+    ;("5" . "2")
+    ;("6" . "1")
+    ;("7" . "1")
+    ;("8" . "1")
+    ;("9" . "1")
+    ))
 (define assigns-conflicting-with-past-tests
   '(("5" . "1")
     ("5" . "2")
@@ -27,7 +30,9 @@
   ;; These assignments won't be checked when checking test novelty against past tests
   ;; (for those assignments in `assigns-conflicting-with-past-tests`)
   '(("2" . "1")
-    ("2" . "2")))
+    ("2" . "2")
+    ("2" . "3")
+    ("2" . "4")))
 (define assigns-with-student-tests
   '(("2" . "1")
     ("2" . "2")
@@ -80,11 +85,11 @@
 
 (define-runtime-path oracle-repo-path "..")
 (define validated-tests-dir (build-path oracle-repo-path
-                                        "backgammon-oracle/validated-tests"))
+                                        "welcome-to-oracle/validated-tests"))
 (define submitted-tests-dir (build-path oracle-repo-path
-                                        "backgammon-oracle/submitted-tests"))
+                                        "welcome-to-oracle/submitted-tests"))
 (define oracle-binary-dir (build-path oracle-repo-path
-                                      "backgammon-oracle/oracle"))
+                                      "welcome-to-oracle/oracle"))
 (define oracle-repo-owner course-github-organization)
 (define oracle-repo-name "oracle")
 (define oracle-repo-remote (~a "git@github.com:"
