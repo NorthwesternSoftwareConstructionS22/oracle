@@ -657,6 +657,16 @@
                                        })
                                   #t])])
             all-tests))
+  (define invalid-tests (set-subtract (apply set all-tests) (apply set valid)))
+  (unless (set-empty? invalid-tests)
+    (log-fest-info
+     @~a{
+         invalid tests:
+         @(apply string-append
+                 (for/list ([t (in-list (sort (set->list invalid-tests) string<? #:key ~s))])
+                   (~a "  input file:  " (pretty-path (test-input-file t)) "\n"
+                       "  output file: " (pretty-path (test-output-file t)) "\n")))
+         }))
   (take valid (inexact->exact (truncate (min max-count (length valid))))))
 
 (define/contract (valid-tests/passing-oracle test-directory
