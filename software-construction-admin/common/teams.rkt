@@ -6,8 +6,7 @@
          team-name?)
 
 (define instructor-team-names
-  '("robby"
-    "chrdimo"))
+  '("robby"))
 
 (define teams-1
   '("teamTest"

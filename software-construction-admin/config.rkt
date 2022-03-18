@@ -79,7 +79,7 @@
 (define all-valid-tests-must-be-json? #t)
 
 
-(define course-github-organization "NorthwesternSoftwareConstructionS21")
+(define course-github-organization "NorthwesternSoftwareConstructionS22")
 
 (define-runtime-path test-snapshots-repo-path "../../test-snapshots")
 (define-runtime-path submission-snapshots-repo-path "../../submission-snapshots")
