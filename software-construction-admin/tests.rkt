@@ -32,7 +32,10 @@
 (define (has-test-output-file-naming-convention? path)
   (regexp-match? test-output-file-rx (basename path)))
 (define (has-validated-test-input-file-naming-convention? path)
-  (regexp-match? validated-test-input-file-rx (basename path)))
+  (match (basename path)
+    [(regexp validated-test-input-file-rx (list _ test-id name))
+     (team-name? name)]
+    [else #f]))
 (define (has-validated-test-output-file-naming-convention? path)
   (regexp-match? validated-test-output-file-rx (basename path)))
 
