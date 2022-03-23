@@ -23,7 +23,6 @@
     ("9" . "1")))
 (define assigns-conflicting-with-past-tests
   '(("5" . "1")
-    ("5" . "2")
     ("6" . "1")
     ("9" . "1")))
 (define assign-conflict-exceptions
@@ -40,6 +39,7 @@
     ("3" . "2")
     ("4" . "1")
     ("5" . "1")
+    ("5" . "2")
     ("6" . "1")
     ("9" . "1")))
 (define assigns-with-json-munging
