@@ -121,19 +121,21 @@
 (define/contract assign-test-deadlines
   (hash/c assign-with-student-test?
           moment?)
-  (hash '("2" . "1") (moment 2021 4 7 17
+  (hash ;; '("2" . "1") (moment 2021 4 7 17
+        ;;                      #:tz "America/Chicago")
+        ;; '("2" . "2") (moment 2021 4 7 17
+        ;;                      #:tz "America/Chicago")
+        '("3" . "1") (moment 2022 4 15 17
                              #:tz "America/Chicago")
-        '("2" . "2") (moment 2021 4 7 17
+        '("3" . "2") [moment 2022 4 15 17
+                             #:tz "America/Chicago"]
+        '("4" . "1") (moment 2021 4 22 17
                              #:tz "America/Chicago")
-        '("3" . "1") (moment 2021 4 14 17
+        '("5" . "1") (moment 2021 4 29 17
                              #:tz "America/Chicago")
-        '("4" . "1") (moment 2021 4 21 17
+        '("6" . "1") (moment 2021 5 6 17
                              #:tz "America/Chicago")
-        '("5" . "1") (moment 2021 4 28 17
-                             #:tz "America/Chicago")
-        '("6" . "1") (moment 2021 5 5 17
-                             #:tz "America/Chicago")
-        '("9" . "1") (moment 2021 5 26 17
+        '("9" . "1") (moment 2021 5 27 17
                              #:tz "America/Chicago")))
 (define (is-student-test-validation-time? assign)
   (define current-time (now/moment #:tz "America/Chicago"))
