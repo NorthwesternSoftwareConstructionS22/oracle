@@ -710,21 +710,21 @@
                passes?]
               [else #f])]
        ;; There are no expected outputs for assignments with these oracles.
-       ;; Just make sure that the oracle doesn't break on them.
+       ;; If there are tests for these assignments, however, they are required (in the config)
+       ;; to have test outputs.
+       ;; Just make sure that the oracle doesn't break on them, and that the test outputs are
+       ;; valid.
        ['checks-output
         (define oracle-input
-          (apply input-port-append
-                 #t
-                 ;; these files get closed because
-                 ;; the call to copy-port in launch-process!
-                 ;; will copy all of the data out of this
-                 ;; port (which'll trigger the close
-                 ;; via input-port-append)
-                 (open-input-file in)
-                 (open-input-bytes #"\n")
-                 (if (and out (file-exists? out))
-                     (list (open-input-file out))
-                     empty)))
+          (input-port-append #t
+                             ;; these files get closed because
+                             ;; the call to copy-port in launch-process!
+                             ;; will copy all of the data out of this
+                             ;; port (which'll trigger the close
+                             ;; via input-port-append)
+                             (open-input-file in)
+                             (open-input-bytes #"\n")
+                             (open-input-file out)))
         (match-define oracle-output-bytes
           (run-exe-on-input oracle-path
                             oracle-input

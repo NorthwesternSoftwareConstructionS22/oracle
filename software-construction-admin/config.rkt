@@ -52,13 +52,29 @@
     ("2" . "2")
     ("3" . "1")
     ("3" . "2")
-    ("4" . "1")))
+    ("4" . "1")
+    ("5" . "1")
+    ("5" . "2")
+    ("9" . "1")))
 (define oracle-type/c (or/c 'normal 'checks-output 'interacts))
 (define/contract assign->oracle-type
   (any/c . -> . oracle-type/c)
   (match-lambda [(cons (or "5" "9") _)     'checks-output]
                 [(cons (or "6" "7" "8") _) 'interacts]
                 [else                      'normal]))
+
+(for ([assign (in-list assigns-with-student-tests)])
+  (when (and (equal? (assign->oracle-type assign) 'checks-output)
+             (not (member assign assigns-requiring-test-outputs)))
+    (raise-user-error 'software-construction-admin-config
+                      @~a{
+                          Assignment @assign is configured to have a `checks-output` @;
+                          oracle type, and requires student tests, but does not require @;
+                          test outputs.
+                          This configuration does not make sense: test outputs are necessary @;
+                          to validate tests with a `checks-output` oracle.
+                          })))
+
 ;; This allows using one assignment's oracle to validate multiple assignment's tests
 (define/contract oracle-number-for-validating
   (assign-with-student-test? . -> . assign-with-student-test?)
