@@ -97,9 +97,15 @@
 (define oracle-timeout-seconds (* 1 60))
 
 (define (expected-valid-test-count assign-number)
-  (if (member assign-number assigns-with-student-tests)
-      5
-      0))
+  (cond
+    [(member assign-number assigns-with-student-tests)
+     (match assigns-with-student-tests
+       [(cons "3" _) 10]
+       [(cons "7" _) 10]
+       [(cons "4" _) 10]
+       [(cons "5" _) 10]
+       [_ 5])]
+    [else 0]))
 (define all-valid-tests-must-be-json? #t)
 
 
