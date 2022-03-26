@@ -19,6 +19,8 @@
     ("5" . "2")
     ("6" . "1")
     ("7" . "1")
+    ("7" . "2")
+    ("7" . "3")
     ("8" . "1")
     ("9" . "1")))
 (define assigns-conflicting-with-past-tests
@@ -41,6 +43,9 @@
     ("5" . "1")
     ("5" . "2")
     ("6" . "1")
+    ("7" . "1")
+    ("7" . "2")
+    ("7" . "3")
     ("9" . "1")))
 (define assigns-with-json-munging
   '(("9" . "1")))
@@ -55,12 +60,15 @@
     ("4" . "1")
     ("5" . "1")
     ("5" . "2")
+    ("7" . "1")
+    ("7" . "2")
+    ("7" . "3")
     ("9" . "1")))
 (define oracle-type/c (or/c 'normal 'checks-output 'interacts))
 (define/contract assign->oracle-type
   (any/c . -> . oracle-type/c)
   (match-lambda [(cons (or "5" "9") _)     'checks-output]
-                [(cons (or "6" "7" "8") _) 'interacts]
+                [(cons (or "6" "8") _)     'interacts]
                 [else                      'normal]))
 
 (for ([assign (in-list assigns-with-student-tests)])
