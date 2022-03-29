@@ -117,23 +117,40 @@
     (moment>? (ci-run-creation-time run1)
               (ci-run-creation-time run2)))
   (define (newest-job-in jobs)
-    (first (sort jobs ci-run-newer?)))
+    (match (sort jobs ci-run-newer?)
+      [(cons newest _) newest]
+      ['() #f]))
   (define (wait/poll-for-new-job! original-jobs)
-    (define original-latest-job (newest-job-in original-jobs))
-    (let loop ([retry-count 0])
-      (match (get-all-runs! repo-owner repo-name)
-        [(present (app newest-job-in latest-job))
-         #:when (ci-run-newer? latest-job original-latest-job)
-         (present latest-job)]
-        [else
-         #:when (< (* retry-count run-retrieval-polling-period-seconds)
-                   run-retrieval-polling-timeout-seconds)
-         (sleep run-retrieval-polling-period-seconds)
-         (loop (add1 retry-count))]
-        [else (failure @~a{
-                           Couldn't find launched job after polling for @;
-                           @|run-retrieval-polling-timeout-seconds|s
-                           })])))
+    (option-let*
+     [original-latest-job
+      (let loop ([retry-count 0])
+        (match (newest-job-in original-jobs)
+          [(? ci-run? a-job) (present a-job)]
+          [else
+           #:when (< (* retry-count run-retrieval-polling-period-seconds)
+                     run-retrieval-polling-timeout-seconds)
+           (sleep run-retrieval-polling-period-seconds)
+           (loop (add1 retry-count))]
+          [else (failure @~a{
+                             Couldn't find launched job after polling for @;
+                             @|run-retrieval-polling-timeout-seconds|s
+                             })]))]
+     [the-run
+      (let loop ([retry-count 0])
+        (match (get-all-runs! repo-owner repo-name)
+          [(present (app newest-job-in latest-job))
+           #:when (ci-run-newer? latest-job original-latest-job)
+           (present latest-job)]
+          [else
+           #:when (< (* retry-count run-retrieval-polling-period-seconds)
+                     run-retrieval-polling-timeout-seconds)
+           (sleep run-retrieval-polling-period-seconds)
+           (loop (add1 retry-count))]
+          [else (failure @~a{
+                             Couldn't find launched job after polling for @;
+                             @|run-retrieval-polling-timeout-seconds|s
+                             })]))]
+     the-run))
 
   (option-let*
    [jobs-before-launch (get-all-runs! repo-owner repo-name)]
@@ -261,11 +278,12 @@
             - name: Checkout
               uses: actions/checkout@"@"main
             - name: Install Racket
-              uses: Bogdanp/setup-racket@"@"v0.11
+              uses: Bogdanp/setup-racket@"@"v1.7
               with:
                 architecture: 'x64'
                 distribution: 'full'
-                version: '8.0'
+                variant: 'CS'
+                version: '8.4'
             - name: Set up environment
               run: cat @workflow-env-file >> $GITHUB_ENV
             - name: Install oracle
