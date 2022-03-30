@@ -73,7 +73,9 @@
   (listof (cons/c assign? (listof assign-with-student-test?)))
   '((("2" . "2") #;-> ("2" . "1"))
     (("2" . "4") #;-> ("2" . "3"))
-    (("7" . "1") #;-> ("7" . "1") ("3" . "1"))))
+    (("7" . "1") #;-> ("7" . "1") ("3" . "1"))
+    (("7" . "2") #;-> ("7" . "2") ("3" . "2"))
+    (("7" . "3") #;-> ("7" . "3") ("4" . "1"))))
 
 (define oracle-type/c (or/c 'normal 'checks-output 'interacts))
 (define/contract assign->oracle-type
