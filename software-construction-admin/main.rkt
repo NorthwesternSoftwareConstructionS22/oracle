@@ -9,7 +9,8 @@
          "common/assignments.rkt"
          "common/util.rkt"
          "common/logger.rkt"
-         "test-validation/test-novelty.rkt")
+         "test-validation/test-novelty.rkt"
+         racket/hash)
 
 (define grading-log-delimiter "-----score-----")
 
@@ -46,7 +47,7 @@
 (define (assignment-test-fest team-name assign-number force-test-validation?)
   (define-values {oracle-path oracle-type} (get-oracle+type assign-number))
 
-  (define assign-has-student-tests? (member assign-number assigns-with-student-tests))
+  (define assign-has-student-tests? (assign-with-student-test? assign-number))
   (define assign-has-json-munging? (and (member assign-number assigns-with-json-munging) #t))
   (define doing-student-test-validation?
     (or force-test-validation?
@@ -86,11 +87,26 @@
                          })
       (length novel-tests)))
 
-  (define validated-tests-by-team (get-pre-validated-tests-by-team assign-number))
-
   (build-executable! assign-number)
   (define test-exe-path
     (path->complete-path (assign-number->deliverable-exe-path assign-number)))
+
+  (define assigns-to-test-against
+    (dict-ref assign-test-redirects
+              assign-number
+              (list assign-number)))
+  (log-fest-info
+   @~a{
+       Assignment @(assign-number->string assign-number) is configured to test against @;
+       the tests of assignments @(map assign-number->string assigns-to-test-against)
+       })
+  (define validated-tests-by-team
+    (for/fold ([h (hash)])
+              ([assign (in-list assigns-to-test-against)])
+      (hash-union h
+                  (get-pre-validated-tests-by-team assign)
+                  #:combine append)))
+
   (define failed-tests
     (cond [(file-exists? test-exe-path)
            (log-fest-info
@@ -116,11 +132,15 @@
 
 
   (define this-teams-valid-tests
-    (if doing-student-test-validation?
-        current-valid-test-count
-        (length (hash-ref validated-tests-by-team
-                          team-name
-                          empty))))
+    (cond [doing-student-test-validation?
+           current-valid-test-count]
+          [assign-has-student-tests?
+           ;; count this assigns tests, not incl. redirected ones
+           ;; (which are included in `validated-tests-by-team`)
+           (length (hash-ref (get-pre-validated-tests-by-team assign-number)
+                             team-name
+                             empty))]
+          [else 0]))
   (define enough-valid-tests? (or (not assign-has-student-tests?)
                                   (>= this-teams-valid-tests
                                       (expected-valid-test-count assign-number))))
@@ -166,7 +186,7 @@
          @(pretty-format
            (for/hash ([(group tests) (in-hash failed-tests)])
              (values group
-                     (map (λ (t) (basename (test-input-file t)))
+                     (map (λ (t) (test-display-name (test-input-file t)))
                           tests))))
          })))
 
@@ -186,7 +206,7 @@
 
 (module+ main
   (require racket/date)
-  
+
   (match-define (cons (hash-table ['major major]
                                   ['minor minor]
                                   ['team team-name]

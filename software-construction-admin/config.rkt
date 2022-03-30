@@ -36,7 +36,7 @@
     ("2" . "4")))
 (define assigns-with-student-tests
   '(("2" . "1")
-    ("2" . "2")
+    ("2" . "3")
     ("3" . "1")
     ("3" . "2")
     ("4" . "1")
@@ -49,12 +49,14 @@
     ("9" . "1")))
 (define assigns-with-json-munging
   '(("9" . "1")))
+(define (assign? a)
+  (member a assign-sequence))
 (define (assign-with-student-test? a)
   (member a assigns-with-student-tests))
 (define/contract assigns-requiring-test-outputs
   (listof assign-with-student-test?)
   '(("2" . "1")
-    ("2" . "2")
+    ("2" . "3")
     ("3" . "1")
     ("3" . "2")
     ("4" . "1")
@@ -64,6 +66,15 @@
     ("7" . "2")
     ("7" . "3")
     ("9" . "1")))
+
+(define/contract assign-test-redirects
+  ;; Test redirect A -> B ...
+  ;; means that assign A uses the union of `B ...`s validated tests for the test fest.
+  (listof (cons/c assign? (listof assign-with-student-test?)))
+  '((("2" . "2") #;-> ("2" . "1"))
+    (("2" . "4") #;-> ("2" . "3"))
+    (("7" . "1") #;-> ("7" . "1") ("3" . "1"))))
+
 (define oracle-type/c (or/c 'normal 'checks-output 'interacts))
 (define/contract assign->oracle-type
   (any/c . -> . oracle-type/c)

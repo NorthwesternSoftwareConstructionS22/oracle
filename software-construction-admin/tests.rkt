@@ -13,7 +13,8 @@
 
          directory->tests
 
-         test-set-count-tests)
+         test-set-count-tests
+         test-display-name)
 
 (require "common/assignments.rkt"
          "common/util.rkt"
@@ -91,3 +92,11 @@
     (test (build-path path maybe-input)
           output-file)))
 
+;; (or/c test? path-string?) -> string?
+;; Returns a string identifying the given test, including the assignment it is from
+(define (test-display-name test-or-path)
+  (match test-or-path
+    [(test input _) (test-display-name input)]
+    [(? path-string? (app (compose1 explode-path simple-form-path)
+                          (list _ ... assign-number name)))
+     (~a (build-path assign-number name))]))

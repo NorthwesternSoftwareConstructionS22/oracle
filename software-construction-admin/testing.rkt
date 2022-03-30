@@ -195,7 +195,7 @@
       boolean?)
 
   (define input-file (test-input-file the-test))
-  (log-fest-info @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
+  (log-fest-info @~a{Running @(pretty-path exe-path) on test @(test-display-name input-file) ...})
 
   (define the-oracle (fetch-racket-based-oracle oracle-path))
 
@@ -214,7 +214,7 @@
                                        ((error-display-handler)
                                         (exn-message x)
                                         x))
-                                     (log-fest-error @~a{An error occurred while running the test @(basename input-file):
+                                     (log-fest-error @~a{An error occurred while running the test @(test-display-name input-file):
                           ------------------------------
                           @(get-output-string sp)
                           ------------------------------
@@ -266,7 +266,7 @@
     (with-handlers ([exn:fail? (λ (x)
                                  (log-fest-error
                                   @~a{
-                                      @(pretty-path exe-path) fails test @(basename input-file) @;
+                                      @(pretty-path exe-path) fails test @(test-display-name input-file) @;
                                       because the following JSON message could not be sent
                                       ------------------------------
                                       @(jsexpr->bytes json)
@@ -321,7 +321,7 @@
     (when (and (eof-object? val) (not allow-eof?))
       (log-fest-error
        @~a{
-           @(pretty-path exe-path) fails test @(basename input-file) @;
+           @(pretty-path exe-path) fails test @(test-display-name input-file) @;
            because it didn't send a JSON object, got eof @where
            })
       (test-failed))
@@ -339,7 +339,7 @@
                 ((flat-contract-predicate ctc) val))
       (log-fest-error
        @~a{
-           @(pretty-path exe-path) fails test @(basename input-file) @;
+           @(pretty-path exe-path) fails test @(test-display-name input-file) @;
            because its JSON result did not have the right shape:
            ------------------------------
            @(jsexpr->bytes val)
@@ -493,7 +493,7 @@
 
   (define input-file (test-input-file t))
 
-  (log-fest-info @~a{Running @(pretty-path exe-path) on test @(basename input-file) ...})
+  (log-fest-info @~a{Running @(pretty-path exe-path) on test @(test-display-name input-file) ...})
   (define exe-output-bytes (run-exe-on-input exe-path input-file submission-timeout-seconds
                                              #:munge-json-style munge-json-style))
   (when (bytes? exe-output-bytes)
@@ -506,7 +506,7 @@
   (match exe-output-bytes
     [(? bytes? (app bytes->json/safe (and exe-output-json
                                           (not (== bad-json)))))
-     (log-fest-debug @~a{Running the oracle on test @(basename input-file) ...})
+     (log-fest-debug @~a{Running the oracle on test @(test-display-name input-file) ...})
      (define oracle-input
        (if oracle-needs-student-output?
            (input-port-append #t
@@ -538,7 +538,7 @@
            [(and oracle-needs-student-output?
                  (not oracle-output-json))
             (log-fest-error @~a{
-                                @(pretty-path exe-path) fails test @(basename input-file) @;
+                                @(pretty-path exe-path) fails test @(test-display-name input-file) @;
                                 because it produced an invalid result
                                 It produced this json:
                                 ------------------------------
@@ -550,7 +550,7 @@
            [(and (not oracle-needs-student-output?)
                  (not (jsexpr=? exe-output-json oracle-output-json)))
             (log-fest-error @~a{
-                                @(pretty-path exe-path) fails test @(basename input-file) @;
+                                @(pretty-path exe-path) fails test @(test-display-name input-file) @;
                                 because it produced the wrong result.
                                 It produced this json:
                                 ------------------------------
@@ -560,7 +560,7 @@
                                 })
             (when (log-test-failure-comparison?)
               (log-fest-error @~a{
-                                  The expected output json for @(basename input-file) is:
+                                  The expected output json for @(test-display-name input-file) is:
                                   ------------------------------
                                   @(with-output-to-string (thunk (write-json oracle-output-json)))
                                   ------------------------------
@@ -576,7 +576,7 @@
             #t])]
     [(? bytes? non-json-bytes)
      (log-fest-error @~a{
-                         @(pretty-path exe-path) fails test @(basename input-file) @;
+                         @(pretty-path exe-path) fails test @(test-display-name input-file) @;
                          because it produced invalid json.
                          The raw output is below. @;
                          @(if (= (bytes-length non-json-bytes) process-stdout-bytes-limit)
@@ -593,7 +593,7 @@
      #f]
     [#f
      (log-fest-error @~a{
-                         @(pretty-path exe-path) fails test @(basename input-file) @;
+                         @(pretty-path exe-path) fails test @(test-display-name input-file) @;
                          because something went wrong while running it.
                          @test-log-messages-delimiter
                          })
