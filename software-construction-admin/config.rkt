@@ -164,10 +164,10 @@
 (define/contract assign-test-deadlines
   (hash/c assign-with-student-test?
           moment?)
-  (hash ;; '("2" . "1") (moment 2021 4 7 17
-        ;;                      #:tz "America/Chicago")
-        ;; '("2" . "2") (moment 2021 4 7 17
-        ;;                      #:tz "America/Chicago")
+  (hash '("2" . "1") (moment 2022 4 7 17
+                             #:tz "America/Chicago")
+        '("2" . "3") (moment 2022 4 7 17
+                             #:tz "America/Chicago")
         '("3" . "1") (moment 2022 4 15 17
                              #:tz "America/Chicago")
         '("3" . "2") [moment 2022 4 15 17
