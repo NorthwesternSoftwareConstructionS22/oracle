@@ -168,17 +168,17 @@
                              #:tz "America/Chicago")
         '("2" . "3") (moment 2022 4 7 17
                              #:tz "America/Chicago")
-        '("3" . "1") (moment 2022 4 15 17
+        '("3" . "1") (moment 2022 4 13 17
                              #:tz "America/Chicago")
-        '("3" . "2") [moment 2022 4 15 17
-                             #:tz "America/Chicago"]
-        '("4" . "1") (moment 2022 4 22 17
+        '("3" . "2") (moment 2022 4 13 17
                              #:tz "America/Chicago")
-        '("5" . "1") (moment 2022 4 29 17
+        '("4" . "1") (moment 2022 4 20 17
                              #:tz "America/Chicago")
-        '("6" . "1") (moment 2022 5 6 17
+        '("5" . "1") (moment 2022 4 27 17
                              #:tz "America/Chicago")
-        '("9" . "1") (moment 2022 5 27 17
+        '("6" . "1") (moment 2022 5 4 17
+                             #:tz "America/Chicago")
+        '("9" . "1") (moment 2022 5 25 17
                              #:tz "America/Chicago")))
 (define (is-student-test-validation-time? assign)
   (define current-time (now/moment #:tz "America/Chicago"))
