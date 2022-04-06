@@ -108,7 +108,8 @@
                   #:combine append)))
 
   (define failed-tests
-    (cond [(file-exists? test-exe-path)
+    (cond [(and (file-exists? test-exe-path)
+                (member 'execute (file-or-directory-permissions test-exe-path)))
            (log-fest-info
             @~a{
                 Running tests for assignment @(assign-number->string assign-number) on team @team-name's @;
@@ -122,11 +123,18 @@
                                                              'interacts)
                               #:oracle-needs-student-output? (equal? oracle-type 'checks-output))]
           [else
-           (log-fest-error
-            @~a{
-                could not find the `run` executable
-                @"  "expected location: @(pretty-path test-exe-path)
-                })
+           (if (file-exists? test-exe-path)
+               (log-fest-error
+                @~a{
+                    found a file named `run` at the expected location (below) @;
+                    but it is not executable!
+                    @"  "expected location: @(pretty-path test-exe-path)
+                    })
+               (log-fest-error
+                @~a{
+                    could not find the `run` executable
+                    @"  "expected location: @(pretty-path test-exe-path)
+                    }))
            validated-tests-by-team]))
   (log-fest-info @~a{Done running tests.})
 
