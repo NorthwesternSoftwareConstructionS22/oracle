@@ -1,0 +1,34 @@
+{"content": 14}
+{"content": 13}
+{"anullvalue": null}
+{"content": 12}
+{"content": 6}
+{"content": 8}
+{"content": 1}
+{"content": 9}
+{"content": 2}
+{"content": 5}
+{"content": 20}
+{"content": 14}
+{"content": 13}
+{"badlist": ["1", "2", "blue"]}
+{"content": 12}
+{"content": 6}
+{"content": 8}
+{"badlist": ["1", "2", "blue"]}
+{"content": 1}
+{"content": 9}
+{"content": 2}
+{"content": 5}
+{"content": 20}
+{"anotherbadone": ["hope", "this", "test", "passes", 1.1], "yikes": true, "anullvalue": null}
+{"content": 14}
+{"content": 13}
+{"content": 12}
+{"content": 6}
+{"content": 8}
+{"content": 1}
+{"content": 9}
+{"content": 2}
+{"content": 5}
+{"content": 20}

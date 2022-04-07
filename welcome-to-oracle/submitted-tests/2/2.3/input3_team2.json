@@ -1,0 +1,109 @@
+"start"
+{"content": 15}
+"string\\\/\"\t\uA2C4"
+{"content": 6}
+-987
+{"content": 21}
+true
+{"content": 18}
+false
+{"content": 18}
+null
+{"content": 4}
+0
+{"content": 12}
+0.1
+{"content": 21}
+123.456
+{"content": 8}
+-2.3e-4
+{"content": 9}
+[1, true, "yes"]
+
+
+{"content": 11}
+{"content": 17}
+{"content": 6}
+{"content": 9}
+{"content": 14}
+{"content": 20}
+{"content": 10}
+{"content": 2}
+{"content": 1}
+{"content": 6}
+
+{
+    "one":
+    {
+        "one-one": 1.1,
+        "one-two": "one-two",
+        "one-three":
+        {
+            "one-three-one": true,
+            "one-three-two": false
+        }
+    },
+    "two":
+    {
+        "two-one": "two-one",
+        "two-two": 2.2,
+        "two-three":
+        {
+            "two-three-one": false,
+            "two-three-two": true
+        }
+    }
+}
+
+{"content": 22}
+{"content": 15}
+{"content": 2}
+{"content": 24}
+{"content": 19}
+{"content": 20}
+{"content": 13}
+{"content": 15}
+{"content": 10}
+
+{
+    "three":
+    {
+        "content": 3,
+        "three-two": "three-two",
+        "three-three":
+        {
+            "content": 3,
+            "three-three-two": false
+        }
+    },
+    "four":
+    {
+        "four-one": "two-one",
+        "content": 4,
+        "four-three":
+        {
+            "content": 4,
+            "four-three-two": true
+        }
+    }
+}
+
+[
+    {
+        "obj_1":
+        {
+            "mood": "happy",
+            "lines": 5
+        },
+        "obj_2":
+        {
+            "vibe": "active",
+            "ages": 10
+        }
+    },
+    [0, false, null, "no"],
+    3.1415926,
+    "no time to code",
+    {"content": 7},
+    [{"content": 11}, {"content": 23}, {"content": 9}]
+]

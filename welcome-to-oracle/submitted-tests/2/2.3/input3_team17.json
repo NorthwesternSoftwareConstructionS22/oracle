@@ -1,0 +1,3 @@
+{ "not_content" : 1 } 
+{ "content" : 2, "not_content" : 1 } 
+{ "content" : "string" } 
