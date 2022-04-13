@@ -1,0 +1,34 @@
+{
+  "cat": "meow",
+  "city-plans":[
+    {
+      "criteria":[3, 2, 1],
+      "position":1,
+      "score1":16,
+      "score2":6
+    },
+    {
+      "criteria":[1, 1, 1, 6],
+      "position":2,
+      "score1":13,
+      "score2":8
+    },
+    {
+      "criteria":[1, 2, 6],
+      "position":3,
+      "score1":14,
+      "score2":7
+    }
+  ],
+  "city-plans-won":[
+    false,
+    false,
+    false
+  ],
+  "construction-cards":[
+    [1, "surveyor"],
+    [2, "landscaper"],
+    [3, "pool"]
+  ],
+  "effects":["agent", "bis","temp"]
+}

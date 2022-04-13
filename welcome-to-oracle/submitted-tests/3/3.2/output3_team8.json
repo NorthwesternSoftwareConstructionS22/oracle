@@ -1,0 +1,7 @@
+{"city-plans":
+[{"criteria":[1,1,1,4],"position":1,"score1":8,"score2":4},
+{"criteria":[1,2,3],"position":2,"score1":10,"score2":5},
+{"criteria":[3,3],"position":3,"score1":12,"score2":6}],
+"city-plans-won":[true,false,true],
+"construction-cards":[[15,"agent"],[9,"agent"],[2,"pool"]],
+"effects":["surveyor","temp","bis"]}
