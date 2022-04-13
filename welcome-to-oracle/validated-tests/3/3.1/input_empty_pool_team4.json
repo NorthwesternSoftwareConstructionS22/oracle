@@ -1,0 +1,28 @@
+{
+    "agents":[0,0,0,0,0,0],
+    "city-plan-score":["blank","blank","blank"],
+    "refusals":0,
+    "extra thing": "not supposed to be here",
+    "streets":
+    [
+        {
+            "homes":["blank",false,[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],
+            "parks":0,
+            "pools":[false,true,false]
+        },
+            
+        {
+            "homes":["blank",false,[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],
+            "parks":0,
+            "pools":[false,false,false]
+        },
+            
+        {
+            "homes":["blank",false,[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],
+            "parks":0,
+            "pools":[false,false,false]
+        }
+    ],
+    "temps":0,
+    "one last thing":"hehehhehehehe"
+}
