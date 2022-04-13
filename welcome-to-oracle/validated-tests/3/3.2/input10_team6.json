@@ -1,0 +1,25 @@
+{
+	"city-plans": [{
+		"criteria": [1, 4, 5],
+		"position": 1,
+		"score1": 12,
+		"score2": 10
+	}, {
+		"criteria": [3, 3, 3],
+		"position": 2,
+		"score1": 10,
+		"score2": 6
+	}, {
+		"criteria": [1, 1, 1, 1, 2],
+		"position": 3,
+		"score1": 4,
+		"score2": 3
+	}],
+	"city-plans-won": [true, true, false],
+	"construction-cards": [
+		[10, "bis"],
+		[7, "bis"],
+		[14, "agent"]
+	],
+	"effects": ["temp", "surveyor"]
+}

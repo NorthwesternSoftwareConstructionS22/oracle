@@ -1,0 +1,1 @@
+{"city-plans":[{"criteria":[1,1,12,2,3,4],"position":3,"score1":8,"score2":10},{"criteria":[1,2,3],"position":2,"score1":684,"score2":3},{"criteria":[322222,5345353,61111,"wrong"],"position":1,"score1":12,"score2":11}],"city-plans-WON":[true,true,false,"yes"],"construction-cards":[[1000000,"pool"],[7,"engineer"],[10,"temp"]],"EFFECTS":["scientist","agent","bis"]}

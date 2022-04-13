@@ -1,0 +1,8 @@
+{
+  "city-plans": [
+    { "criteria": [1, 5], "position": 1, "score1": 7, "score2": 3 },
+    { "criteria": [1, 3, 4], "position": 2, "score1": 8, "score2": 6 },
+    { "criteria": [1, 1, 3, 5], "position": 3, "score1": 12, "score2": 9 }
+  ],
+  "effects": ["landscaper", "agent", "surveyor"]
+}

@@ -1,0 +1,1 @@
+{"city-plans":[{"criteria":[true, false, false],"position":3,"score1":8,"score2":"red"},{"criteria":[1,2,3],"POSITION":2,"score1":6,"score2":3},{"criteria":[3,5,6],"position":9,"score1":1200,"score2":11}],"city-plans-won":[true,true,false],"extra-key": [true], "construction-cards":[[1,false],[2,"landscaper"],[true,"temp"]],"effects":[1,48,"no"]}
