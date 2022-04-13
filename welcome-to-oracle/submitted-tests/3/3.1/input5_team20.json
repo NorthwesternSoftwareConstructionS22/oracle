@@ -1,0 +1,62 @@
+{
+  "agents": [1, 1, 0, 0, 0, 0],
+  "city-plan-score": ["blank", "blank", "blank"],
+  "refusals": 1,
+  "streets": [
+    {
+      "homes": [
+        "blank",
+        false,
+        [false, "blank", false],
+        [false, "blank", false],
+        [false, "blank", false],
+        [false, "blank", false],
+        [false, "blank", false],
+        [false, "blank", false],
+        [true, 13, true],
+        [false, [13, "bis"], true],
+        [true, 14, false]
+      ],
+      "parks": 2,
+      "pools": [false, false, true]
+    },
+    {
+      "homes": [
+        1,
+        false,
+        [false, "blank", false],
+        [false, "blank", false],
+        [false, "blank", false],
+        [true, "blank", false],
+        [false, "blank", false],
+        [true, "blank", false],
+        [false, "blank", false],
+        [true, 13, true],
+        [false, [13, "bis"], true],
+        [true, 14, false]
+      ],
+      "parks": 0,
+      "pools": [false, false, false]
+    },
+    {
+      "homes": [
+        1,
+        true,
+        [false, 2, true],
+        [false, 6, true],
+        [true, 8, true],
+        [true, 12, true],
+        [true, "blank", false],
+        [false, "blank", false],
+        [false, "blank", false],
+        [false, "blank", false],
+        [true, 13, true],
+        [false, [13, "bis"], true],
+        [true, 14, false]
+      ],
+      "parks": 2,
+      "pools": [true, false, false]
+    }
+  ],
+  "temps": 2
+}

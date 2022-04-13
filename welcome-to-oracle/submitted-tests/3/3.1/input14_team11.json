@@ -1,0 +1,49 @@
+{
+    "agents": [
+      0,
+      2,
+      5,
+      10,
+      22,
+      14,
+      11,
+      100,
+      1000
+    ],
+    "city-plan-score": [
+      0,
+      0,
+      1
+    ],
+    "refusals": 0,
+    "streets": [
+      {
+        "homes": ["blank", true, [true,[5,"bis"], false]],
+        "parks": 0,
+        "pools": [
+          true,
+          true,
+          false
+        ]
+      },
+      {
+        "homes": [0, true, [false,"blank", true]],
+        "parks": 10,
+        "pools": [
+          true,
+          true,
+          false
+        ]
+      },
+      {
+        "homes": [2, false, [true,2, false]],
+        "parks": 1,
+        "pools": [
+          true,
+          true,
+          false
+        ]
+      }
+    ],
+    "temps": 10
+}
