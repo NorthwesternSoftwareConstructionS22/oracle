@@ -20,8 +20,8 @@
          "common/util.rkt"
          "common/teams.rkt")
 
-(define test-file-rx @~a{([a-zA-Z0-9_-]+).json$})
-(define validated-test-file-rx @~a{([a-zA-Z0-9_-]+)_([a-zA-Z0-9-]+).json$})
+(define test-file-rx @~a{([a-z0-9_-]+).json$})
+(define validated-test-file-rx @~a{([a-z0-9_-]+)_([a-z0-9-]+).json$})
 
 (define test-input-file-rx (pregexp @~a{^input@test-file-rx}))
 (define test-output-file-rx (pregexp @~a{^output@test-file-rx}))
