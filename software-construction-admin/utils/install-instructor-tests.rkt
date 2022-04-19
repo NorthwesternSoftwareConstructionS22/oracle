@@ -13,7 +13,21 @@
     (delete-directory/files dir))
   (make-directory* dir))
 
-(for* ([assign '(("3" . "1") ("3" . "2") ("4" . "1") ("5" . "1") ("5" . "2") ("6" . "1") ("7" . "1") ("7" . "2") ("7" . "3"))]
+(define assignments
+  (list
+   #;'("3" . "1")
+   #;'("3" . "2")
+   '("4" . "1")
+   #;'("5" . "1")
+   #;'("5" . "2")
+   #;'("6" . "1")
+   #;'("7" . "1")
+   #;'("7" . "2")
+   #;'("7" . "3")
+   ))
+
+(for* ([assign (in-list assignments)]
+       [_ (in-value (printf "copying assignment ~a\n" assign))]
        [dest (in-value (build-path validated-dir (assign-number->dir-path-part assign)))]
        #:when (ensure-empty! dest) ; for side effect only
        [f (in-list (directory-list (build-path robbys-dir (assign-number->dir-path-part assign))
