@@ -176,7 +176,15 @@
                              #:tz "America/Chicago")
         '("5" . "1") (moment 2022 4 27 17
                              #:tz "America/Chicago")
+        '("5" . "2") (moment 2022 4 27 17
+                             #:tz "America/Chicago")
         '("6" . "1") (moment 2022 5 4 17
+                             #:tz "America/Chicago")
+        '("7" . "1") (moment 2022 5 11 17
+                             #:tz "America/Chicago")
+        '("7" . "2") (moment 2022 5 11 17
+                             #:tz "America/Chicago")
+        '("7" . "3") (moment 2022 5 11 17
                              #:tz "America/Chicago")
         '("9" . "1") (moment 2022 5 25 17
                              #:tz "America/Chicago")))
