@@ -25,12 +25,24 @@
        (= (string-length str) 40)
        (regexp-match? #rx"^[a-z0-9]+$" str)))
 
+;; Returns either zero, one, or two values, depending on #:status? and #:output?:
+;; if both are true, returns both the exit status and output in that order
+;; if either is true and the other is false, returns just the one that's true
+;; if neither are true, returns void
 (define (git cmd
              #:in [repo-dir (current-directory)]
-             #:output? [output? #t])
-  (parameterize ([current-directory repo-dir])
-    ((if output? system/string system)
-     (~a "git " cmd))))
+             #:output? [output? #t]
+             #:status? [status? #f])
+  (define outstr (open-output-string))
+  (parameterize ([current-directory   repo-dir]
+                 [current-output-port outstr]
+                 [current-error-port  outstr])
+    (define status (system (~a "git " cmd)))
+    (cond [(and status? output?)
+           (values status (get-output-string outstr))]
+          [status? status]
+          [output? (get-output-string outstr)]
+          [else (void)])))
 
 (define/contract (clone-repo! repo-name)
   (repo-name? . -> . (or/c path-to-existant-directory? #f))
@@ -38,7 +50,8 @@
   (log-sc-info @~a{Cloning @repo-name ...})
   (define repo-url (repo-name->url repo-name (git-remote-access-method)))
   (match (git @~a{clone "@repo-url" > /dev/null 2>&1}
-              #:output? #f)
+              #:output? #f
+              #:status? #t)
     [#t
      (log-sc-debug @~a{Done.})
      (build-path-string "." repo-name)]
@@ -135,14 +148,29 @@
   (log-sc-debug @~a{git-adding @paths-to-add})
   (add! repo-dir paths-to-add)
   (log-sc-debug @~a{Committing ...})
-  (define commit-output (git @~a{commit -m "@msg"}
-                             #:in repo-dir))
-  (log-sc-debug @~a{
-                    git commit output
-                    -----
-                    @commit-output
-                    -----
-                    }))
+  (define-values {success? commit-output}
+    (git @~a{commit -m "@msg"}
+         #:in repo-dir
+         #:status? #t
+         #:output? #t))
+  (if (or success?
+          ;; git gives non-0 exit code in this case, but don't consider it a failure
+          (regexp-match? #px"^On branch.*?\nnothing to commit, working tree clean\\s*$"
+                         commit-output))
+      (log-sc-debug @~a{
+                        git commit output
+                        -----
+                        @commit-output
+                        -----
+                        })
+      (raise-user-error
+       'git:commit!
+       @~a{
+           git commit in repo @repo-dir failed with output
+           -----
+           @commit-output
+           -----
+           })))
 
 (define/contract (push! repo-dir
                         #:remote [remote "origin"]
@@ -153,14 +181,26 @@
    . ->* .
    any)
 
-  (define push-output (git @~a{push @remote @branch}
-                           #:in repo-dir))
-  (log-sc-debug @~a{
-                    git push @remote @branch output
-                    -----
-                    @push-output
-                    -----
-                    }))
+  (define-values {success? push-output}
+    (git @~a{push @remote @branch}
+         #:in repo-dir
+         #:status? #t
+         #:output? #t))
+  (if success?
+      (log-sc-debug @~a{
+                        git push @remote @branch output
+                        -----
+                        @push-output
+                        -----
+                        })
+      (raise-user-error
+       'git:push!
+       @~a{
+           git push @remote @branch in @repo-dir failed with output
+           -----
+           @push-output
+           -----
+           })))
 
 (define/contract (commit-and-push! repo-dir msg
                                    #:remote [remote "origin"]
