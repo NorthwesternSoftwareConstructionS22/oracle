@@ -1,0 +1,25 @@
+[
+    {"city-plans":
+        [{"criteria":[1,1,1,4],"position":1,"score1":5,"score2":3},
+        {"criteria":[1,1,1,6],"position":2,"score1":11,"score2":6},
+        {"criteria":[1,2,6],"position":3,"score1":12,"score2":7}],
+    "city-plans-won":[false,false,false],
+    "construction-cards":[[6,"surveyor"],[8,"landscaper"],[12,"pool"]],
+    "effects":["agent","bis","agent"]},
+
+    {"agents":[0,2,1,0,0,0],
+        "city-plan-score":["blank","blank","blank"],
+        "refusals":0,
+        "streets":[{"homes":[3,false,[true,5,false],[false,6,false],[false,10,false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]], "parks":0,"pools":[false,false,false]},
+            {"homes":[4,false,[false,[4,"bis"],false],[false,6,false],[false,[6,"bis"],false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],"parks":0,"pools":[false,false,false]},
+            {"homes":[5,false,[false,6,false],[false,7,false],[false,"blank",false],[false,10,false],[false,11,false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],"parks":2,"pools":[false,false,false]}],
+        "temps":2},
+
+        {"agents":[0,2,1,0,0,0],
+            "city-plan-score":["blank","blank","blank"],
+            "refusals":0,
+            "streets":[{"homes":[3,false,[true,5,false],[false,6,false],[false,10,false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]], "parks":0,"pools":[false,false,false]},
+                {"homes":[4,false,[false,[4,"bis"],false],[false,6,false],[false,[6,"bis"],false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],"parks":0,"pools":[false,false,false]},
+                {"homes":[5,false,[false,6,false],[false,7,false],[false,"blank",false],[false,10,false],[false,11,false],[false,12,false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],"parks":2,"pools":[false,false,false]}],
+            "temps":2}
+]
