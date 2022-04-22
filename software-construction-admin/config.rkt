@@ -106,7 +106,7 @@
 ;; this used to depend on the amount time the oracle took but since
 ;; the oracle sometimes needs the student's output, this is a
 ;; constant number of seconds for now
-(define submission-timeout-seconds 5)
+(define submission-timeout-seconds 10)
 (define oracle-timeout-seconds (* 1 60))
 
 (define (expected-valid-test-count assign-number)
