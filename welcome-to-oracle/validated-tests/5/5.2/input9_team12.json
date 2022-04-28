@@ -1,0 +1,16 @@
+[{"agents":[1,0,0,2,0,1],
+    "city-plan-score":["blank","blank","blank"],
+    "refusals":0,
+    "streets":[
+      {"homes":["blank",false,[false,2,false],[false,"blank",false],[false,10,false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],
+        "parks":0,
+        "pools":[false,false,false]},
+      {"homes":[1,false,[false,"blank",false],[false,"blank",false],[false,8,false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],
+        "parks":0,
+        "pools":[false,false,false]},
+      {"homes":[1,false,[false,"blank",false],[false,6,false],[false,7,false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false],[false,"blank",false]],
+        "parks":0,
+        "pools":[false,false,false]}],
+    "temps":2},
+    [3,4,5]
+]
