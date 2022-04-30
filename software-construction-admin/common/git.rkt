@@ -50,7 +50,7 @@
   (log-sc-info @~a{Cloning @repo-name ...})
   (define repo-url (repo-name->url repo-name (git-remote-access-method)))
   (define-values {success? output}
-    (git @~a{clone "@repo-url" > /dev/null 2>&1}
+    (git @~a{clone "@repo-url"}
               #:output? #t
               #:status? #t))
   (match success?
