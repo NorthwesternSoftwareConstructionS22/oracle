@@ -1,0 +1,5 @@
+{ "players" : ["simple-player", "simple-player", "simple-player",
+	       "simple-player", "simple-player", "simple-player",
+	       "simple-player", "simple-player", "simple-player",
+	       "simple-player"],
+  "port" : 8081 }

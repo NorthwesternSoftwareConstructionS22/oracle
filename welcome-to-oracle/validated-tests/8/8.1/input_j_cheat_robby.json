@@ -1,0 +1,5 @@
+{ "players" : ["cheat-illegal-move-player", "cheat-bogus-json-player", "simple-player",
+	       "simple-player", "simple-player", "simple-player",
+	       "simple-player", "simple-player", "simple-player",
+	       "simple-player"],
+  "port" : 8081 }
