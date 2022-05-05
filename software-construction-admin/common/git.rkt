@@ -49,14 +49,22 @@
 
   (log-sc-info @~a{Cloning @repo-name ...})
   (define repo-url (repo-name->url repo-name (git-remote-access-method)))
-  (match (git @~a{clone "@repo-url" > /dev/null 2>&1}
-              #:output? #f
-              #:status? #t)
+  (define-values {success? output}
+    (git @~a{clone "@repo-url"}
+              #:output? #t
+              #:status? #t))
+  (match success?
     [#t
      (log-sc-debug @~a{Done.})
      (build-path-string "." repo-name)]
     [#f
-     (log-sc-info @~a{Failed to clone repo @repo-name from @repo-url})
+     (log-sc-error @~a{
+                      Failed to clone repo @repo-name from @repo-url
+                      Git output:
+                      ----------
+                      @output
+                      ----------
+                      })
      #f]))
 
 (define/contract (clone-repos-into! target-dir repo-names
