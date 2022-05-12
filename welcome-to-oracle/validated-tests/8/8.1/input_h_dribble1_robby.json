@@ -1,0 +1,2 @@
+{ "players" : [{ "strategy" : "simple-player", "communication-style" : "dribble" }], "port" : 8099 }
+

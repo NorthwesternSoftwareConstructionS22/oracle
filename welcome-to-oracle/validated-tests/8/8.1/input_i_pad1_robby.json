@@ -1,0 +1,2 @@
+{ "players" : [{ "strategy" : "simple-player", "communication-style" : "pad" }], "port" : 8101 }
+

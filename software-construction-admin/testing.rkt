@@ -114,7 +114,7 @@
 (define bolus-bytes (make-bytes 5001 (char->integer #\space)))
 (define (send-padded-json json port)
   (define (bolus) (write-bytes bolus-bytes port))
-  
+
   (bolus)
   (cond
     [(list? json)
@@ -262,7 +262,7 @@
 
 
 (define (make-send-json exe-path input-file test-failed)
-  (define (send-json out json where)
+  (define (send-json out json where #:communication-style [style 'normal])
     (with-handlers ([exn:fail? (λ (x)
                                  (log-fest-error
                                   @~a{
@@ -278,11 +278,32 @@
  @(jsexpr->bytes json)
  ------------------------------
  })
-      (with-timeout (write-json json out) (format "json to be sent ~a" where))
+      (with-timeout (send-a-json-maybe-messing-with-it json out style) (format "json to be sent ~a" where))
       (newline out)
       (flush-output out)))
 
   send-json)
+
+(define (send-a-json-maybe-messing-with-it json out style)
+  (match style
+    ['normal (write-json json out)]
+    ['pad
+     (send-padded-json json out)]
+    ['dribble
+     (define-values (pipe-in pipe-out) (make-pipe))
+     (thread (λ ()
+               (write-json json pipe-out)
+               (close-output-port pipe-out)))
+     (define start-time (current-seconds))
+     (let loop ([n 0])
+       (define b (read-byte pipe-in))
+       (unless (eof-object? b)
+         (write-byte b out)
+         (case (modulo n 3)
+           [(0) (sleep)]
+           [(1) (sleep 0.001)]
+           [(2) (void)])
+         (loop (+ n 1))))]))
 
 (define (make-recv-json exe-path input-file test-failed)
   (define (recv-json in ctc where
@@ -462,7 +483,9 @@
 
          ;; a function to just send some json out, the string
          ;; goes into the students debug log, along with the JSON
-         [send-json (-> output-port? jsexpr? string? void?)]
+         [send-json (->* (output-port? jsexpr? string?)
+                         (#:communication-style (or/c 'normal 'dribble 'pad))
+                         void?)]
 
          ;; a function to receive some json in, the string
          ;; goes into the students debug log, along with the JSON

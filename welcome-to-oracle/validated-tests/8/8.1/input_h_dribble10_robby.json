@@ -1,0 +1,12 @@
+{ "players" : [{ "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" },
+	       { "strategy" : "roundabout-player", "communication-style" : "dribble" }],
+  "port" : 8098 }
+
