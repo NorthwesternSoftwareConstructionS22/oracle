@@ -1,0 +1,1 @@
+{"city-plans":[{"criteria":"end houses","position":1,"score1":20,"score2":10},{"criteria":[3,6],"position":2,"score1":80,"score2":40},{"criteria":[1,4,5],"position":3,"score1":12,"score2":5}],"city-plans-won":[false,false,false],"construction-cards":[[13,"bis"],[4,"temp"],[8,"temp"]],"effects":["landscaper","landscaper","bis"]}

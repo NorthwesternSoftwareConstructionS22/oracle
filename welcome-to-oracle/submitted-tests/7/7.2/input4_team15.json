@@ -1,0 +1,21 @@
+{
+    "city-plans":[
+        {"criteria":
+            "7 temps",
+            "position":1,
+            "score1":20,
+            "score2":5},
+        {"criteria":
+            [1, 2, 3, 4],
+            "position":2,
+            "score1":15,
+            "score2":15},
+        {"criteria":
+            [1, 6, 6, 9],
+            "position":3,
+            "score1":11,
+            "score2":13}],
+    "city-plans-won":[true, false, false],
+    "construction-cards":[[9,"bis"],[10,"bis"],[15,"bis"]],
+    "effects":["surveyor","landscaper","pool"]
+}

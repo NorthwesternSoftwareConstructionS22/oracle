@@ -1,0 +1,9 @@
+{
+  "city-plans":[
+    {"criteria":[1,1,1,1,1,1],"position":1,"score1":8,"score2":4},
+    {"criteria":"all pools all parks one roundabout","position":2,"score1":11,"score2":6},
+    {"criteria":[1,3,6],"position":3,"score1":12,"score2":7}],
+  "city-plans-won":[true,false,true],
+  "construction-cards":[[2,"temp"],[1,"landscaper"],[3,"bis"]],
+  "effects":["agent","bis","pool"]
+}

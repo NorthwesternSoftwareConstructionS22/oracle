@@ -1,0 +1,24 @@
+{
+  "city-plans": [
+    { "criteria": [1, 1, 2, 3], "position": 1, "score1": 8, "score2": 3 },
+    {
+      "criteria": [1, 1, 1, 1, 1, 1],
+      "position": 2,
+      "score1": 20,
+      "score2": 16
+    },
+    {
+      "criteria": "four streets all parks",
+      "position": 3,
+      "score1": 10,
+      "score2": 6
+    }
+  ],
+  "city-plans-won": [false, false, false],
+  "construction-cards": [
+    [1, "landscaper"],
+    [2, "landscaper"],
+    [3, "pool"]
+  ],
+  "effects": ["bis", "bis", "bis"]
+}

@@ -1,0 +1,1 @@
+{"city-plans":[{"criteria":["all houses",0],"position":1,"score1":6,"score2":3},{"criteria":["all pools all parks",1],"position":2,"score1":8,"score2":3},{"criteria":[2,3,5],"position":3,"score1":13,"score2":7}],"city-plans-won":[false,false,false],"construction-cards":[[6,"bis"],[1,"agent"],[10,"bis"]],"effects":["landscaper","pool","pool"]}

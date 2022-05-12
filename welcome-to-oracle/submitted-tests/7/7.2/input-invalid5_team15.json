@@ -1,0 +1,21 @@
+{
+    "city-plans":[
+        {"criteria":
+            [1, 1, 6, 8],
+            "position":1,
+            "score1":19,
+            "score2":5},
+        {"criteria":
+            "end homes",
+            "position":1,
+            "score1":4,
+            "score2":17},
+        {"criteria":
+            [1, 1, 1, 3, 5, 7, 9, 11],
+            "position":1,
+            "score1":8,
+            "score2":1}],
+    "city-plans-won":[false,true,true],
+    "construction-cards":[[1,"surveyor"],[1,"surveyor"]],
+    "effects":["temp","park","temp"]
+}
