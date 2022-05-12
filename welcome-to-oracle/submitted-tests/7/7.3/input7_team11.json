@@ -1,0 +1,39 @@
+[
+    {"city-plans":
+        [{"criteria":[1,1,1,1,1,1],
+            "position":1,
+            "score1":8,
+            "score2":4},
+        {"criteria":"two streets all parks",
+            "position":2,
+            "score1":11,
+            "score2":6},
+        {"criteria":[1,2,6],
+            "position":3,
+            "score1":12,
+            "score2":7}],
+    "city-plans-won":[false,false,false],
+    "construction-cards":
+        [[4,"bis"],
+        [11,"landscaper"],
+        [11,"surveyor"]],
+    "effects":["bis","landscaper","agent"]},
+
+    {"agents":[1,1,0,2,0,4],
+        "city-plan-score":["blank","blank","blank"],
+        "refusals":0,
+        "streets":[
+          {"homes":[1,false,[true,2,false],[false,3,false],[false,4,false],[true,5,false],[false,6,false],[false,7,false],[false,8,false],[false,9,false],[false,10,false]],"parks":3,"pools":[false,false,false]},
+          {"homes":[0,false,[false,1,false],[true,2,false],[false,4,false],[false,"blank",false],[false,5,false],[false,6,false],[true,10,false],[false,"blank",false],[false,12,false],[false,16,false]],"parks":3,"pools":[false,false,false]},
+          {"homes":[1,false,[false,2,false],[true,3,false],[true,4,false],[true,5,false],[true,6,false],[true,7,false],[false,8,false],[false,9,false],[false,10,false],[false,11,false],[false,12,false]],"parks":5,"pools":[false,false,false]}],
+          "temps":4},
+
+          {"agents":[1,1,0,2,0,4],
+            "city-plan-score":[12,11,14],
+            "refusals":0,
+            "streets":[
+              {"homes":[1,false,[true,2,false],[false,3,false],[false,4,false],[true,5,false],[false,6,false],[false,7,false],[false,8,false],[false,9,false],[false,10,false]],"parks":3,"pools":[false,false,false]},
+              {"homes":[0,false,[false,1,false],[true,2,false],[false,4,false],[false,"blank",false],[false,5,false],[false,6,false],[true,10,false],[false,11,false],[false,12,false],[false,16,false]],"parks":4,"pools":[false,false,false]},
+              {"homes":[1,false,[false,2,false],[true,3,false],[true,4,false],[true,5,false],[true,6,false],[true,7,false],[false,8,false],[false,9,false],[false,10,false],[false,11,false],[false,12,false]],"parks":5,"pools":[false,false,false]}],
+              "temps":4}
+]
