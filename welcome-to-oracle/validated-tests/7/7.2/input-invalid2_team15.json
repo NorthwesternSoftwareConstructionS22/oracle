@@ -1,0 +1,21 @@
+{
+    "city-plans":[
+        {"criteria":
+            ["all houses", 0],
+            "position":2,
+            "score1":19,
+            "score2":5},
+        {"criteria":
+            [1, 10],
+            "position":1,
+            "score1":4,
+            "score2":17},
+        {"criteria":
+            [3, 5, 7, 9, 11],
+            "position":3,
+            "score1":8,
+            "score2":1}],
+    "city-plans-won":[true,false,false],
+    "construction-cards":[[1,"surveyor"],[8,"landscaper"],[4,"pool"]],
+    "effects":["surveyor","bis","bis"]
+}

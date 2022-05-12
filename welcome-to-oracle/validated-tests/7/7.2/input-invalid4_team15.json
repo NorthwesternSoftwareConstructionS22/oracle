@@ -1,0 +1,16 @@
+{
+    "city-plans":[
+        {"criteria":
+            [2, 4, 6, 8],
+            "position":2,
+            "score1":19,
+            "score2":5},
+        {"criteria":
+            ["two streets all parks"],
+            "position":1,
+            "score1":4,
+            "score2":17}],
+    "city-plans-won":[true,false,false],
+    "construction-cards":[[1,"king"],[8,"queen"],[4,"knight"]],
+    "effects":["pawn","bishop","castle"]
+}

@@ -1,0 +1,22 @@
+{
+    "city-plans":
+        [{"criteria":[1,2,15],
+        "position":1,
+        "score1":90,
+        "score2":0},
+        {"criteria":[15],
+            "position":2,
+            "score1":0,
+            "score2":0},
+        {"criteria":"all pools all parks one roundabout",
+            "position":3,
+            "score1":0,
+            "score2":0},
+        {"criteria":[15],
+            "position":2,
+            "score1":0,
+            "score2":0}],
+    "city-plans-won":[true,false,false],
+    "construction-cards":[[1,"surveyor"],[2,"surveyor"],[8,"surveyor"]],
+    "effects":["surveyor","pool","surveyor"]
+}

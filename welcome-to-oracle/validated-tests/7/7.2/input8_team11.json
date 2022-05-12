@@ -1,0 +1,18 @@
+{
+    "city-plans":
+        [{"criteria":"end houses",
+        "position":1,
+        "score1":90,
+        "score2":0},
+        {"criteria":"end houses",
+            "position":2,
+            "score1":0,
+            "score2":0},
+        {"criteria":"end houses",
+            "position":3,
+            "score1":0,
+            "score2":0}],
+    "city-plans-won":[false,false,false],
+    "construction-cards":[[1,"surveyor"],[2,"surveyor"],[8,"surveyor"]],
+    "effects":["surveyor","pool","surveyor"]
+}

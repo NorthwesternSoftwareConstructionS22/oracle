@@ -1,0 +1,19 @@
+{
+  "city-plans": [
+    { "criteria": [2, 3, 3], "position": 1, "score1": 6, "score2": 3 },
+    {
+      "criteria": ["all pools all parks", 2],
+      "position": 2,
+      "score1": 10,
+      "score2": 6
+    },
+    { "criteria": [2, 2, 3], "position": 3, "score1": 14, "score2": 11 }
+  ],
+  "city-plans-won": [false, false, false],
+  "construction-cards": [
+    [1, "bis"],
+    [2, "pool"],
+    [3, "surveyor"]
+  ],
+  "effects": ["agent", "landscaper", "temp"]
+}

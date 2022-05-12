@@ -1,0 +1,7 @@
+{"city-plans":
+    [{"criteria":"end houses","position":1,"score1":9,"score2":1},
+    {"criteria":"5 bis","position":2,"score1":14,"score2":6},
+    {"criteria":[1,1,2,6],"position":3,"score1":8,"score2":7}],
+"city-plans-won":[false,false,true],
+"construction-cards":[[7,"pool"],[2,"pool"],[4,"pool"]],
+"effects":["agent","temp","agent"]}
