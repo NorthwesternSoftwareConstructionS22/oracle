@@ -262,25 +262,33 @@
 
 
 (define (make-send-json exe-path input-file test-failed)
-  (define (send-json out json where #:communication-style [style 'normal])
-    (with-handlers ([exn:fail? (λ (x)
-                                 (log-fest-error
-                                  @~a{
-                                      @(pretty-path exe-path) fails test @(test-display-name input-file) @;
-                                      because the following JSON message could not be sent
-                                      ------------------------------
-                                      @(jsexpr->bytes json)
-                                      ------------------------------
-                                      })
-                                 (raise x))])
-      (log-fest-debug @~a{Sending to @where
+  (define terminated (make-hash))
+  (define (send-json out json where
+                     #:communication-style [style 'normal]
+                     #:terminate-connection [terminate-connection #f])
+    (when (and terminate-connection (not (hash-ref terminated out #f)))
+      (hash-set! terminated out #t)
+      (close-output-port out)
+      (close-input-port terminate-connection))
+    (unless (hash-ref terminated out #f)
+      (with-handlers ([exn:fail? (λ (x)
+                                   (log-fest-error
+                                    @~a{
+                        @(pretty-path exe-path) fails test @(test-display-name input-file) @;
+                        because the following JSON message could not be sent
+                        ------------------------------
+                        @(jsexpr->bytes json)
+                        ------------------------------
+                        })
+                                   (raise x))])
+        (log-fest-debug @~a{Sending to @where
  ------------------------------
  @(jsexpr->bytes json)
  ------------------------------
  })
-      (with-timeout (send-a-json-maybe-messing-with-it json out style) (format "json to be sent ~a" where))
-      (newline out)
-      (flush-output out)))
+        (with-timeout (send-a-json-maybe-messing-with-it json out style) (format "json to be sent ~a" where))
+        (newline out)
+        (flush-output out))))
 
   send-json)
 
@@ -484,7 +492,8 @@
          ;; a function to just send some json out, the string
          ;; goes into the students debug log, along with the JSON
          [send-json (->* (output-port? jsexpr? string?)
-                         (#:communication-style (or/c 'normal 'dribble 'pad))
+                         (#:communication-style (or/c 'normal 'dribble 'pad)
+                          #:terminate-connection (or/c #f input-port?))
                          void?)]
 
          ;; a function to receive some json in, the string
