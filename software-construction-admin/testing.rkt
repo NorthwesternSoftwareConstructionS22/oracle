@@ -234,6 +234,7 @@
             (thread (λ () (copy-port stderr copy-of-stderr) (close-output-port copy-of-stderr))))
 
           (define (give-up-due-to-json-problem)
+            (subprocess-kill proc #t)
             (sync stderr-piping-thread)
             (test-failed))
           (define passed? (the-oracle stdout stdin-pipe-out
