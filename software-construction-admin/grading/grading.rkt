@@ -156,10 +156,12 @@
 
 (define (count-valid-tests team-name assign-number)
   (define valid-tests-path (assign-number->validated-tests-path assign-number))
-  (count (λ (valid-test)
-           (equal? (validated-test-input-file->team-name valid-test)
-                   team-name))
-         (directory-list valid-tests-path)))
+  (if (directory-exists? valid-tests-path)
+      (count (λ (valid-test)
+               (equal? (validated-test-input-file->team-name valid-test)
+                       team-name))
+             (directory-list valid-tests-path))
+      0))
 
 (define strip-presents
   (match-lambda [(present v) (strip-presents v)]
