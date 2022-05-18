@@ -21,7 +21,7 @@
 (define grading-workflow-name "grade")
 
 (define-runtime-path grading-job-info-cache "grading-jobs.rktd")
-(define grading-repo-preserve-files '(".github" ".git"))
+(define grading-repo-preserve-files '(".github" ".git" ".gitignore"))
 
 (define/contract (kick-off-submission-job! team
                                            assign-number
