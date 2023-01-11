@@ -31,13 +31,14 @@ Students work in small teams.
 ** Summary of repos
 #+begin_example
 Organization
- |- admin/oracle         : course infrastructure
- |- game implementation  : oracle implementation, might also live outside of org
- |- teamX                : student development & submission
+ |- oracle               : course infrastructure (public)
+ |- course-admin         : course admin information and programs (private)
+ |- game implementation  : oracle implementation, might also live outside of org (private)
+ |- teamX                : student development & submission (private)
  ...
 
 Possibly elsewhere (e.g. a personal github account)
- |- grading              : used for automated grading
+ |- grading              : used for automated grading (private)
 #+end_example
 
 The grading repo might be outside the organization so as to not use up the Actions CI resources of the organization for grading.
@@ -86,7 +87,7 @@ Students must also have the necessary config file for CI integration in their re
 :CUSTOM_ID: ll:07293b56-48c3-4ac5-b93a-7f1cd453e911
 :END:
 This has the implementation of the course infrastructure (/not/ the instructor's game implementation).
-It should be a racket collection with two pkgs:
+It should be a racket collection with two parts:
 #+begin_example
 infrastructure collection
  |- <game>-oracle
@@ -117,6 +118,10 @@ infrastructure collection
  |- software-construction-admin
      |- ... # infrastracture implementation
 #+end_example
+
+** Course admin repo
+This has programs, records, and notes for course admin.
+Most notably, it's the place that raw team scores and codewalk information is stored - along with programs to work with that information.
 
 ** Other repos
 
@@ -152,6 +157,7 @@ For assignment M.N
 
 *** Instructor implements oracle and commits it
 Commit to in [[#ll:07293b56-48c3-4ac5-b93a-7f1cd453e911][the infrastructure repo]].
+Historically the oracle implementation has been obfuscated in this repo using the [[https://pkgs.racket-lang.org/package/simple-obfuscation][simple-obfuscation]] package Robby wrote.
 
 *** Students create tests before =test-submission-deadline=, push them to their dev repos
 And they must follow the naming convention for test inputs and outputs, like described in [[#ll:e163dfa0-0601-442b-a552-48e4a0a79327][Student submissions: the dev repos]].
@@ -174,7 +180,8 @@ Specifically,
 2. Run [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]] to launch CI jobs to grade every student submission
    1. [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]] can be used to check the status of the jobs as they go
 3. Once grading is done, run [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]] again to collect the grading results
-4. Commit the scores somewhere
+4. Commit the scores in =scores.rkt= of the =course-admin= repo.
+5. Download the canvas scores csv, run =scores.rkt= on it, and upload the new scores to release the latest grades.
 
 *** Debugging student questions about a submission
 :PROPERTIES:
@@ -186,8 +193,23 @@ Run [[#ll:f23dc27f-6ed2-423b-9d46-ce270ca71cff][debug-team-submission.rkt]], whi
 To regrade the snapshotted commit, run [[#ll:dde65b48-955b-4f45-b6ea-4b92af735bf2][grading.rkt]], but supply the team name with =--team=.
 To regrade a different commit, doing the whole regrading of previous assignments thing, take a new snapshot and then run grading.rkt using it.
 
+** For codewalks
+Before any codewalks, be sure to configure the [[#ll:8c13ae30-c697-47c9-b10a-713174f49198][codewalks.rkt]] with information about codewalking dates etc.
+Then run it with =--regenerate= to generate a codewalking schedule.
 
-* Infrastructure implementation
+*** Before each codewalk (24-36h before)
+Run [[#ll:8c13ae30-c697-47c9-b10a-713174f49198][codewalks.rkt]] with =-m= to generate piazza messages to be copied to post (privately) in piazza notifying teams.
+
+*** After each codewalk
+Run [[#ll:8c13ae30-c697-47c9-b10a-713174f49198][codewalks.rkt]] with =--commit= to record that the codewalk happened.
+
+*** If the plan needs to change
+If it's because a student will be absent on day X or something like that, best is to add that to the =absences= definition, then regenerate.
+Alternatively, you can hand-edit the codewalk plan and double-check it with =--check-plan=.
+
+* The infrastructure
+In the =oracle= repo.
+
 ** Programs
 The core configurable parts of all of these programs are set in =config.rkt=.
 There you can configure which repos the programs use, special assignments, testing timeouts, etc.
@@ -267,6 +289,126 @@ This program
 
 Meant to run locally by the TA/instructor.
 
+* Course management tools
+In the =course-admin= repo.
+
+** Scheduling and recording codewalks
+
+*** codewalks.rkt
+:PROPERTIES:
+:CUSTOM_ID: ll:8c13ae30-c697-47c9-b10a-713174f49198
+:END:
+This program manages the codewalk schedule.
+It needs to be configured by modifying the definitions at the top of the file.
+Having done that, it
+- generates a codewalking schedule for the quarter
+- keeps track of the upcoming and past codewalks
+- generates piazza messages notifying teams that they will codewalk in the next class
+- verify that the current codewalk plan doesn't violate any constraints
+
+The codewalk schedule and history are stored in the files named at the top of the program.
+The plan can be edited by hand; then the verification option is useful to make sure the changes don't accidentally cause problems.
+
+You may want to edit the message generated by =codewalk-messages=, too.
+
+Run it with =-h= to see the options.
+
+*** scores.rkt
+This program is mainly a record of scores and related information for each team, but its main module also records each teams' current scores in a CSV for uploading into canvas.
+
+The regular assignment scores are stored in the =scores-by-assignment= hash at the top of the program (just paste in the output of =software-construction-admin/grading/grading.rkt=).
+Final CI run scores are in =final-run-scores=.
+Final codewalk scores are recorded by filling in =final-codewalk-score=.
+The teams that participate in the tournament are recorded by filling in =tournament-teams=.
+Any late penalty exceptions are recorded in =late-penalty-exception?=.
+The function from CI scores to assignment grades is in =code-score-function=, which uses the =current-late-submission-penalty-factor=.
+
+For the canvas score recording, the program expects a CSV export of the course grades from canvas, and it then updates that CSV to create a new one with the latest team grades.
+The new csv can then be uploaded back into canvas.
+
+*** teams.rkt
+Provides a list of all the teams in the class.
+This file needs to be filled in with the output of running the helper =parse-team-info-from-spreadsheet.rkt= on the team-registering-google-form export.
+
+* What to do when spinning up another iteration of the course
+
+** Create a course organization, contact the NU people IT people who can make it a NU organization
+This gives us access to the NU CI credits.
+
+*** Create the oracle repo therein, called =oracle=, and push the repo of last year's oracle
+Clean out the oracle for the last game.
+
+*Ensure the repo is public.*
+
+** Create a google form for students to record partner pairs
+The form we used in the past had these fields
+: Timestamp,My name,My netid,My GitHub id,My partner's name,My partner's netid,My partner's GitHub id,My partner and I have met and discussed our schedule and put aside time to pair program on the homework assignments.
+
+The csv-exported data from this form will be used to populate the team information below.
+
+** Create a directory for this iteration of the course
+E.g. =spring22=
+
+** Set up all the grading repos
+*** Clone the oracle from last year
+To =spring22/oracle=
+And install it as a package.
+
+*** Clone the course admin repo from last year, update it
+To =spring22/course-admin=
+And install it as a package.
+
+Update the information at the top of =codewalks.rkt=, specifically
+- the dates for codewalking
+- the list of known student absences (probably starts empty, but update it as they come in)
+- (perhaps) the codewalk notification message
+
+Update the information in =teams.rkt= using =parse-team-info-from-spreadsheet.rkt= and the spreadsheet from the student teams form.
+You'll probably need to edit =parse-team-info-from-spreadsheet.rkt= to update the path to the csv.
+
+Clean up =scores.rkt= if needed, which is the file that records the history of team scores.
+
+Generate the codewalk schedule for the quarter with =codewalks.rkt=.
+
+*** (optional, useful for testing everything) Make/copy a dummy team repo, update its workflow yaml if needed
+- Update racket version
+- Update organization url
+
+*** Create the snapshot and grading repos
+Create the directories and do git init for each:
+- =spring22/grading=
+- =spring22/submission-snapshots=
+- =spring22/test-snapshots=
+
+Run the scripts to kick off and retrieve test validation, grading information to check if apis have changed.
+The first attempt for validation/grading may fail because the workflow .yml files need to be pushed before the api will accept references to them.
+
+*** Create a private repo in your personal github account for grading
+
+** Update settings
+*** Review and update =oracle/software-construction-admin/config.rkt=
+- Organization name
+- Grading repo info
+- Assignment sequence and test info
+- Oracle types
+- Assignment test deadlines
+
+*** Update github auth key if necessary
+https://github.com/settings/tokens
+
+*** Ensure that the oracle still works by pushing to the dummy team repo and checking if the actions CI launches, finishes OK
+
+*** Update the CI guide as necessary
+At minimum, in the workflow yaml:
+- Racket version
+- Organization url
+
+*** Update the auto-generated action config for automated grading if necessary
+E.g. to bump the racket version number.
+At =software-construction-admin/github-actions/actions.rkt=, function =make-workflow-config-contents=.
+
+
+
 * Gotchas and things to keep in mind
 
 ** Look through and modify [[file:~/github_sync/Notes/research/grad/ta/sc/spring21/oracle/software-construction-admin/config.rkt][config.rkt]] to control many fine-grained aspects of the system
@@ -309,6 +451,7 @@ then grading assignment 2.1 entails grading all of
 ** Tests are validated only once
 The grades for tests reported by the grading program come from the number of validated tests found in the =validated-tests= directory for the assignment.
 The consequence of that is that although student code is re-graded on every assignment, the tests are never re-validated.
+
 
 * Possible improvements and ideas
 

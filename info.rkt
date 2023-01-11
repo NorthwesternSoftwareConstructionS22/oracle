@@ -4,5 +4,6 @@
                       "draw-lib"
                       "pict-lib"
                       "gui-lib"
-                      "simple-obfuscation"))
-(define build-deps '("at-exp-lib" "rackunit-lib"))
+                      "simple-obfuscation"
+                      "rackunit-lib"))
+(define build-deps '("at-exp-lib"))
