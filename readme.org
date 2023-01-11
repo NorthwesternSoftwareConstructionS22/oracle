@@ -396,6 +396,8 @@ The first attempt for validation/grading may fail because the workflow .yml file
 *** Update github auth key if necessary
 https://github.com/settings/tokens
 
+Put it in the encrypted file referred to by [[file:~/github_sync/Notes/research/grad/ta/sc/spring21/oracle/software-construction-admin/github-actions/github-api.rkt::define-runtime-path token-file][github-actions/github-api.rkt]].
+
 *** Ensure that the oracle still works by pushing to the dummy team repo and checking if the actions CI launches, finishes OK
 
 *** Update the CI guide as necessary
